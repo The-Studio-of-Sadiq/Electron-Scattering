@@ -1,0 +1,6 @@
+{
+  "name": "ELSEPA Physics Workbench",
+  "description": "GUI and real-time simulation platform for ELSEPA electron and positron elastic scattering by atoms, with Dirac partial-wave analysis, Fortran integration, and secure file uploads.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

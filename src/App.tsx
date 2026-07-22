@@ -1,0 +1,212 @@
+import React, { useState, useEffect } from 'react';
+import { ElsepaInputParams, SimulationResult, UploadedDataset, FortranServerStatus } from './types';
+import { Header } from './components/Header';
+import { InputGuiForm } from './components/InputGuiForm';
+import { ResultsDashboard } from './components/ResultsDashboard';
+import { EnergySweepViewer } from './components/EnergySweepViewer';
+import { DatasetUploadPanel } from './components/DatasetUploadPanel';
+import { RenderDeploymentModal } from './components/RenderDeploymentModal';
+import { getElementByZ } from './data/elements';
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState<'workbench' | 'sweep' | 'datasets' | 'deploy'>('workbench');
+
+  // Default initial simulation parameters (Gold Au Z=79, 100 keV electron)
+  const [params, setParams] = useState<ElsepaInputParams>({
+    z: 79,
+    projectile: -1, // Electron
+    energyEv: 100000, // 100 keV
+    massNumber: 196.97,
+    nuclearModel: 'fermi',
+    fermiC: 6.55,
+    fermiT: 0.5229,
+    densityModel: 'dirac-fock',
+    exchangeModel: 'furness-mccarthy',
+    polarizationModel: 'buckingham',
+    polarizability: 36.0,
+    cutoffRadius: 1.7,
+    absorptionModel: 'none',
+    minAngle: 0,
+    maxAngle: 180,
+    angleStep: 1.0,
+  });
+
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [fortranStatus, setFortranStatus] = useState<FortranServerStatus | null>(null);
+  const [uploadedDatasets, setUploadedDatasets] = useState<UploadedDataset[]>([]);
+
+  // Fetch Fortran status on mount
+  useEffect(() => {
+    fetch('/api/fortran-status')
+      .then((res) => res.json())
+      .then((status) => setFortranStatus(status))
+      .catch((err) => console.warn('Fortran status check failed:', err));
+
+    fetch('/api/datasets')
+      .then((res) => res.json())
+      .then((data) => setUploadedDatasets(data))
+      .catch((err) => console.warn('Fetch datasets failed:', err));
+
+    // Run initial benchmark simulation
+    runSimulation(params);
+  }, []);
+
+  const runSimulation = async (inputParams: ElsepaInputParams) => {
+    setIsSimulating(true);
+    try {
+      const res = await fetch('/api/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inputParams),
+      });
+
+      if (res.ok) {
+        const result: SimulationResult = await res.json();
+        setSimulationResult(result);
+      } else {
+        console.error('Simulation server error');
+      }
+    } catch (err) {
+      console.error('Simulation request failed:', err);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
+  const handleLoadPreset = (presetKey: string) => {
+    let newP: ElsepaInputParams = { ...params };
+
+    if (presetKey === 'e-gold-100kev') {
+      const el = getElementByZ(79);
+      newP = {
+        ...params,
+        z: 79,
+        projectile: -1,
+        energyEv: 100000,
+        massNumber: el.atomicMass,
+        polarizability: el.polarizability,
+        cutoffRadius: el.cutoffRadius,
+        nuclearModel: 'fermi',
+      };
+    } else if (presetKey === 'e-argon-10ev') {
+      const el = getElementByZ(18);
+      newP = {
+        ...params,
+        z: 18,
+        projectile: -1,
+        energyEv: 10,
+        massNumber: el.atomicMass,
+        polarizability: el.polarizability,
+        cutoffRadius: el.cutoffRadius,
+        exchangeModel: 'furness-mccarthy',
+        polarizationModel: 'buckingham',
+      };
+    } else if (presetKey === 'e-uranium-1mev') {
+      const el = getElementByZ(92);
+      newP = {
+        ...params,
+        z: 92,
+        projectile: -1,
+        energyEv: 1000000,
+        massNumber: el.atomicMass,
+        polarizability: el.polarizability,
+        cutoffRadius: el.cutoffRadius,
+        nuclearModel: 'fermi',
+      };
+    } else if (presetKey === 'e+-gold-100kev') {
+      const el = getElementByZ(79);
+      newP = {
+        ...params,
+        z: 79,
+        projectile: 1, // Positron
+        energyEv: 100000,
+        massNumber: el.atomicMass,
+        polarizability: el.polarizability,
+        cutoffRadius: el.cutoffRadius,
+        exchangeModel: 'none',
+      };
+    } else if (presetKey === 'e-hydrogen-100ev') {
+      const el = getElementByZ(1);
+      newP = {
+        ...params,
+        z: 1,
+        projectile: -1,
+        energyEv: 100,
+        massNumber: el.atomicMass,
+        polarizability: el.polarizability,
+        cutoffRadius: el.cutoffRadius,
+        nuclearModel: 'point',
+      };
+    } else if (presetKey === 'e-xenon-10kev') {
+      const el = getElementByZ(54);
+      newP = {
+        ...params,
+        z: 54,
+        projectile: -1,
+        energyEv: 10000,
+        massNumber: el.atomicMass,
+        polarizability: el.polarizability,
+        cutoffRadius: el.cutoffRadius,
+      };
+    }
+
+    setParams(newP);
+    runSimulation(newP);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <Header
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        fortranStatus={fortranStatus}
+        onLoadPreset={handleLoadPreset}
+      />
+
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+        {activeTab === 'workbench' && (
+          <div className="flex flex-col gap-6">
+            <InputGuiForm
+              params={params}
+              setParams={setParams}
+              onRunSimulation={() => runSimulation(params)}
+              isSimulating={isSimulating}
+            />
+
+            <ResultsDashboard
+              result={simulationResult}
+              uploadedDatasets={uploadedDatasets}
+            />
+          </div>
+        )}
+
+        {activeTab === 'sweep' && <EnergySweepViewer baseParams={params} />}
+
+        {activeTab === 'datasets' && (
+          <DatasetUploadPanel
+            uploadedDatasets={uploadedDatasets}
+            setUploadedDatasets={setUploadedDatasets}
+            onSelectOverlay={() => setActiveTab('workbench')}
+          />
+        )}
+
+        {activeTab === 'deploy' && (
+          <RenderDeploymentModal fortranStatus={fortranStatus} />
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>
+            ELSEPA Physics Workbench • F. Salvat, A. Jablonski, F. Powell Dirac Scattering Solver
+          </span>
+          <span className="font-mono">
+            Deployed for Render.com • Node.js + Express + Vite + Recharts
+          </span>
+        </div>
+      </footer>
+    </div>
+  );
+}

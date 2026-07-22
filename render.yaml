@@ -1,0 +1,15 @@
+# Render.com Blueprint Configuration (render.yaml)
+services:
+  - type: web
+    name: elsepa-physics-workbench
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: ELSEPA_DATA
+        value: /app/data
