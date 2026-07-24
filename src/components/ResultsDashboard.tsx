@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { SimulationResult, UploadedDataset } from '../types';
 import { PolarPlot } from './PolarPlot';
+import { Math, LaTeXText } from './LaTeX';
 
 interface ResultsDashboardProps {
   result: SimulationResult | null;
@@ -126,9 +127,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       {/* Top Metrics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         <div className="bg-indigo-50/60 border border-indigo-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-indigo-700 uppercase font-bold tracking-wider">Total Elastic σ_el</div>
-          <div className="text-lg font-black text-indigo-950 font-mono mt-0.5">
-            {summary.sigmaElAu.toFixed(3)} <span className="text-xs font-normal text-indigo-600">a0²</span>
+          <div className="text-[10px] text-indigo-700 font-bold tracking-wider flex items-center gap-1">
+            <span>Total Elastic</span>
+            <Math math="\sigma_{\text{el}}" />
+          </div>
+          <div className="text-lg font-black text-indigo-950 font-mono mt-0.5 flex items-baseline gap-1">
+            <span>{summary.sigmaElAu.toFixed(3)}</span>
+            <span className="text-xs font-normal text-indigo-600"><Math math="a_0^2" /></span>
           </div>
           <div className="text-[10px] text-indigo-700 font-mono">
             {summary.sigmaElCm2.toExponential(3)} cm²
@@ -136,28 +141,39 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">1st Transport σ_1</div>
-          <div className="text-lg font-black text-slate-800 font-mono mt-0.5">
-            {summary.sigma1Au.toFixed(3)} <span className="text-xs font-normal text-slate-500">a0²</span>
+          <div className="text-[10px] text-slate-500 font-bold tracking-wider flex items-center gap-1">
+            <span>1st Transport</span>
+            <Math math="\sigma_1" />
+          </div>
+          <div className="text-lg font-black text-slate-800 font-mono mt-0.5 flex items-baseline gap-1">
+            <span>{summary.sigma1Au.toFixed(3)}</span>
+            <span className="text-xs font-normal text-slate-500"><Math math="a_0^2" /></span>
           </div>
           <div className="text-[10px] text-slate-500 font-mono">Momentum Transfer</div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">2nd Transport σ_2</div>
-          <div className="text-lg font-black text-slate-800 font-mono mt-0.5">
-            {summary.sigma2Au.toFixed(3)} <span className="text-xs font-normal text-slate-500">a0²</span>
+          <div className="text-[10px] text-slate-500 font-bold tracking-wider flex items-center gap-1">
+            <span>2nd Transport</span>
+            <Math math="\sigma_2" />
+          </div>
+          <div className="text-lg font-black text-slate-800 font-mono mt-0.5 flex items-baseline gap-1">
+            <span>{summary.sigma2Au.toFixed(3)}</span>
+            <span className="text-xs font-normal text-slate-500"><Math math="a_0^2" /></span>
           </div>
           <div className="text-[10px] text-slate-500 font-mono">Viscosity Cross Sec.</div>
         </div>
 
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Kinematics (k, γ, β)</div>
-          <div className="text-xs font-bold text-slate-800 font-mono mt-0.5">
-            k = {summary.kWaveVector.toFixed(2)} a0⁻¹
+          <div className="text-[10px] text-slate-500 font-bold tracking-wider flex items-center gap-1">
+            <span>Kinematics</span>
+            <Math math="(k, \gamma, \beta)" />
+          </div>
+          <div className="text-xs font-bold text-slate-800 font-mono mt-0.5 flex items-center gap-1">
+            <Math math={`k = ${summary.kWaveVector.toFixed(2)}\\text{ }a_0^{-1}`} />
           </div>
           <div className="text-[10px] text-slate-500 font-mono">
-            γ = {summary.gammaRelativistic.toFixed(3)}, β = {summary.betaRelativistic.toFixed(3)}
+            <Math math={`\\gamma = ${summary.gammaRelativistic.toFixed(3)}, \\beta = ${summary.betaRelativistic.toFixed(3)}`} />
           </div>
         </div>
 
@@ -526,7 +542,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '12px' }}
                   formatter={(val: any) => [typeof val === 'number' ? val.toFixed(4) : val, 'radians']}
-                  labelFormatter={(k) => `kappa = ${k}`}
+                  labelFormatter={(k) => `κ = ${k}`}
                 />
                 <Bar dataKey="deltaRe" name="Real Phase Shift δ_κ" fill="#818cf8" radius={[4, 4, 0, 0]} />
               </BarChart>

@@ -3,14 +3,82 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Electron Scattering Simulator</title>
+    <title>Electron Scattering Simulator | ELSEPA Dirac Physics Workbench</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="Electron Scattering Simulator | ELSEPA Dirac Physics Workbench" />
+    <meta name="description" content="Interactive Dirac partial-wave electron & positron elastic scattering simulator. Powered by Salvat, Jablonski & Powell ELSEPA Fortran physics engine. Developed by HSTU Research Society." />
+    <meta name="keywords" content="Electron Scattering, ELSEPA, Dirac Equation, Elastic Scattering, Cross Section, Quantum Physics, Atomic Physics, Positron Scattering, HSTU Research Society, Golam Kuadir Khan Prince, Dr. Md. Mahabub Hossain" />
+    <meta name="author" content="Golam Kuadir Khan Prince, Professor Dr. Md. Mahabub Hossain, Pankaj Bhowmick, HSTU Research Society" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://electron-scattering-simulator.app/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://electron-scattering-simulator.app/" />
+    <meta property="og:title" content="Electron Scattering Simulator | ELSEPA Physics Workbench" />
+    <meta property="og:description" content="High-precision Dirac elastic scattering simulation tool for electrons and positrons. Features atomic and molecular IAM benchmarks, energy sweeps, and experimental curve overlays." />
+    <meta property="og:image" content="/favicon.svg" />
+    <meta property="og:site_name" content="Electron Scattering Simulator" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://electron-scattering-simulator.app/" />
+    <meta property="twitter:title" content="Electron Scattering Simulator | ELSEPA Physics Workbench" />
+    <meta property="twitter:description" content="High-precision Dirac elastic scattering simulation tool for electrons and positrons. Developed by HSTU Research Society." />
+    <meta property="twitter:image" content="/favicon.svg" />
+
+    <!-- Icons & PWA Manifest -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#4f46e5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="description" content="Electron Scattering Simulator - Interactive ELSEPA Dirac elastic scattering workbench" />
+
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ELSEPA1001"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-ELSEPA1001', { send_page_view: true });
+    </script>
+
+    <!-- Schema.org JSON-LD Structured Data for Scientific Software -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Electron Scattering Simulator",
+      "operatingSystem": "All",
+      "applicationCategory": "EducationalApplication, ScientificSoftware",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "High-precision Dirac partial-wave relativistic electron and positron elastic scattering simulator utilizing ELSEPA Dirac scattering engine.",
+      "author": [
+        {
+          "@type": "Person",
+          "name": "Golam Kuadir Khan Prince"
+        },
+        {
+          "@type": "Person",
+          "name": "Professor Dr. Md. Mahabub Hossain"
+        },
+        {
+          "@type": "Person",
+          "name": "Pankaj Bhowmick"
+        },
+        {
+          "@type": "Organization",
+          "name": "HSTU Research Society"
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

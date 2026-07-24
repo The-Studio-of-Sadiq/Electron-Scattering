@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { LineChart as LineChartIcon, Play, RefreshCw } from 'lucide-react';
 import { ElsepaInputParams, EnergySweepPoint } from '../types';
+import { LaTeXText } from './LaTeX';
 
 interface EnergySweepViewerProps {
   baseParams: ElsepaInputParams;
@@ -52,7 +53,7 @@ export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams
           <div>
             <h3 className="font-bold text-base text-slate-800">Energy Spectrum Cross Section Sweep</h3>
             <p className="text-xs text-slate-500">
-              Computes integrated cross sections (\sigma_el, \sigma_1, \sigma_2) across kinetic energy E (10 eV to 1 MeV).
+              <LaTeXText text="Computes integrated cross sections ($\sigma_{\text{el}}$, $\sigma_1$, $\sigma_2$) across kinetic energy $E$ ($10\text{ eV}$ to $1\text{ MeV}$)." />
             </p>
           </div>
         </div>

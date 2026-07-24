@@ -15,6 +15,7 @@ import {
 import { ElsepaInputParams, ElementData } from '../types';
 import { getElementByZ } from '../data/elements';
 import { PeriodicTableModal } from './PeriodicTableModal';
+import { LaTeXText } from './LaTeX';
 
 interface InputGuiFormProps {
   params: ElsepaInputParams;
@@ -455,8 +456,9 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
               <Play className="w-4 h-4 text-emerald-400" />
               <span>Simulation Trigger</span>
             </div>
+
             <p className="text-xs text-slate-400 mb-4">
-              Executes Dirac partial-wave solution of the radial wave equation to calculate differential cross section $d\sigma/d\Omega$ and Sherman function $S(\theta)$.
+              <LaTeXText text="Executes Dirac partial-wave solution of the radial wave equation to calculate differential cross section $\frac{d\sigma}{d\Omega}$ and Sherman function $S(\theta)$." />
             </p>
           </div>
 

@@ -26,6 +26,7 @@ import {
 import { MolecularInputParams, MolecularSimulationResult, MolecularAtom } from '../types';
 import { getElementByZ } from '../data/elements';
 import { saveMolecularSimulationRun } from '../utils/localStorage';
+import { Math, LaTeXText } from './LaTeX';
 
 interface MolecularWorkbenchProps {
   onSimulationComplete?: (result: MolecularSimulationResult) => void;
@@ -539,7 +540,10 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
           {/* Integrated Cross Section Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase">Coherent Total CS</div>
+              <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
+                <span>Coherent Total</span>
+                <Math math="\sigma_{\text{coh}}" />
+              </div>
               <div className="text-lg font-black text-indigo-700 font-mono mt-1">
                 {simResult.summary.sigmaCohCm2.toExponential(3)} cm²
               </div>
@@ -549,7 +553,10 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
             </div>
 
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase">Incoherent Atom Sum CS</div>
+              <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
+                <span>Incoherent Sum</span>
+                <Math math="\sigma_{\text{incoh}}" />
+              </div>
               <div className="text-lg font-black text-emerald-700 font-mono mt-1">
                 {simResult.summary.sigmaIncohCm2.toExponential(3)} cm²
               </div>
@@ -559,14 +566,20 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
             </div>
 
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase">1st Transport CS (Momentum)</div>
+              <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
+                <span>1st Transport</span>
+                <Math math="\sigma_1" />
+              </div>
               <div className="text-lg font-black text-slate-800 font-mono mt-1">
                 {(simResult.summary.sigma1CohCm2 || 0).toExponential(3)} cm²
               </div>
             </div>
 
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase">2nd Transport CS (Viscosity)</div>
+              <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
+                <span>2nd Transport</span>
+                <Math math="\sigma_2" />
+              </div>
               <div className="text-lg font-black text-slate-800 font-mono mt-1">
                 {(simResult.summary.sigma2CohCm2 || 0).toExponential(3)} cm²
               </div>
@@ -576,7 +589,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
           {/* Recharts Chart: Coherent Interference DCS vs Incoherent Atom Sum */}
           <div className="space-y-2">
             <h4 className="font-bold text-sm text-slate-800 flex items-center justify-between">
-              <span>Differential Cross Section DCS dσ/dΩ (cm²/sr) vs Scattering Angle θ (deg)</span>
+              <span><LaTeXText text="Differential Cross Section DCS $\frac{d\sigma}{d\Omega}$ ($\text{cm}^2/\text{sr}$) vs Scattering Angle $\theta$ ($\text{deg}$)" /></span>
               <span className="text-xs text-slate-500 font-normal">
                 Highlights molecular interference diffraction fringes vs independent atom sum
               </span>
