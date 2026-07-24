@@ -430,11 +430,11 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
         ) : compareMode === 'overlay' ? (
           <div className="h-96 w-full bg-slate-50/50 p-2 rounded-lg border border-slate-200">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={comparisonChartData} margin={{ top: 15, right: 30, left: 65, bottom: 25 }}>
+              <LineChart data={comparisonChartData} margin={{ top: 20, right: 30, left: 65, bottom: 35 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
                   dataKey="angleDeg"
-                  label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -15, fill: '#64748b', style: { fontSize: '12px' } }}
+                  label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -20, fill: '#475569', style: { fontSize: '13px', fontWeight: 600 } }}
                   tick={{ fontSize: 12 }}
                 />
                 <YAxis
@@ -447,8 +447,8 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                     angle: -90,
                     position: 'insideLeft',
                     dx: -25,
-                    style: { textAnchor: 'middle', fontSize: '12px' },
-                    fill: '#64748b'
+                    style: { textAnchor: 'middle', fontSize: '13px', fontWeight: 600 },
+                    fill: '#475569'
                   }}
                 />
                 <Tooltip
@@ -458,18 +458,28 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                   ]}
                   labelFormatter={(label) => `Angle θ: ${label}°`}
                 />
-                <Legend />
-                {selectedRuns.map((run, idx) => (
-                  <Line
-                    key={run.id}
-                    type="monotone"
-                    dataKey={`run_${run.id}`}
-                    name={run.title}
-                    stroke={LINE_COLORS[idx % LINE_COLORS.length]}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                ))}
+                <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: '15px', fontSize: '13px' }} />
+                {selectedRuns.map((run, idx) => {
+                  const isDuplicateTitle = selectedRuns.filter(r => r.title === run.title).length > 1;
+                  const timeStr = new Date(run.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const runDisplayName = isDuplicateTitle
+                    ? `[Run #${idx + 1}] ${run.title} (${timeStr})`
+                    : selectedRuns.length > 1
+                    ? `[Run #${idx + 1}] ${run.title}`
+                    : run.title;
+
+                  return (
+                    <Line
+                      key={run.id}
+                      type="monotone"
+                      dataKey={`run_${run.id}`}
+                      name={runDisplayName}
+                      stroke={LINE_COLORS[idx % LINE_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           </div>
