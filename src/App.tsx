@@ -244,16 +244,21 @@ export default function App() {
       {/* Footer */}
       <footer className={`border-t py-4 px-6 text-center text-xs transition-colors ${
         theme === 'light'
-          ? 'bg-white border-slate-200 text-slate-500'
-          : 'bg-slate-900 border-slate-800/80 text-slate-500'
+          ? 'bg-white border-slate-200 text-slate-600'
+          : 'bg-slate-900 border-slate-800/80 text-slate-400'
       }`}>
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            Electron Scattering Simulator • ELSEPA Dirac Scattering Engine
-          </span>
-          <span className="font-mono">
-            Node.js + Express + Vite + Recharts • Salvat, Jablonski, Powell
-          </span>
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-2">
+          <div className="font-semibold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">
+            Created by Golam Kuadir Khan Prince, Professor Dr. Md. Mahabub Hossain, Pankaj Bhowmick and HSTU Research Society
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full text-[11px] text-slate-500 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 gap-1">
+            <span>
+              Electron Scattering Simulator • ELSEPA Dirac Scattering Engine
+            </span>
+            <span className="font-mono">
+              Salvat, Jablonski, Powell Physics Benchmarks
+            </span>
+          </div>
         </div>
       </footer>
     </div>
