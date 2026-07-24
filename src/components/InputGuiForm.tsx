@@ -21,6 +21,7 @@ interface InputGuiFormProps {
   setParams: React.Dispatch<React.SetStateAction<ElsepaInputParams>>;
   onRunSimulation: () => void;
   isSimulating: boolean;
+  theme?: 'dark' | 'light';
 }
 
 export const InputGuiForm: React.FC<InputGuiFormProps> = ({
@@ -28,6 +29,7 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
   setParams,
   onRunSimulation,
   isSimulating,
+  theme = 'dark',
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [energyUnit, setEnergyUnit] = useState<'eV' | 'keV' | 'MeV'>('keV');
@@ -60,20 +62,35 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
     }));
   };
 
+  const isLight = theme === 'light';
+
   return (
-    <div id="input-gui-form-container" className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl text-slate-100 flex flex-col gap-5">
+    <div
+      id="input-gui-form-container"
+      className={
+        isLight
+          ? 'bg-white border border-slate-200 rounded-2xl p-5 shadow-md text-slate-900 flex flex-col gap-5 transition-colors'
+          : 'bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl text-slate-100 flex flex-col gap-5 transition-colors'
+      }
+    >
       {/* Header Banner */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
         <div className="flex items-center space-x-2">
-          <Sliders className="w-5 h-5 text-indigo-400" />
-          <h2 className="font-bold text-base text-white tracking-tight">ELSEPA Simulation Parameters</h2>
+          <Sliders className="w-5 h-5 text-indigo-600" />
+          <h2 className={`font-bold text-base tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            ELSEPA Simulation Parameters
+          </h2>
         </div>
         <button
           id="open-periodic-table-btn"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 rounded-xl text-xs font-semibold transition-all hover:scale-102"
+          className={`flex items-center space-x-1.5 px-3 py-1.5 border rounded-xl text-xs font-semibold transition-all hover:scale-102 ${
+            isLight
+              ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+              : 'bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40'
+          }`}
         >
-          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
           <span>Periodic Table Picker</span>
         </button>
       </div>

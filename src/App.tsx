@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ElsepaInputParams, SimulationResult, UploadedDataset, FortranServerStatus } from './types';
+import { ElsepaInputParams, SimulationResult, UploadedDataset, FortranServerStatus, SavedSimulationRun } from './types';
 import { Header } from './components/Header';
 import { InputGuiForm } from './components/InputGuiForm';
 import { ResultsDashboard } from './components/ResultsDashboard';
@@ -13,6 +13,19 @@ import { saveAtomicSimulationRun } from './utils/localStorage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy'>('workbench');
+
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('elsepa_theme');
+    return saved === 'light' || saved === 'dark' ? saved : 'dark';
+  });
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('elsepa_theme', next);
+      return next;
+    });
+  };
 
 
   // Default initial simulation parameters (Gold Au Z=79, 100 keV electron)
@@ -161,13 +174,31 @@ export default function App() {
     runSimulation(newP);
   };
 
+  const handleCloneToWorkbench = (run: SavedSimulationRun) => {
+    if (run.type === 'atomic' && run.atomicResult?.params) {
+      setParams(run.atomicResult.params);
+      setActiveTab('workbench');
+      runSimulation(run.atomicResult.params);
+    } else if (run.type === 'molecular' && run.molecularResult) {
+      setActiveTab('molecular');
+    } else if (run.atomicResult?.params) {
+      setParams(run.atomicResult.params);
+      setActiveTab('workbench');
+      runSimulation(run.atomicResult.params);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors ${
+      theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
+    }`}>
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         fortranStatus={fortranStatus}
         onLoadPreset={handleLoadPreset}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
@@ -178,6 +209,7 @@ export default function App() {
               setParams={setParams}
               onRunSimulation={() => runSimulation(params)}
               isSimulating={isSimulating}
+              theme={theme}
             />
 
             <ResultsDashboard
@@ -191,7 +223,9 @@ export default function App() {
 
         {activeTab === 'sweep' && <EnergySweepViewer baseParams={params} />}
 
-        {activeTab === 'saved' && <SavedRunsManager />}
+        {activeTab === 'saved' && (
+          <SavedRunsManager onCloneToWorkbench={handleCloneToWorkbench} />
+        )}
 
         {activeTab === 'datasets' && (
 
@@ -208,13 +242,17 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500">
+      <footer className={`border-t py-4 px-6 text-center text-xs transition-colors ${
+        theme === 'light'
+          ? 'bg-white border-slate-200 text-slate-500'
+          : 'bg-slate-900 border-slate-800/80 text-slate-500'
+      }`}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
-            ELSEPA Physics Workbench • F. Salvat, A. Jablonski, F. Powell Dirac Scattering Solver
+            Electron Scattering Simulator • ELSEPA Dirac Scattering Engine
           </span>
           <span className="font-mono">
-            Deployed for Render.com • Node.js + Express + Vite + Recharts
+            Node.js + Express + Vite + Recharts • Salvat, Jablonski, Powell
           </span>
         </div>
       </footer>

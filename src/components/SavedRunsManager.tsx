@@ -17,6 +17,7 @@ import {
   Percent,
   ArrowRightLeft,
   FileText,
+  Copy,
 } from 'lucide-react';
 import {
   LineChart,
@@ -42,12 +43,14 @@ import { getElementByZ } from '../data/elements';
 
 interface SavedRunsManagerProps {
   onLoadRunToActiveView?: (run: SavedSimulationRun) => void;
+  onCloneToWorkbench?: (run: SavedSimulationRun) => void;
 }
 
 const LINE_COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
 export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
   onLoadRunToActiveView,
+  onCloneToWorkbench,
 }) => {
   const [runs, setRuns] = useState<SavedSimulationRun[]>([]);
   const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
@@ -730,13 +733,24 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                       </td>
 
                       <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleDeleteRun(run.id)}
-                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Delete run"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-center space-x-1.5">
+                          <button
+                            id={`btn-clone-run-${run.id}`}
+                            onClick={() => onCloneToWorkbench?.(run)}
+                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-indigo-600 font-bold rounded-md text-[11px] flex items-center space-x-1 transition-all shadow-sm"
+                            title="Load this run's exact parameters into the Atomic/Molecular Workbench"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Clone to Workbench</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRun(run.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                            title="Delete run"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
