@@ -116,8 +116,10 @@ export const PolarPlot: React.FC<PolarPlotProps> = ({
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!svgRef.current || pointsUpper.length === 0) return;
     const rect = svgRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const scaleX = width / (rect.width || 1);
+    const scaleY = height / (rect.height || 1);
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
 
     // Find closest point in upper half
     let closest = pointsUpper[0];
@@ -186,12 +188,11 @@ export const PolarPlot: React.FC<PolarPlotProps> = ({
       </div>
 
       {/* SVG Container */}
-      <div className="relative bg-slate-950 border border-slate-800 rounded-xl p-4 shadow-xl flex items-center justify-center">
+      <div className="relative bg-slate-950 border border-slate-800 rounded-xl p-2 sm:p-4 shadow-xl flex items-center justify-center w-full max-w-[580px] overflow-hidden">
         <svg
           ref={svgRef}
-          width={width}
-          height={height}
-          className="overflow-visible select-none cursor-crosshair"
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-auto max-w-[540px] overflow-visible select-none cursor-crosshair"
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoveredPoint(null)}
         >

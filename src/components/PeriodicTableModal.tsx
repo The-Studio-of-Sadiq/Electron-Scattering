@@ -35,20 +35,20 @@ export const PeriodicTableModal: React.FC<PeriodicTableModalProps> = ({
     <div id="periodic-table-modal-overlay" className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
       <div id="periodic-table-modal" className="bg-white border border-slate-200 rounded-xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden text-slate-900">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
+        <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
           <div className="flex items-center space-x-2">
             <Sparkles className="w-5 h-5 text-indigo-600" />
-            <h3 className="font-bold text-lg text-slate-800">Periodic Table Element Picker</h3>
+            <h3 className="font-bold text-base sm:text-lg text-slate-800">Periodic Table Element Picker</h3>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="relative">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search name, symbol, or Z..."
-                className="bg-slate-50 text-slate-800 text-xs pl-8 pr-3 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-48"
+                className="bg-slate-50 text-slate-800 text-xs pl-8 pr-3 py-1.5 rounded-md border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full sm:w-48"
               />
             </div>
             <button
@@ -62,7 +62,7 @@ export const PeriodicTableModal: React.FC<PeriodicTableModalProps> = ({
         </div>
 
         {/* Elements Grid */}
-        <div className="p-4 overflow-y-auto grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 bg-slate-50/50">
+        <div className="p-2 sm:p-4 overflow-y-auto grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1.5 sm:gap-2 bg-slate-50/50">
           {filteredElements.map((el) => {
             const isSelected = el.z === currentZ;
             return (
