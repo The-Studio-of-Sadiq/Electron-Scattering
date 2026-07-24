@@ -26,7 +26,7 @@ import {
 import { MolecularInputParams, MolecularSimulationResult, MolecularAtom } from '../types';
 import { getElementByZ } from '../data/elements';
 import { saveMolecularSimulationRun } from '../utils/localStorage';
-import { Math, LaTeXText } from './LaTeX';
+import { MathTex, LaTeXText } from './LaTeX';
 
 interface MolecularWorkbenchProps {
   onSimulationComplete?: (result: MolecularSimulationResult) => void;
@@ -282,8 +282,12 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">
-                Dipole Polarizability α (cm³)
+              <label className="text-xs font-semibold text-slate-600 block mb-1 flex items-center gap-1">
+                <span>Dipole Polarizability</span>
+                <MathTex math="\alpha_d" />
+                <span>(</span>
+                <MathTex math="\text{cm}^3" />
+                <span>)</span>
               </label>
               <input
                 type="number"
@@ -542,7 +546,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
               <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
                 <span>Coherent Total</span>
-                <Math math="\sigma_{\text{coh}}" />
+                <MathTex math="\sigma_{\text{coh}}" />
               </div>
               <div className="text-lg font-black text-indigo-700 font-mono mt-1">
                 {simResult.summary.sigmaCohCm2.toExponential(3)} cm²
@@ -555,7 +559,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
               <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
                 <span>Incoherent Sum</span>
-                <Math math="\sigma_{\text{incoh}}" />
+                <MathTex math="\sigma_{\text{incoh}}" />
               </div>
               <div className="text-lg font-black text-emerald-700 font-mono mt-1">
                 {simResult.summary.sigmaIncohCm2.toExponential(3)} cm²
@@ -568,7 +572,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
               <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
                 <span>1st Transport</span>
-                <Math math="\sigma_1" />
+                <MathTex math="\sigma_1" />
               </div>
               <div className="text-lg font-black text-slate-800 font-mono mt-1">
                 {(simResult.summary.sigma1CohCm2 || 0).toExponential(3)} cm²
@@ -578,7 +582,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
               <div className="text-[11px] font-semibold text-slate-500 uppercase flex items-center gap-1">
                 <span>2nd Transport</span>
-                <Math math="\sigma_2" />
+                <MathTex math="\sigma_2" />
               </div>
               <div className="text-lg font-black text-slate-800 font-mono mt-1">
                 {(simResult.summary.sigma2CohCm2 || 0).toExponential(3)} cm²
@@ -588,33 +592,36 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
 
           {/* Recharts Chart: Coherent Interference DCS vs Incoherent Atom Sum */}
           <div className="space-y-2">
-            <h4 className="font-bold text-sm text-slate-800 flex items-center justify-between">
-              <span><LaTeXText text="Differential Cross Section DCS $\frac{d\sigma}{d\Omega}$ ($\text{cm}^2/\text{sr}$) vs Scattering Angle $\theta$ ($\text{deg}$)" /></span>
-              <span className="text-xs text-slate-500 font-normal">
-                Highlights molecular interference diffraction fringes vs independent atom sum
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200 pb-2">
+              <h4 className="font-bold text-base text-slate-800 flex items-center gap-2">
+                <LaTeXText text="Differential Cross Section DCS $\frac{d\sigma}{d\Omega}$ ($\text{cm}^2/\text{sr}$) vs Scattering Angle $\theta$ ($\text{deg}$)" />
+              </h4>
+              <span className="text-xs text-slate-500 font-medium">
+                Molecular interference diffraction fringes vs independent atom sum
               </span>
-            </h4>
+            </div>
 
             <div className="h-80 w-full bg-slate-50/50 p-2 rounded-lg border border-slate-200">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={simResult.scatteringData}>
+                <LineChart data={simResult.scatteringData} margin={{ top: 15, right: 30, left: 65, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis
                     dataKey="angleDeg"
-                    label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -5 }}
-                    tick={{ fontSize: 11 }}
+                    label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -15, fill: '#64748b', style: { fontSize: '12px' } }}
+                    tick={{ fontSize: 12 }}
                   />
                   <YAxis
                     scale={showLogScale ? 'log' : 'linear'}
                     domain={['auto', 'auto']}
                     tickFormatter={(tick) => tick.toExponential(1)}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 12 }}
+                    label={{ value: 'DCS dσ/dΩ (cm²/sr)', angle: -90, position: 'insideLeft', dx: -25, style: { textAnchor: 'middle', fontSize: '12px' }, fill: '#64748b' }}
                   />
                   <Tooltip
                     formatter={(val: number) => [val.toExponential(4) + ' cm²/sr', '']}
                     labelFormatter={(label) => `Angle θ: ${label}°`}
                   />
-                  <Legend />
+                  <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: '10px' }} />
                   <Line
                     type="monotone"
                     dataKey="dcsCohCm2"

@@ -15,7 +15,7 @@ import {
 import { ElsepaInputParams, ElementData } from '../types';
 import { getElementByZ } from '../data/elements';
 import { PeriodicTableModal } from './PeriodicTableModal';
-import { LaTeXText } from './LaTeX';
+import { LaTeXText, MathTex } from './LaTeX';
 
 interface InputGuiFormProps {
   params: ElsepaInputParams;
@@ -332,7 +332,13 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
 
             <div className="grid grid-cols-2 gap-2 text-xs mt-2">
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Polarizability α_d (a0³):</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <span>Polarizability </span>
+                  <MathTex math="\alpha_d" />
+                  <span> (</span>
+                  <MathTex math="a_0^3" />
+                  <span>):</span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -343,11 +349,17 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                       polarizability: parseFloat(e.target.value) || 0,
                     }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-400 mb-1">Cutoff Radius r_c (a0):</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  <span>Cutoff Radius </span>
+                  <MathTex math="r_c" />
+                  <span> (</span>
+                  <MathTex math="a_0" />
+                  <span>):</span>
+                </label>
                 <input
                   type="number"
                   step="0.1"
@@ -358,7 +370,7 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                       cutoffRadius: parseFloat(e.target.value) || 1.0,
                     }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>

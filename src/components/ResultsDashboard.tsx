@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { SimulationResult, UploadedDataset } from '../types';
 import { PolarPlot } from './PolarPlot';
-import { Math, LaTeXText } from './LaTeX';
+import { MathTex, LaTeXText } from './LaTeX';
 
 interface ResultsDashboardProps {
   result: SimulationResult | null;
@@ -126,64 +126,64 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     <div id="results-dashboard-container" className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm text-slate-900 flex flex-col gap-5">
       {/* Top Metrics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <div className="bg-indigo-50/60 border border-indigo-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-indigo-700 font-bold tracking-wider flex items-center gap-1">
+        <div className="bg-indigo-50/60 border border-indigo-200 rounded-lg p-3.5 shadow-sm">
+          <div className="text-xs text-indigo-700 font-bold tracking-wider flex items-center gap-1.5">
             <span>Total Elastic</span>
-            <Math math="\sigma_{\text{el}}" />
+            <MathTex math="\sigma_{\text{el}}" />
           </div>
-          <div className="text-lg font-black text-indigo-950 font-mono mt-0.5 flex items-baseline gap-1">
+          <div className="text-xl font-black text-indigo-950 font-mono mt-1 flex items-baseline gap-1">
             <span>{summary.sigmaElAu.toFixed(3)}</span>
-            <span className="text-xs font-normal text-indigo-600"><Math math="a_0^2" /></span>
+            <span className="text-xs font-semibold text-indigo-600"><MathTex math="a_0^2" /></span>
           </div>
-          <div className="text-[10px] text-indigo-700 font-mono">
+          <div className="text-xs text-indigo-700 font-mono mt-0.5">
             {summary.sigmaElCm2.toExponential(3)} cm²
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-slate-500 font-bold tracking-wider flex items-center gap-1">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 shadow-sm">
+          <div className="text-xs text-slate-600 font-bold tracking-wider flex items-center gap-1.5">
             <span>1st Transport</span>
-            <Math math="\sigma_1" />
+            <MathTex math="\sigma_1" />
           </div>
-          <div className="text-lg font-black text-slate-800 font-mono mt-0.5 flex items-baseline gap-1">
+          <div className="text-xl font-black text-slate-800 font-mono mt-1 flex items-baseline gap-1">
             <span>{summary.sigma1Au.toFixed(3)}</span>
-            <span className="text-xs font-normal text-slate-500"><Math math="a_0^2" /></span>
+            <span className="text-xs font-semibold text-slate-500"><MathTex math="a_0^2" /></span>
           </div>
-          <div className="text-[10px] text-slate-500 font-mono">Momentum Transfer</div>
+          <div className="text-xs text-slate-500 font-mono mt-0.5">Momentum Transfer</div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-slate-500 font-bold tracking-wider flex items-center gap-1">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 shadow-sm">
+          <div className="text-xs text-slate-600 font-bold tracking-wider flex items-center gap-1.5">
             <span>2nd Transport</span>
-            <Math math="\sigma_2" />
+            <MathTex math="\sigma_2" />
           </div>
-          <div className="text-lg font-black text-slate-800 font-mono mt-0.5 flex items-baseline gap-1">
+          <div className="text-xl font-black text-slate-800 font-mono mt-1 flex items-baseline gap-1">
             <span>{summary.sigma2Au.toFixed(3)}</span>
-            <span className="text-xs font-normal text-slate-500"><Math math="a_0^2" /></span>
+            <span className="text-xs font-semibold text-slate-500"><MathTex math="a_0^2" /></span>
           </div>
-          <div className="text-[10px] text-slate-500 font-mono">Viscosity Cross Sec.</div>
+          <div className="text-xs text-slate-500 font-mono mt-0.5">Viscosity Cross Sec.</div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm">
-          <div className="text-[10px] text-slate-500 font-bold tracking-wider flex items-center gap-1">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 shadow-sm">
+          <div className="text-xs text-slate-600 font-bold tracking-wider flex items-center gap-1.5">
             <span>Kinematics</span>
-            <Math math="(k, \gamma, \beta)" />
+            <MathTex math="(k, \gamma, \beta)" />
           </div>
-          <div className="text-xs font-bold text-slate-800 font-mono mt-0.5 flex items-center gap-1">
-            <Math math={`k = ${summary.kWaveVector.toFixed(2)}\\text{ }a_0^{-1}`} />
+          <div className="text-sm font-bold text-slate-800 font-mono mt-1 flex items-center gap-1">
+            <MathTex math={`k = ${summary.kWaveVector.toFixed(2)}\\text{ }a_0^{-1}`} />
           </div>
-          <div className="text-[10px] text-slate-500 font-mono">
-            <Math math={`\\gamma = ${summary.gammaRelativistic.toFixed(3)}, \\beta = ${summary.betaRelativistic.toFixed(3)}`} />
+          <div className="text-xs text-slate-500 font-mono mt-0.5">
+            <MathTex math={`\\gamma = ${summary.gammaRelativistic.toFixed(3)}, \\beta = ${summary.betaRelativistic.toFixed(3)}`} />
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 shadow-sm col-span-2 md:col-span-1">
-          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Solver Status</div>
-          <div className="text-xs font-bold text-emerald-600 mt-0.5 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 shadow-sm col-span-2 md:col-span-1">
+          <div className="text-xs text-slate-600 uppercase font-bold tracking-wider">Solver Status</div>
+          <div className="text-sm font-bold text-emerald-600 mt-1 flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>{summary.computationTimeMs} ms</span>
           </div>
-          <div className="text-[10px] text-slate-500 truncate font-mono">
+          <div className="text-xs text-slate-500 truncate font-mono mt-0.5">
             Max l = {summary.maxL} partial waves
           </div>
         </div>
@@ -384,55 +384,73 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       <div id="main-plot-area" className="bg-slate-50/50 border border-slate-200 rounded-lg p-4 min-h-[420px] flex flex-col justify-center">
         {/* VIEW 1: DCS Plot */}
         {activeView === 'dcs' && (
-          <div className="w-full h-[380px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dcsChartData} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="angle"
-                  stroke="#64748b"
-                  label={{ value: 'Scattering Angle θ (degrees)', position: 'insideBottom', offset: -10, fill: '#64748b' }}
-                />
-                <YAxis
-                  stroke="#64748b"
-                  scale={useLogScale ? 'log' : 'auto'}
-                  domain={useLogScale ? ['auto', 'auto'] : [0, 'auto']}
-                  tickFormatter={(val) => (typeof val === 'number' ? val.toExponential(1) : val)}
-                  label={{
-                    value: `dσ/dΩ (${dcsUnit === 'au' ? 'a0²/sr' : dcsUnit === 'cm2' ? 'cm²/sr' : 'Å²/sr'})`,
-                    angle: -90,
-                    position: 'insideLeft',
-                    fill: '#64748b',
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  formatter={(val: any) => [typeof val === 'number' ? val.toExponential(4) : val, 'dσ/dΩ']}
-                  labelFormatter={(lbl) => `Angle θ = ${lbl}°`}
-                />
-                <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: '10px' }} />
-                <Line
-                  type="monotone"
-                  dataKey="dcs"
-                  name={`ELSEPA ${element.symbol} (${result.params.projectile === -1 ? 'e⁻' : 'e⁺'} @ ${result.params.energyEv} eV)`}
-                  stroke="#6366f1"
-                  strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 6 }}
-                />
-                {overlayDataset && (
+          <div className="w-full flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-2 px-1 text-slate-800 font-bold text-sm sm:text-base">
+              <div className="flex items-center gap-2">
+                <span>Differential Cross Section</span>
+                <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  <MathTex math="\frac{d\sigma}{d\Omega}" />
+                </span>
+                <span className="text-slate-600 font-normal text-xs sm:text-sm">
+                  ({dcsUnit === 'au' ? 'a₀²/sr' : dcsUnit === 'cm2' ? 'cm²/sr' : 'Å²/sr'}) vs Scattering Angle θ
+                </span>
+              </div>
+            </div>
+
+            <div className="w-full h-[380px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dcsChartData} margin={{ top: 15, right: 30, left: 65, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="angle"
+                    stroke="#64748b"
+                    label={{ value: 'Scattering Angle θ (degrees)', position: 'insideBottom', offset: -15, fill: '#64748b', style: { fontSize: '12px' } }}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis
+                    stroke="#64748b"
+                    scale={useLogScale ? 'log' : 'auto'}
+                    domain={useLogScale ? ['auto', 'auto'] : [0, 'auto']}
+                    tickFormatter={(val) => (typeof val === 'number' ? val.toExponential(1) : val)}
+                    tick={{ fontSize: 12 }}
+                    label={{
+                      value: `dσ/dΩ (${dcsUnit === 'au' ? 'a0²/sr' : dcsUnit === 'cm2' ? 'cm²/sr' : 'Å²/sr'})`,
+                      angle: -90,
+                      position: 'insideLeft',
+                      dx: -25,
+                      style: { textAnchor: 'middle', fontSize: '12px' },
+                      fill: '#64748b',
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(val: any) => [typeof val === 'number' ? val.toExponential(4) : val, 'dσ/dΩ']}
+                    labelFormatter={(lbl) => `Angle θ = ${lbl}°`}
+                  />
+                  <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: '10px', fontSize: '13px' }} />
                   <Line
                     type="monotone"
-                    dataKey="overlay"
-                    name={`Uploaded: ${overlayDataset.filename}`}
-                    stroke="#f43f5e"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={true}
+                    dataKey="dcs"
+                    name={`ELSEPA ${element.symbol} (${result.params.projectile === -1 ? 'e⁻' : 'e⁺'} @ ${result.params.energyEv} eV)`}
+                    stroke="#6366f1"
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 6 }}
                   />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
+                  {overlayDataset && (
+                    <Line
+                      type="monotone"
+                      dataKey="overlay"
+                      name={`Uploaded: ${overlayDataset.filename}`}
+                      stroke="#f43f5e"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={true}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
@@ -440,17 +458,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         {activeView === 'spin' && (
           <div className="w-full h-[380px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={scatteringData} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
+              <LineChart data={scatteringData} margin={{ top: 15, right: 30, left: 60, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis
                   dataKey="angleDeg"
                   stroke="#94a3b8"
-                  label={{ value: 'Scattering Angle θ (degrees)', position: 'insideBottom', offset: -10, fill: '#94a3b8' }}
+                  label={{ value: 'Scattering Angle θ (degrees)', position: 'insideBottom', offset: -15, fill: '#94a3b8' }}
                 />
                 <YAxis
                   stroke="#94a3b8"
                   domain={[-1.1, 1.1]}
-                  label={{ value: 'Spin Polarization Functions', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                  label={{ value: 'Spin Polarization Functions', angle: -90, position: 'insideLeft', dx: -25, style: { textAnchor: 'middle' }, fill: '#94a3b8' }}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '12px' }}
@@ -505,17 +523,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         {activeView === 'potentials' && (
           <div className="w-full h-[380px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={potentialProfile} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
+              <LineChart data={potentialProfile} margin={{ top: 15, right: 30, left: 60, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis
                   dataKey="r"
                   stroke="#94a3b8"
                   tickFormatter={(v) => v.toFixed(2)}
-                  label={{ value: 'Radius r (Bohr radius a0)', position: 'insideBottom', offset: -10, fill: '#94a3b8' }}
+                  label={{ value: 'Radius r (Bohr radius a0)', position: 'insideBottom', offset: -15, fill: '#94a3b8' }}
                 />
                 <YAxis
                   stroke="#94a3b8"
-                  label={{ value: 'Potential V(r) (Hartree E_h)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }}
+                  label={{ value: 'Potential V(r) (Hartree E_h)', angle: -90, position: 'insideLeft', dx: -25, style: { textAnchor: 'middle' }, fill: '#94a3b8' }}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '12px' }}
@@ -535,10 +553,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         {activeView === 'phases' && (
           <div className="w-full h-[380px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={phaseShifts.slice(0, 30)} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
+              <BarChart data={phaseShifts.slice(0, 30)} margin={{ top: 15, right: 30, left: 60, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="kappa" stroke="#94a3b8" label={{ value: 'Relativistic Quantum Number κ', position: 'insideBottom', offset: -10, fill: '#94a3b8' }} />
-                <YAxis stroke="#94a3b8" label={{ value: 'Real Phase Shift δ_κ (rad)', angle: -90, position: 'insideLeft', fill: '#94a3b8' }} />
+                <XAxis dataKey="kappa" stroke="#94a3b8" label={{ value: 'Relativistic Quantum Number κ', position: 'insideBottom', offset: -15, fill: '#94a3b8' }} />
+                <YAxis stroke="#94a3b8" label={{ value: 'Real Phase Shift δ_κ (rad)', angle: -90, position: 'insideLeft', dx: -25, style: { textAnchor: 'middle' }, fill: '#94a3b8' }} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '12px' }}
                   formatter={(val: any) => [typeof val === 'number' ? val.toFixed(4) : val, 'radians']}

@@ -80,7 +80,7 @@ export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams
       ) : (
         <div className="bg-slate-50/50 border border-slate-200 rounded-lg p-4 h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sweepPoints} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
+            <LineChart data={sweepPoints} margin={{ top: 15, right: 30, left: 60, bottom: 25 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis
                 dataKey="energyEv"
@@ -88,13 +88,13 @@ export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams
                 domain={['auto', 'auto']}
                 stroke="#64748b"
                 tickFormatter={(val) => (val >= 1e6 ? `${val / 1e6} MeV` : val >= 1e3 ? `${val / 1e3} keV` : `${val} eV`)}
-                label={{ value: 'Kinetic Energy E (eV)', position: 'insideBottom', offset: -10, fill: '#64748b' }}
+                label={{ value: 'Kinetic Energy E (eV)', position: 'insideBottom', offset: -15, fill: '#64748b' }}
               />
               <YAxis
                 scale="log"
                 domain={['auto', 'auto']}
                 stroke="#64748b"
-                label={{ value: 'Cross Section σ (a0²)', angle: -90, position: 'insideLeft', fill: '#64748b' }}
+                label={{ value: 'Cross Section σ (a0²)', angle: -90, position: 'insideLeft', dx: -25, style: { textAnchor: 'middle' }, fill: '#64748b' }}
               />
               <Tooltip
                 contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}

@@ -30,6 +30,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { SavedSimulationRun } from '../types';
+import { MathTex, LaTeXText } from './LaTeX';
 import {
   getSavedSimulations,
   deleteSavedSimulationRun,
@@ -395,9 +396,18 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
               <>
                 <button
                   onClick={() => setPlotVariable(plotVariable === 'dcs' ? 'sherman' : 'dcs')}
-                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 transition-colors"
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 transition-colors flex items-center gap-1"
                 >
-                  Showing: {plotVariable === 'dcs' ? 'DCS dσ/dΩ (cm²/sr)' : 'Sherman Function S(θ)'}
+                  <span>Showing: </span>
+                  {plotVariable === 'dcs' ? (
+                    <>
+                      <span>DCS </span>
+                      <MathTex math="\frac{d\sigma}{d\Omega}" />
+                      <span>(cm²/sr)</span>
+                    </>
+                  ) : (
+                    <span>Sherman Function S(θ)</span>
+                  )}
                 </button>
 
                 {plotVariable === 'dcs' && (
@@ -420,18 +430,26 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
         ) : compareMode === 'overlay' ? (
           <div className="h-96 w-full bg-slate-50/50 p-2 rounded-lg border border-slate-200">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={comparisonChartData}>
+              <LineChart data={comparisonChartData} margin={{ top: 15, right: 30, left: 65, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
                   dataKey="angleDeg"
-                  label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -5 }}
-                  tick={{ fontSize: 11 }}
+                  label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -15, fill: '#64748b', style: { fontSize: '12px' } }}
+                  tick={{ fontSize: 12 }}
                 />
                 <YAxis
                   scale={plotVariable === 'dcs' && showLogScale ? 'log' : 'linear'}
                   domain={plotVariable === 'dcs' && showLogScale ? ['auto', 'auto'] : [-1, 1]}
                   tickFormatter={(val) => (plotVariable === 'dcs' ? val.toExponential(1) : val.toFixed(2))}
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 12 }}
+                  label={{
+                    value: plotVariable === 'dcs' ? 'dσ/dΩ (cm²/sr)' : 'Sherman S(θ)',
+                    angle: -90,
+                    position: 'insideLeft',
+                    dx: -25,
+                    style: { textAnchor: 'middle', fontSize: '12px' },
+                    fill: '#64748b'
+                  }}
                 />
                 <Tooltip
                   formatter={(val: number) => [
@@ -524,7 +542,11 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                     return (
                       <>
                         <tr className="hover:bg-slate-50">
-                          <td className="p-2.5 font-sans font-bold text-slate-800">Total Elastic Cross Section σ_el (cm²)</td>
+                          <td className="p-2.5 font-sans font-bold text-slate-800 flex items-center gap-1">
+                            <span>Total Elastic Cross Section</span>
+                            <MathTex math="\sigma_{\text{el}}" />
+                            <span>(<MathTex math="\text{cm}^2" />)</span>
+                          </td>
                           <td className="p-2.5 font-bold text-indigo-700">{sigElA.toExponential(3)}</td>
                           <td className="p-2.5 font-bold text-teal-700">{sigElB.toExponential(3)}</td>
                           <td className="p-2.5">{Math.abs(sigElB - sigElA).toExponential(3)}</td>
@@ -534,7 +556,11 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                         </tr>
 
                         <tr className="hover:bg-slate-50">
-                          <td className="p-2.5 font-sans font-bold text-slate-800">1st Transport CS σ_1 (a0²) [Momentum Transfer]</td>
+                          <td className="p-2.5 font-sans font-bold text-slate-800 flex items-center gap-1">
+                            <span>1st Transport CS</span>
+                            <MathTex math="\sigma_1" />
+                            <span>(<MathTex math="a_0^2" />) [Momentum]</span>
+                          </td>
                           <td className="p-2.5 font-bold text-indigo-700">{sig1A.toFixed(3)}</td>
                           <td className="p-2.5 font-bold text-teal-700">{sig1B.toFixed(3)}</td>
                           <td className="p-2.5">{Math.abs(sig1B - sig1A).toFixed(3)}</td>
@@ -544,7 +570,11 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                         </tr>
 
                         <tr className="hover:bg-slate-50">
-                          <td className="p-2.5 font-sans font-bold text-slate-800">2nd Transport CS σ_2 (a0²) [Viscosity]</td>
+                          <td className="p-2.5 font-sans font-bold text-slate-800 flex items-center gap-1">
+                            <span>2nd Transport CS</span>
+                            <MathTex math="\sigma_2" />
+                            <span>(<MathTex math="a_0^2" />) [Viscosity]</span>
+                          </td>
                           <td className="p-2.5 font-bold text-indigo-700">{sig2A.toFixed(3)}</td>
                           <td className="p-2.5 font-bold text-teal-700">{sig2B.toFixed(3)}</td>
                           <td className="p-2.5">{Math.abs(sig2B - sig2A).toFixed(3)}</td>
@@ -576,15 +606,15 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
               </h4>
               <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={pctDiffChartData}>
+                  <LineChart data={pctDiffChartData} margin={{ top: 15, right: 30, left: 60, bottom: 25 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                     <XAxis
                       dataKey="angleDeg"
-                      label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -5 }}
+                      label={{ value: 'Scattering Angle θ (deg)', position: 'insideBottom', offset: -15, fill: '#64748b' }}
                       tick={{ fontSize: 11 }}
                     />
                     <YAxis
-                      label={{ value: '% Difference in DCS', angle: -90, position: 'insideLeft' }}
+                      label={{ value: '% Difference in DCS', angle: -90, position: 'insideLeft', dx: -25, style: { textAnchor: 'middle' }, fill: '#64748b' }}
                       tickFormatter={(v) => `${v.toFixed(1)}%`}
                       tick={{ fontSize: 11 }}
                     />

@@ -7,7 +7,7 @@ interface MathProps {
   className?: string;
 }
 
-export const Math: React.FC<MathProps> = ({ math, block = false, className = '' }) => {
+export const MathTex: React.FC<MathProps> = ({ math, block = false, className = '' }) => {
   const html = useMemo(() => {
     try {
       return katex.renderToString(math, {
@@ -27,6 +27,9 @@ export const Math: React.FC<MathProps> = ({ math, block = false, className = '' 
     />
   );
 };
+
+export const Math = MathTex;
+export default MathTex;
 
 interface LaTeXTextProps {
   text: string;
@@ -55,10 +58,10 @@ export const LaTeXText: React.FC<LaTeXTextProps> = ({ text, className = '' }) =>
       const raw = match[0];
       if (raw.startsWith('$$') && raw.endsWith('$$')) {
         const formula = raw.slice(2, -2);
-        parts.push(<Math key={match.index} math={formula} block />);
+        parts.push(<MathTex key={match.index} math={formula} block />);
       } else if (raw.startsWith('$') && raw.endsWith('$')) {
         const formula = raw.slice(1, -1);
-        parts.push(<Math key={match.index} math={formula} />);
+        parts.push(<MathTex key={match.index} math={formula} />);
       }
 
       lastIndex = regex.lastIndex;
@@ -73,5 +76,3 @@ export const LaTeXText: React.FC<LaTeXTextProps> = ({ text, className = '' }) =>
 
   return <span className={className}>{elements}</span>;
 };
-
-export default Math;
