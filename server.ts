@@ -9,9 +9,12 @@ import {
 } from './src/physics/elsepaPhysicsEngine';
 import {
   ensureFortranBinaryCompiled,
+  ensureElscatmBinaryCompiled,
   runOfficialFortranSimulation,
+  runOfficialMolecularFortranSimulation,
 } from './server/fortranRunner';
-import { ElsepaInputParams, UploadedDataset } from './src/types';
+import { ElsepaInputParams, MolecularInputParams, UploadedDataset } from './src/types';
+
 import {
   OFFICIAL_ELSEPA_FORTRAN_SOURCE,
   RENDER_DOCKERFILE_CONTENT,
@@ -90,6 +93,55 @@ app.post('/api/simulate', (req: Request, res: Response) => {
     res.status(500).json({ error: err.message || 'Simulation execution failed' });
   }
 });
+
+// API 2b: Run ELSCATM Molecular Scattering Simulation
+app.post('/api/simulate-molecule', (req: Request, res: Response) => {
+  try {
+    const params: MolecularInputParams = req.body;
+    if (!params || !params.atoms || params.atoms.length === 0 || !params.energyEv) {
+      res.status(400).json({ error: 'Missing required molecular simulation parameters (atoms, energyEv)' });
+      return;
+    }
+
+    const result = runOfficialMolecularFortranSimulation(params);
+    res.json(result);
+  } catch (err: any) {
+    console.error('Molecular simulation error:', err);
+    res.status(500).json({ error: err.message || 'Molecular simulation failed' });
+  }
+});
+
+// API 2c: Batch Simulations Endpoint
+app.post('/api/batch-simulate', (req: Request, res: Response) => {
+  try {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items)) {
+      res.status(400).json({ error: 'Invalid batch items array' });
+      return;
+    }
+
+    const results: any[] = [];
+    for (const item of items) {
+      if (item.type === 'molecular' && item.molecularParams) {
+        results.push({
+          type: 'molecular',
+          result: runOfficialMolecularFortranSimulation(item.molecularParams),
+        });
+      } else if (item.atomicParams) {
+        results.push({
+          type: 'atomic',
+          result: runOfficialFortranSimulation(item.atomicParams),
+        });
+      }
+    }
+
+    res.json({ success: true, count: results.length, results });
+  } catch (err: any) {
+    console.error('Batch simulation error:', err);
+    res.status(500).json({ error: err.message || 'Batch simulation failed' });
+  }
+});
+
 
 // API 3: Run Energy Spectrum Sweep
 app.post('/api/energy-sweep', (req: Request, res: Response) => {

@@ -10,6 +10,7 @@ import {
   Sparkles,
   Info,
   Sliders,
+  FileText,
 } from 'lucide-react';
 import { ElsepaInputParams, ElementData } from '../types';
 import { getElementByZ } from '../data/elements';
@@ -409,7 +410,28 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
           </div>
         </div>
 
-        {/* Card 6: Run Execution & Actions */}
+        {/* Card 6: Custom Experimental Notes & Run Metadata */}
+        <div id="notes-card" className="bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center space-x-2 text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">
+              <FileText className="w-4 h-4 text-amber-400" />
+              <span>Experimental Notes & Metadata</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mb-2">
+              Attach custom notes, detector specs, or sample details to persist alongside this simulation run in Saved Runs Manager.
+            </p>
+            <textarea
+              id="input-experimental-notes"
+              rows={3}
+              value={params.notes || ''}
+              onChange={(e) => setParams((prev) => ({ ...prev, notes: e.target.value }))}
+              placeholder="e.g. Exp #104, 50nm Gold foil, TEM detector @ 100 keV, 300 K..."
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Card 7: Run Execution & Actions */}
         <div id="execution-card" className="bg-slate-800/60 border border-slate-700/80 rounded-xl p-4 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2">

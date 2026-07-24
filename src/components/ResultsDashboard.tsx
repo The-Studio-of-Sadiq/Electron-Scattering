@@ -22,8 +22,11 @@ import {
   Compass,
   Zap,
   TrendingUp,
+  CircleDot,
+  FileJson,
 } from 'lucide-react';
 import { SimulationResult, UploadedDataset } from '../types';
+import { PolarPlot } from './PolarPlot';
 
 interface ResultsDashboardProps {
   result: SimulationResult | null;
@@ -34,11 +37,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   result,
   uploadedDatasets,
 }) => {
-  const [activeView, setActiveView] = useState<'dcs' | 'spin' | 'potentials' | 'phases' | 'file' | 'table'>('dcs');
+  const [activeView, setActiveView] = useState<'dcs' | 'spin' | 'polar' | 'potentials' | 'phases' | 'file' | 'table'>('dcs');
   const [useLogScale, setUseLogScale] = useState(true);
   const [dcsUnit, setDcsUnit] = useState<'au' | 'cm2' | 'angstrom2'>('au');
   const [selectedOverlayId, setSelectedOverlayId] = useState<string>('');
   const [copiedFile, setCopiedFile] = useState(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
 
   if (!result) {
     return (
@@ -103,6 +107,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     const a = document.createElement('a');
     a.href = url;
     a.download = `ELSEPA_Z${element.z}_E${result.params.energyEv}eV_DCS.csv`;
+    a.click();
+  };
+
+  // Export JSON download
+  const handleDownloadJson = () => {
+    const jsonStr = JSON.stringify(result, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ELSEPA_Z${element.z}_E${result.params.energyEv}eV_Result.json`;
     a.click();
   };
 
@@ -184,6 +199,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </button>
 
           <button
+            id="view-tab-polar"
+            onClick={() => setActiveView('polar')}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center space-x-1.5 whitespace-nowrap ${
+              activeView === 'polar' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <CircleDot className="w-3.5 h-3.5" />
+            <span>Polar Plot</span>
+          </button>
+
+          <button
             id="view-tab-potentials"
             onClick={() => setActiveView('potentials')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center space-x-1.5 whitespace-nowrap ${
@@ -228,67 +254,114 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </button>
         </div>
 
-        {/* View Controls (Log scale, units, overlay) for DCS */}
-        {activeView === 'dcs' && (
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* Units dropdown */}
-            <div className="flex items-center space-x-1 bg-slate-100 border border-slate-200 rounded-md p-0.5">
-              <button
-                onClick={() => setDcsUnit('au')}
-                className={`px-2 py-1 rounded text-[11px] font-bold ${
-                  dcsUnit === 'au' ? 'bg-indigo-600 text-white' : 'text-slate-600'
-                }`}
-              >
-                a0²/sr
-              </button>
-              <button
-                onClick={() => setDcsUnit('cm2')}
-                className={`px-2 py-1 rounded text-[11px] font-bold ${
-                  dcsUnit === 'cm2' ? 'bg-indigo-600 text-white' : 'text-slate-600'
-                }`}
-              >
-                cm²/sr
-              </button>
-              <button
-                onClick={() => setDcsUnit('angstrom2')}
-                className={`px-2 py-1 rounded text-[11px] font-bold ${
-                  dcsUnit === 'angstrom2' ? 'bg-indigo-600 text-white' : 'text-slate-600'
-                }`}
-              >
-                Å²/sr
-              </button>
-            </div>
+        {/* View Controls & Export Action */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {activeView === 'dcs' && (
+            <>
+              {/* Units dropdown */}
+              <div className="flex items-center space-x-1 bg-slate-100 border border-slate-200 rounded-md p-0.5">
+                <button
+                  onClick={() => setDcsUnit('au')}
+                  className={`px-2 py-1 rounded text-[11px] font-bold ${
+                    dcsUnit === 'au' ? 'bg-indigo-600 text-white' : 'text-slate-600'
+                  }`}
+                >
+                  a0²/sr
+                </button>
+                <button
+                  onClick={() => setDcsUnit('cm2')}
+                  className={`px-2 py-1 rounded text-[11px] font-bold ${
+                    dcsUnit === 'cm2' ? 'bg-indigo-600 text-white' : 'text-slate-600'
+                  }`}
+                >
+                  cm²/sr
+                </button>
+                <button
+                  onClick={() => setDcsUnit('angstrom2')}
+                  className={`px-2 py-1 rounded text-[11px] font-bold ${
+                    dcsUnit === 'angstrom2' ? 'bg-indigo-600 text-white' : 'text-slate-600'
+                  }`}
+                >
+                  Å²/sr
+                </button>
+              </div>
 
-            {/* Log Scale Toggle */}
+              {/* Log Scale Toggle */}
+              <button
+                id="btn-toggle-log-scale"
+                onClick={() => setUseLogScale(!useLogScale)}
+                className={`px-3 py-1.5 rounded-md border text-xs font-bold transition-colors ${
+                  useLogScale
+                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                    : 'bg-white text-slate-700 border-slate-300'
+                }`}
+              >
+                Log Scale: {useLogScale ? 'ON' : 'OFF'}
+              </button>
+
+              {/* Dataset Overlay Selector */}
+              {uploadedDatasets.length > 0 && (
+                <select
+                  value={selectedOverlayId}
+                  onChange={(e) => setSelectedOverlayId(e.target.value)}
+                  className="bg-white border border-slate-300 text-slate-800 text-xs rounded-md px-2.5 py-1.5 focus:outline-none"
+                >
+                  <option value="">-- No Overlay Dataset --</option>
+                  {uploadedDatasets.map((ds) => (
+                    <option key={ds.id} value={ds.id}>
+                      Overlay: {ds.filename} ({ds.dataPointsCount} pts)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
+          )}
+
+          {/* Download Results Action Button */}
+          <div className="relative">
             <button
-              id="btn-toggle-log-scale"
-              onClick={() => setUseLogScale(!useLogScale)}
-              className={`px-3 py-1.5 rounded-md border text-xs font-bold transition-colors ${
-                useLogScale
-                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                  : 'bg-white text-slate-700 border-slate-300'
-              }`}
+              id="btn-download-results-dropdown"
+              onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all"
             >
-              Log Scale: {useLogScale ? 'ON' : 'OFF'}
+              <Download className="w-3.5 h-3.5" />
+              <span>Download Results</span>
             </button>
 
-            {/* Dataset Overlay Selector */}
-            {uploadedDatasets.length > 0 && (
-              <select
-                value={selectedOverlayId}
-                onChange={(e) => setSelectedOverlayId(e.target.value)}
-                className="bg-white border border-slate-300 text-slate-800 text-xs rounded-md px-2.5 py-1.5 focus:outline-none"
-              >
-                <option value="">-- No Overlay Dataset --</option>
-                {uploadedDatasets.map((ds) => (
-                  <option key={ds.id} value={ds.id}>
-                    Overlay: {ds.filename} ({ds.dataPointsCount} pts)
-                  </option>
-                ))}
-              </select>
+            {showDownloadMenu && (
+              <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1 font-sans text-xs">
+                <button
+                  id="btn-export-json"
+                  onClick={() => {
+                    handleDownloadJson();
+                    setShowDownloadMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-indigo-50 text-slate-800 flex items-center gap-2"
+                >
+                  <FileJson className="w-4 h-4 text-indigo-600" />
+                  <div>
+                    <div className="font-bold">Export JSON File</div>
+                    <div className="text-[10px] text-slate-500">Full parameters & physics data</div>
+                  </div>
+                </button>
+                <button
+                  id="btn-export-csv"
+                  onClick={() => {
+                    handleDownloadCsv();
+                    setShowDownloadMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-emerald-50 text-slate-800 flex items-center gap-2 border-t border-slate-100"
+                >
+                  <Download className="w-4 h-4 text-emerald-600" />
+                  <div>
+                    <div className="font-bold">Export CSV Dataset</div>
+                    <div className="text-[10px] text-slate-500">Angular DCS table columns</div>
+                  </div>
+                </button>
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Main Plot Area */}
@@ -397,6 +470,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* VIEW 2.5: Polar Plot Angular Distribution */}
+        {activeView === 'polar' && (
+          <div className="w-full py-2 flex justify-center">
+            <PolarPlot
+              data={scatteringData}
+              projectileSymbol={result.params.projectile === -1 ? 'e⁻' : 'e⁺'}
+              energyEv={result.params.energyEv}
+              elementSymbol={element.symbol}
+            />
           </div>
         )}
 

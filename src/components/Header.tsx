@@ -13,11 +13,12 @@ import {
 import { FortranServerStatus } from '../types';
 
 interface HeaderProps {
-  activeTab: 'workbench' | 'sweep' | 'datasets' | 'deploy';
-  setActiveTab: (tab: 'workbench' | 'sweep' | 'datasets' | 'deploy') => void;
+  activeTab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy';
+  setActiveTab: (tab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy') => void;
   fortranStatus: FortranServerStatus | null;
   onLoadPreset: (presetKey: string) => void;
 }
+
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
@@ -99,7 +100,20 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <FlaskConical className="w-4 h-4" />
-            <span>Simulation Workbench</span>
+            <span>Atomic Workbench</span>
+          </button>
+
+          <button
+            id="tab-molecular"
+            onClick={() => setActiveTab('molecular')}
+            className={`flex items-center space-x-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'molecular'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Molecular Mode (ELSCATM)</span>
           </button>
 
           <button
@@ -116,6 +130,19 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <button
+            id="tab-saved"
+            onClick={() => setActiveTab('saved')}
+            className={`flex items-center space-x-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+              activeTab === 'saved'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span>Saved Runs & Comparison</span>
+          </button>
+
+          <button
             id="tab-datasets"
             onClick={() => setActiveTab('datasets')}
             className={`flex items-center space-x-2 px-3 py-2 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
@@ -125,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Upload Datasets & Experimental Data</span>
+            <span>Upload Datasets</span>
           </button>
 
           <button
@@ -138,9 +165,10 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Terminal className="w-4 h-4" />
-            <span>Fortran Source & Render.com Deploy</span>
+            <span>Fortran Source & Render Deploy</span>
           </button>
         </div>
+
       </div>
     </header>
   );

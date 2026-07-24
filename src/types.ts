@@ -137,3 +137,65 @@ export interface FortranServerStatus {
   versionInfo?: string;
   gfortranPath?: string;
 }
+
+// Molecular scattering types for ELSCATM (Salvat, Jablonski, Powell)
+export interface MolecularAtom {
+  z: number;
+  xAngstrom: number;
+  yAngstrom: number;
+  zAngstrom: number;
+}
+
+export interface MolecularInputParams {
+  moleculeName: string;
+  atoms: MolecularAtom[];
+  projectile: ProjectileType; // -1 for e-, +1 for e+
+  energyEv: number;
+  exchangeModel: ExchangeModel;
+  polarizationModel: PolarizationModel;
+  polarizability: number; // in cm^3 (e.g. 1.457e-24 for H2O)
+  absorptionModel: AbsorptionModel;
+  absorptionStrength?: number; // e.g. 2.0
+  excitationEnergy?: number; // e.g. 6.20 eV
+}
+
+export interface MolecularScatteringDataPoint {
+  angleDeg: number;
+  angleRad: number;
+  dcsCohCm2: number; // Coherent DCS in cm^2/sr
+  dcsCohAu: number; // Coherent DCS in a_0^2/sr
+  dcsIncohCm2: number; // Incoherent DCS in cm^2/sr
+  dcsIncohAu: number; // Incoherent DCS in a_0^2/sr
+  shermanS: number;
+}
+
+export interface MolecularSimulationResult {
+  params: MolecularInputParams;
+  scatteringData: MolecularScatteringDataPoint[];
+  summary: {
+    sigmaCohCm2: number;
+    sigmaCohAu: number;
+    sigmaIncohCm2: number;
+    sigmaIncohAu: number;
+    sigma1CohCm2: number;
+    sigma1IncohCm2: number;
+    sigma2CohCm2: number;
+    sigma2IncohCm2: number;
+    computationTimeMs: number;
+    engineUsed: 'salvat-official-fortran' | 'fortran-native' | 'typescript-dirac-solver';
+  };
+  elsepaInputFileText: string;
+}
+
+// Saved Simulation Run in Local State Management (localStorage)
+export interface SavedSimulationRun {
+  id: string;
+  timestamp: string; // ISO string
+  title: string;
+  type: 'atomic' | 'molecular';
+  atomicResult?: SimulationResult;
+  molecularResult?: MolecularSimulationResult;
+  tags?: string[];
+  notes?: string;
+}
+

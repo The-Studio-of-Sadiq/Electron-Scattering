@@ -6,10 +6,14 @@ import { ResultsDashboard } from './components/ResultsDashboard';
 import { EnergySweepViewer } from './components/EnergySweepViewer';
 import { DatasetUploadPanel } from './components/DatasetUploadPanel';
 import { RenderDeploymentModal } from './components/RenderDeploymentModal';
+import { MolecularWorkbench } from './components/MolecularWorkbench';
+import { SavedRunsManager } from './components/SavedRunsManager';
 import { getElementByZ } from './data/elements';
+import { saveAtomicSimulationRun } from './utils/localStorage';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'workbench' | 'sweep' | 'datasets' | 'deploy'>('workbench');
+  const [activeTab, setActiveTab] = useState<'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy'>('workbench');
+
 
   // Default initial simulation parameters (Gold Au Z=79, 100 keV electron)
   const [params, setParams] = useState<ElsepaInputParams>({
@@ -64,7 +68,9 @@ export default function App() {
       if (res.ok) {
         const result: SimulationResult = await res.json();
         setSimulationResult(result);
+        saveAtomicSimulationRun(result);
       } else {
+
         console.error('Simulation server error');
       }
     } catch (err) {
@@ -181,9 +187,14 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'molecular' && <MolecularWorkbench />}
+
         {activeTab === 'sweep' && <EnergySweepViewer baseParams={params} />}
 
+        {activeTab === 'saved' && <SavedRunsManager />}
+
         {activeTab === 'datasets' && (
+
           <DatasetUploadPanel
             uploadedDatasets={uploadedDatasets}
             setUploadedDatasets={setUploadedDatasets}
