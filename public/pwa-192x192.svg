@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="pwaBg192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FFFFFF" />
+      <stop offset="100%" stopColor="#F8FAFC" />
+    </linearGradient>
+
+    <linearGradient id="brandGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+
+    <linearGradient id="nodeGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+  </defs>
+
+  <rect width="192" height="192" rx="42" fill="url(#pwaBg192)" stroke="#E2E8F0" stroke-width="2" />
+
+  <g transform="translate(96, 96)">
+    <!-- Outer Arc -->
+    <path d="M 0 -68 A 68 68 0 1 0 0 68" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" />
+    <path d="M -11 -56 L 4 -70 L -11 -82" fill="none" stroke="#2563EB" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Polar Scattering Lobe (Right) -->
+    <path d="M 0 0 C 15 -42, 70 -50, 70 0 C 70 50, 15 42, 0 0 Z" 
+          fill="rgba(124, 58, 237, 0.1)" stroke="url(#brandGrad192)" stroke-width="2.5" stroke-linejoin="round" />
+
+    <!-- Inner Nested Lobe -->
+    <path d="M 0 0 C 10 -25, 48 -32, 48 0 C 48 32, 10 25, 0 0 Z" 
+          fill="none" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="3 2" />
+
+    <!-- Axis -->
+    <line x1="-68" y1="0" x2="0" y2="0" stroke="#2563EB" stroke-width="2" stroke-dasharray="3 2" />
+
+    <!-- Incoming Electron Circle -->
+    <circle cx="-45" cy="0" r="9" fill="url(#nodeGrad192)" stroke="#FFFFFF" stroke-width="1.2" />
+    <text x="-45" y="3.2" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">e⁻</text>
+
+    <!-- Target Nucleus -->
+    <circle cx="0" cy="0" r="6.5" fill="url(#nodeGrad192)" />
+    <circle cx="-1.5" cy="-1.5" r="2" fill="#FFFFFF" opacity="0.9" />
+
+    <!-- Code Symbol -->
+    <text x="0" y="80" font-family="monospace, Courier, sans-serif" font-size="13" font-weight="bold" fill="#7C3AED" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+</svg>

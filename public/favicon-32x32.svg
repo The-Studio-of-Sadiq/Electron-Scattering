@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Simplified High-Contrast Design for 32x32 Favicon -->
+  <defs>
+    <linearGradient id="favGrad32" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+  </defs>
+
+  <rect width="32" height="32" rx="7" fill="#090D16" />
+
+  <g transform="translate(16, 16)">
+    <!-- Thick Arc -->
+    <path d="M 0 -11 A 11 11 0 1 0 0 11" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Thicker Polar Lobe (Right) -->
+    <path d="M 0 0 C 3 -7, 12 -8, 12 0 C 12 8, 3 7, 0 0 Z" fill="rgba(124, 58, 237, 0.25)" stroke="url(#favGrad32)" stroke-width="1.8" />
+
+    <!-- Center Nucleus -->
+    <circle cx="0" cy="0" r="2.2" fill="#60A5FA" />
+
+    <!-- Electron Node -->
+    <circle cx="-7" cy="0" r="2.5" fill="#2563EB" stroke="#FFFFFF" stroke-width="0.8" />
+
+    <!-- Simple Code Symbol -->
+    <text x="0" y="14" font-family="monospace, sans-serif" font-size="5" font-weight="bold" fill="#A78BFA" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+</svg>

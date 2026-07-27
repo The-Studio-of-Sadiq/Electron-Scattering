@@ -19,6 +19,57 @@ const BOHR_SQ_TO_CM2 = 0.28002852e-16;
 const BOHR_SQ_TO_ANGSTROM2 = 0.28002852;
 
 let compiledBinaryPath: string | null = null;
+let gfortranChecked = false;
+let gfortranAvailable = false;
+
+function checkGFortranAvailable(): boolean {
+  if (gfortranChecked) return gfortranAvailable;
+  try {
+    execSync('gfortran --version', { stdio: 'ignore', timeout: 2000 });
+    gfortranAvailable = true;
+  } catch {
+    gfortranAvailable = false;
+  }
+  gfortranChecked = true;
+  return gfortranAvailable;
+}
+
+function checkAndCleanBinary(binaryPath: string): boolean {
+  if (!fs.existsSync(binaryPath)) return false;
+
+  try {
+    fs.chmodSync(binaryPath, 0o755);
+    execSync(`"${binaryPath}" < /dev/null`, {
+      timeout: 1000,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return true;
+  } catch (e: any) {
+    const stderr = (e.stderr || '').toString();
+    const msg = (e.message || '').toString();
+    const status = e.status;
+
+    if (
+      status === 126 ||
+      status === 127 ||
+      msg.includes('Exec format error') ||
+      stderr.includes('Exec format error') ||
+      e.code === 'ENOEXEC'
+    ) {
+      console.warn(`Binary ${binaryPath} cannot be executed on this architecture (Exec format error). Removing...`);
+      try { fs.unlinkSync(binaryPath); } catch (_) {}
+      return false;
+    }
+
+    if (status === 0 || status === 1 || status === 2) {
+      return true;
+    }
+
+    try { fs.unlinkSync(binaryPath); } catch (_) {}
+    return false;
+  }
+}
 
 export function ensureFortranBinaryCompiled(): string | null {
   if (compiledBinaryPath && fs.existsSync(compiledBinaryPath)) {
@@ -29,26 +80,17 @@ export function ensureFortranBinaryCompiled(): string | null {
   const binaryTarget = path.join(rootDir, 'elsepa_exec');
 
   if (fs.existsSync(binaryTarget)) {
-    try {
-      fs.chmodSync(binaryTarget, 0o755);
-      // Test if binary can be executed
-      execSync(`"${binaryTarget}"`, { timeout: 1000, stdio: 'ignore' });
-    } catch (e: any) {
-      // Exit code 0 or 1 or error from stdin EOF is normal for Fortran program waiting for input.
-      // But 'Exec format error' (ENOEXEC) or ENOENT means binary is corrupted/wrong architecture.
-      if (e.code === 'ENOEXEC' || (e.message && e.message.includes('Exec format error'))) {
-        console.warn('Existing elsepa_exec binary is invalid for current architecture, removing and recompiling...');
-        try { fs.unlinkSync(binaryTarget); } catch (_) {}
-      }
+    if (checkAndCleanBinary(binaryTarget)) {
+      compiledBinaryPath = binaryTarget;
+      return compiledBinaryPath;
     }
   }
 
-  if (fs.existsSync(binaryTarget)) {
-    compiledBinaryPath = binaryTarget;
-    return compiledBinaryPath;
+  if (!checkGFortranAvailable()) {
+    return null;
   }
 
-  // Attempt gfortran compilation
+  // Attempt gfortran compilation if available
   try {
     const fortranDir = path.join(rootDir, 'fortran');
     const elscataFile = path.join(fortranDir, 'elscata.f');
@@ -62,18 +104,16 @@ export function ensureFortranBinaryCompiled(): string | null {
     execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscataFile}" "${elsepaFile}"`, {
       encoding: 'utf-8',
       timeout: 30000,
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
-    if (fs.existsSync(binaryTarget)) {
-      try {
-        fs.chmodSync(binaryTarget, 0o755);
-      } catch (e) {}
+    if (checkAndCleanBinary(binaryTarget)) {
       compiledBinaryPath = binaryTarget;
       console.log('Successfully compiled ELSEPA Fortran binary:', binaryTarget);
       return compiledBinaryPath;
     }
-  } catch (err) {
-    console.warn('gfortran compilation failed or not available:', err);
+  } catch (err: any) {
+    console.warn('gfortran compilation not available or failed:', err?.message || err);
   }
 
   return null;
@@ -353,20 +393,14 @@ export function ensureElscatmBinaryCompiled(): string | null {
   const binaryTarget = path.join(rootDir, 'elscatm_exec');
 
   if (fs.existsSync(binaryTarget)) {
-    try {
-      fs.chmodSync(binaryTarget, 0o755);
-      execSync(`"${binaryTarget}"`, { timeout: 1000, stdio: 'ignore' });
-    } catch (e: any) {
-      if (e.code === 'ENOEXEC' || (e.message && e.message.includes('Exec format error'))) {
-        console.warn('Existing elscatm_exec binary is invalid for current architecture, removing and recompiling...');
-        try { fs.unlinkSync(binaryTarget); } catch (_) {}
-      }
+    if (checkAndCleanBinary(binaryTarget)) {
+      compiledMolBinaryPath = binaryTarget;
+      return compiledMolBinaryPath;
     }
   }
 
-  if (fs.existsSync(binaryTarget)) {
-    compiledMolBinaryPath = binaryTarget;
-    return compiledMolBinaryPath;
+  if (!checkGFortranAvailable()) {
+    return null;
   }
 
   try {
@@ -382,18 +416,16 @@ export function ensureElscatmBinaryCompiled(): string | null {
     execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscatmFile}" "${elsepaFile}"`, {
       encoding: 'utf-8',
       timeout: 30000,
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
-    if (fs.existsSync(binaryTarget)) {
-      try {
-        fs.chmodSync(binaryTarget, 0o755);
-      } catch (e) {}
+    if (checkAndCleanBinary(binaryTarget)) {
       compiledMolBinaryPath = binaryTarget;
       console.log('Successfully compiled ELSCATM Fortran binary:', binaryTarget);
       return compiledMolBinaryPath;
     }
-  } catch (err) {
-    console.warn('ELSCATM gfortran compilation failed:', err);
+  } catch (err: any) {
+    console.warn('ELSCATM gfortran compilation not available or failed:', err?.message || err);
   }
 
   return null;

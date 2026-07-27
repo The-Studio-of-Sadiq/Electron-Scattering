@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- White on Dark Container Version -->
+  <rect width="400" height="400" rx="48" fill="#090D16" />
+
+  <g transform="translate(200, 200)">
+    <!-- Outer Arc -->
+    <path d="M 0 -130 A 130 130 0 1 0 0 130" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M -20 -108 L 6 -133 L -20 -155" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Lobe -->
+    <path d="M 0 0 C 28 -76, 130 -95, 130 0 C 130 95, 28 76, 0 0 Z" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round" />
+
+    <!-- Axis -->
+    <line x1="-130" y1="0" x2="0" y2="0" stroke="#FFFFFF" stroke-width="2.5" stroke-dasharray="5 3" />
+
+    <!-- Electron Circle -->
+    <circle cx="-88" cy="0" r="15" fill="#FFFFFF" />
+    <text x="-88" y="5" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#090D16" text-anchor="middle">e⁻</text>
+
+    <!-- Nucleus Target -->
+    <circle cx="0" cy="0" r="10" fill="#FFFFFF" />
+
+    <!-- Code Symbol -->
+    <text x="0" y="152" font-family="monospace, Courier, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+</svg>

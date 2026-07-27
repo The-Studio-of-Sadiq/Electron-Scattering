@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+
+    <linearGradient id="nucleusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+  </defs>
+
+  <!-- Clean Light Canvas -->
+  <rect width="800" height="600" fill="#FFFFFF" />
+
+  <!-- Main Central Scattering Icon Graphic (Centered around X: 400, Y: 240) -->
+  <g transform="translate(400, 240)">
+    <!-- Outer Circular Trajectory Arc with Arrow -->
+    <path d="M 0 -170 A 170 170 0 1 0 0 170" fill="none" stroke="#2563EB" stroke-width="5" stroke-linecap="round" />
+    <path d="M -26 -142 L 8 -175 L -26 -202" fill="none" stroke="#2563EB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Polar Scattering Lobe (Right) -->
+    <path d="M 0 0 C 36 -100, 170 -125, 170 0 C 170 125, 36 100, 0 0 Z" 
+          fill="rgba(124, 58, 237, 0.05)" stroke="url(#brandGradient)" stroke-width="4" stroke-linejoin="round" />
+
+    <!-- Inner Nested Lobes -->
+    <path d="M 0 0 C 26 -60, 115 -80, 115 0 C 115 80, 26 60, 0 0 Z" 
+          fill="none" stroke="#7C3AED" stroke-width="2" stroke-dasharray="5 3" opacity="0.75" />
+    <path d="M 0 0 C 15 -32, 70 -40, 70 0 C 70 40, 15 32, 0 0 Z" 
+          fill="none" stroke="#A78BFA" stroke-width="1.5" opacity="0.5" />
+
+    <!-- Horizontal Axis -->
+    <line x1="-170" y1="0" x2="0" y2="0" stroke="#2563EB" stroke-width="3.5" stroke-dasharray="6 4" />
+
+    <!-- Incoming Electron Circle -->
+    <circle cx="-115" cy="0" r="20" fill="url(#nucleusGrad)" stroke="#FFFFFF" stroke-width="2.5" />
+    <text x="-115" y="7" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">e⁻</text>
+
+    <!-- Nucleus Target -->
+    <circle cx="0" cy="0" r="14" fill="url(#nucleusGrad)" />
+    <circle cx="-4" cy="-4" r="4" fill="#FFFFFF" opacity="0.8" />
+
+    <!-- Code Icon Badge at Bottom of Arc -->
+    <text x="0" y="195" font-family="monospace, Courier, sans-serif" font-size="28" font-weight="bold" fill="#7C3AED" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+
+  <!-- Title & Subtitle Below -->
+  <text x="400" y="480" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="800" fill="url(#textGradient)" text-anchor="middle" letter-spacing="-0.5">
+    Electron Scattering
+  </text>
+  
+  <text x="400" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#64748B" text-anchor="middle" letter-spacing="3">
+    INTERACTIVE ELSEPA INTERFACE
+  </text>
+</svg>

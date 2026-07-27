@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="pwaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FFFFFF" />
+      <stop offset="100%" stopColor="#F8FAFC" />
+    </linearGradient>
+
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.08" />
+    </filter>
+  </defs>
+
+  <!-- App Icon Rounded Container -->
+  <rect width="512" height="512" rx="112" fill="url(#pwaBg)" stroke="#E2E8F0" stroke-width="4" filter="url(#shadow)" />
+
+  <!-- Center Graphic (Center X: 256, Y: 256) -->
+  <g transform="translate(256, 256)">
+    <!-- Outer Arc -->
+    <path d="M 0 -180 A 180 180 0 1 0 0 180" fill="none" stroke="#2563EB" stroke-width="7.5" stroke-linecap="round" />
+    <path d="M -28 -150 L 10 -185 L -28 -215" fill="none" stroke="#2563EB" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Polar Scattering Lobe (Right) -->
+    <path d="M 0 0 C 40 -110, 185 -135, 185 0 C 185 135, 40 110, 0 0 Z" 
+          fill="rgba(124, 58, 237, 0.08)" stroke="url(#brandGrad)" stroke-width="6" stroke-linejoin="round" />
+
+    <!-- Inner Nested Lobes -->
+    <path d="M 0 0 C 28 -65, 125 -85, 125 0 C 125 85, 28 65, 0 0 Z" 
+          fill="none" stroke="#7C3AED" stroke-width="3" stroke-dasharray="6 4" opacity="0.8" />
+    <path d="M 0 0 C 16 -35, 75 -42, 75 0 C 75 42, 16 35, 0 0 Z" 
+          fill="none" stroke="#A78BFA" stroke-width="2.5" opacity="0.6" />
+
+    <!-- Horizontal Axis -->
+    <line x1="-180" y1="0" x2="0" y2="0" stroke="#2563EB" stroke-width="5" stroke-dasharray="8 5" />
+
+    <!-- Incoming Electron Circle -->
+    <circle cx="-120" cy="0" r="22" fill="url(#nodeGrad)" stroke="#FFFFFF" stroke-width="3" />
+    <text x="-120" y="8" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">e⁻</text>
+
+    <!-- Target Nucleus -->
+    <circle cx="0" cy="0" r="16" fill="url(#nodeGrad)" />
+    <circle cx="-4" cy="-4" r="5" fill="#FFFFFF" opacity="0.9" />
+
+    <!-- Code Symbol -->
+    <text x="0" y="210" font-family="monospace, Courier, sans-serif" font-size="32" font-weight="bold" fill="#7C3AED" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+</svg>

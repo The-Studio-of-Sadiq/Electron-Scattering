@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#070A12" />
+      <stop offset="50%" stopColor="#0F172A" />
+      <stop offset="100%" stopColor="#0B0F19" />
+    </linearGradient>
+
+    <radialGradient id="glowGlow" cx="30%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.18" />
+      <stop offset="60%" stopColor="#7C3AED" stopOpacity="0.08" />
+      <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+    </radialGradient>
+
+    <!-- Brand Color Gradient -->
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="50%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+
+    <!-- Title Gradient -->
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#60A5FA" />
+      <stop offset="50%" stopColor="#818CF8" />
+      <stop offset="100%" stopColor="#C084FC" />
+    </linearGradient>
+
+    <!-- Nucleus Gradient -->
+    <linearGradient id="nucleusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#60A5FA" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+
+    <!-- Background Grid Pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="0.75" opacity="0.4" />
+    </pattern>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+  <circle cx="360" cy="315" r="450" fill="url(#glowGlow)" />
+
+  <!-- Subtle Quantum Wave Backdrop Lines -->
+  <g opacity="0.15">
+    <path d="M 0 100 Q 300 250 600 150 T 1200 200" fill="none" stroke="#3B82F6" stroke-width="1.5" />
+    <path d="M 0 200 Q 350 400 700 250 T 1200 350" fill="none" stroke="#7C3AED" stroke-width="1.5" />
+    <path d="M 0 500 Q 400 300 800 450 T 1200 400" fill="none" stroke="#60A5FA" stroke-width="1.5" />
+  </g>
+
+  <!-- Left Side: Interactive Scattering Diagram (Centered around X: 320, Y: 315) -->
+  <g transform="translate(320, 315)">
+    <!-- Outer Circular Trajectory Arc with Arrow -->
+    <path d="M 0 -190 A 190 190 0 1 0 0 190" fill="none" stroke="#3B82F6" stroke-width="5" stroke-linecap="round" />
+    <path d="M -28 -160 L 10 -195 L -28 -225" fill="none" stroke="#3B82F6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Polar Scattering Lobe (Right) -->
+    <path d="M 0 0 C 40 -110, 190 -140, 190 0 C 190 140, 40 110, 0 0 Z" 
+          fill="rgba(124, 58, 237, 0.12)" stroke="url(#brandGradient)" stroke-width="4.5" stroke-linejoin="round" />
+
+    <!-- Inner Nested Lobes -->
+    <path d="M 0 0 C 30 -70, 130 -90, 130 0 C 130 90, 30 70, 0 0 Z" 
+          fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.85" />
+    <path d="M 0 0 C 18 -38, 80 -45, 80 0 C 80 45, 18 38, 0 0 Z" 
+          fill="none" stroke="#C4B5FD" stroke-width="2" opacity="0.6" />
+
+    <!-- Horizontal Trajectory Axis -->
+    <line x1="-190" y1="0" x2="0" y2="0" stroke="#60A5FA" stroke-width="4" stroke-dasharray="8 5" />
+
+    <!-- Incoming Electron (e⁻) Node -->
+    <circle cx="-130" cy="0" r="22" fill="url(#nucleusGrad)" stroke="#FFFFFF" stroke-width="3" />
+    <text x="-130" y="8" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF" text-anchor="middle">e⁻</text>
+
+    <!-- Central Atomic Nucleus -->
+    <circle cx="0" cy="0" r="30" fill="#2563EB" opacity="0.25" />
+    <circle cx="0" cy="0" r="16" fill="url(#nucleusGrad)" />
+    <circle cx="-5" cy="-5" r="5" fill="#FFFFFF" opacity="0.8" />
+
+    <!-- Bottom Code Badge </ > -->
+    <text x="0" y="215" font-family="monospace, Courier, sans-serif" font-size="32" font-weight="bold" fill="#C4B5FD" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+
+  <!-- Right Side: Brand Title & Metadata (X: 620) -->
+  <!-- Tag Pill -->
+  <rect x="620" y="150" width="310" height="36" rx="18" fill="rgba(59, 130, 246, 0.15)" stroke="rgba(96, 165, 250, 0.4)" stroke-width="1.5" />
+  <text x="636" y="173" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#93C5FD" letter-spacing="1.5">DIRAC ELASTIC SCATTERING</text>
+
+  <!-- Title -->
+  <text x="620" y="245" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" fill="url(#titleGradient)" letter-spacing="-1">Electron Scattering</text>
+  <text x="620" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#E2E8F0" letter-spacing="0">Interactive ELSEPA Physics Workbench</text>
+
+  <!-- Description -->
+  <text x="620" y="355" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="400" fill="#94A3B8">
+    <tspan x="620" dy="0">High-precision Dirac partial-wave elastic electron &amp; positron</tspan>
+    <tspan x="620" dy="28">scattering simulator powered by the Salvat ELSEPA Fortran engine.</tspan>
+  </text>
+
+  <!-- Feature Tags -->
+  <g transform="translate(620, 435)">
+    <!-- Tag 1 -->
+    <rect x="0" y="0" width="130" height="34" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <text x="65" y="22" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#60A5FA" text-anchor="middle">VISUALIZE</text>
+
+    <!-- Tag 2 -->
+    <rect x="142" y="0" width="120" height="34" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <text x="202" y="22" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#C084FC" text-anchor="middle">ANALYZE</text>
+
+    <!-- Tag 3 -->
+    <rect x="274" y="0" width="120" height="34" rx="8" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <text x="334" y="22" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#34D399" text-anchor="middle">EXPLORE</text>
+  </g>
+
+  <!-- Footer Attribution -->
+  <line x1="620" y1="505" x2="1120" y2="505" stroke="#1E293B" stroke-width="1" />
+  <text x="620" y="535" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600" fill="#CBD5E1">
+    HSTU Research Society • Dept. of ECE &amp; CSE • Hajee Mohammad Danesh Science &amp; Tech Univ.
+  </text>
+</svg>

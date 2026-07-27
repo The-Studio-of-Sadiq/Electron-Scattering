@@ -1,18 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-  <circle cx="50" cy="50" r="48" fill="#0f172a" stroke="#6366f1" stroke-width="3"/>
-  <!-- Target nucleus -->
-  <circle cx="50" cy="50" r="10" fill="#818cf8"/>
-  <circle cx="50" cy="50" r="5" fill="#38bdf8"/>
-  <!-- Orbital arcs / scattering pattern -->
-  <path d="M 50 15 A 35 35 0 0 1 85 50 A 35 35 0 0 1 50 85" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="4 3"/>
-  <!-- Incoming electron beam -->
-  <line x1="8" y1="50" x2="40" y2="50" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round"/>
-  <polygon points="40,46 48,50 40,54" fill="#38bdf8"/>
-  <!-- Scattered trajectories -->
-  <path d="M 50 50 Q 70 30 90 20" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M 50 50 Q 75 50 92 50" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M 50 50 Q 70 70 90 80" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Electron label e- -->
-  <circle cx="16" cy="50" r="7" fill="#2563eb"/>
-  <text x="16" y="53" font-family="sans-serif" font-size="8" font-weight="bold" fill="#ffffff" text-anchor="middle">e⁻</text>
+  <defs>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#2563EB" />
+      <stop offset="100%" stopColor="#7C3AED" />
+    </linearGradient>
+    <linearGradient id="nucleusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="100%" stopColor="#1D4ED8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background container -->
+  <rect width="100" height="100" rx="22" fill="#090D16" />
+
+  <!-- Outer Circular Trajectory Arc -->
+  <path d="M 50 12 A 38 38 0 1 0 50 88" fill="none" stroke="#3B82F6" stroke-width="3.5" stroke-linecap="round" />
+  <path d="M 44 18 L 53 11 L 44 6" fill="none" stroke="#3B82F6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Polar Scattering Lobe (Right) -->
+  <path d="M 50 50 C 58 28, 88 22, 88 50 C 88 78, 58 72, 50 50 Z" fill="rgba(124, 58, 237, 0.2)" stroke="url(#brandGradient)" stroke-width="3" />
+  <path d="M 50 50 C 56 36, 76 32, 76 50 C 76 68, 56 64, 50 50 Z" fill="none" stroke="#A78BFA" stroke-width="2" stroke-dasharray="3 2" />
+
+  <!-- Incoming Axis -->
+  <line x1="12" y1="50" x2="50" y2="50" stroke="#60A5FA" stroke-width="3" stroke-dasharray="4 2" />
+
+  <!-- Incoming Electron Circle -->
+  <circle cx="22" cy="50" r="8" fill="url(#nucleusGrad)" stroke="#FFFFFF" stroke-width="1.5" />
+  <text x="22" y="53.5" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#FFFFFF" text-anchor="middle">e⁻</text>
+
+  <!-- Central Nucleus -->
+  <circle cx="50" cy="50" r="6" fill="#3B82F6" />
+  <circle cx="48.5" cy="48.5" r="1.8" fill="#FFFFFF" opacity="0.9" />
+
+  <!-- Code symbol -->
+  <text x="50" y="92" font-family="monospace, sans-serif" font-size="12" font-weight="bold" fill="#A78BFA" text-anchor="middle">&lt;/&gt;</text>
 </svg>

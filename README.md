@@ -12,10 +12,10 @@ An interactive, high-precision physics simulation platform and GUI for **ELSEPA*
 
 ## 👨‍🔬 Authors & Research Attribution
 
-* **Software Architecture & Development**: Golam Kuadir Khan Prince
-* **Principal Research & Physics Direction**: Professor Dr. Md. Mahabub Hossain
-* **Co-Researcher**: Pankaj Bhowmick
-* **Research Group**: **HSTU Research Society** (Hajee Mohammad Danesh Science and Technology University)
+* **Principal Research & Physics Direction**: Professor Dr. Md. Mahabub Hossain (Faculty, Department of Electronics and Communication Engineering, Hajee Mohammad Danesh Science and Technology University - HSTU)
+* **Co-Researcher**: Pankaj Bhowmik (Faculty, Department of Computer Science and Engineering, Hajee Mohammad Danesh Science and Technology University - HSTU)
+* **Software Architecture & Development**: Golam Kuadir Khan Prince (Undergraduate Student, Department of Electrical and Electronic Engineering, Hajee Mohammad Danesh Science and Technology University - HSTU / HSTU Research Society)
+* **Research Group**: **HSTU Research Society** (Hajee Mohammad Danesh Science and Technology University - HSTU)
 
 ### 📚 Core Physics Engine Attribution
 This platform provides a visual interface and backend execution server for the **ELSEPA** Fortran code developed by:
