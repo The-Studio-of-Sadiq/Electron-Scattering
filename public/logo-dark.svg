@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Dark Mode Version (Box 4) -->
+  <defs>
+    <linearGradient id="darkContainerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0B0F19" />
+      <stop offset="100%" stopColor="#050810" />
+    </linearGradient>
+
+    <linearGradient id="purpleBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#3B82F6" />
+      <stop offset="50%" stopColor="#818CF8" />
+      <stop offset="100%" stopColor="#C084FC" />
+    </linearGradient>
+
+    <linearGradient id="electronGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#60A5FA" />
+      <stop offset="100%" stopColor="#2563EB" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Rounded Container -->
+  <rect width="512" height="512" rx="112" fill="url(#darkContainerGrad)" stroke="#1E293B" stroke-width="3" />
+
+  <g transform="translate(256, 256)">
+    <!-- Outer Arc -->
+    <path d="M 0 -170 A 170 170 0 1 0 0 170" fill="none" stroke="#3B82F6" stroke-width="6.5" stroke-linecap="round" />
+    <path d="M -26 -142 L 8 -175 L -26 -202" fill="none" stroke="#3B82F6" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Polar Scattering Lobe (Right) -->
+    <path d="M 0 0 C 38 -105, 175 -130, 175 0 C 175 130, 38 105, 0 0 Z" 
+          fill="rgba(192, 132, 252, 0.12)" stroke="url(#purpleBrandGrad)" stroke-width="5" stroke-linejoin="round" />
+
+    <!-- Inner Nested Lobes -->
+    <path d="M 0 0 C 26 -60, 118 -80, 118 0 C 118 80, 26 60, 0 0 Z" 
+          fill="none" stroke="#C084FC" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.8" />
+
+    <!-- Axis -->
+    <line x1="-170" y1="0" x2="0" y2="0" stroke="#60A5FA" stroke-width="4" stroke-dasharray="7 4" />
+
+    <!-- Electron Circle -->
+    <circle cx="-115" cy="0" r="20" fill="url(#electronGradDark)" stroke="#FFFFFF" stroke-width="2.5" />
+    <text x="-115" y="7" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">e⁻</text>
+
+    <!-- Target Nucleus -->
+    <circle cx="0" cy="0" r="14" fill="url(#electronGradDark)" />
+    <circle cx="-3.5" cy="-3.5" r="4" fill="#FFFFFF" opacity="0.9" />
+
+    <!-- Code Symbol -->
+    <text x="0" y="198" font-family="monospace, Courier, sans-serif" font-size="30" font-weight="bold" fill="#C084FC" text-anchor="middle">&lt;/&gt;</text>
+  </g>
+</svg>
