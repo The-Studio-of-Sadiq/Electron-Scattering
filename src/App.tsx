@@ -188,8 +188,18 @@ export default function App() {
     }
   };
 
+  const getMatchingPresetKey = (p: ElsepaInputParams): string => {
+    if (p.z === 79 && p.projectile === -1 && p.energyEv === 100000 && p.nuclearModel === 'fermi') return 'e-gold-100kev';
+    if (p.z === 18 && p.projectile === -1 && p.energyEv === 10 && p.exchangeModel === 'furness-mccarthy' && p.polarizationModel === 'buckingham') return 'e-argon-10ev';
+    if (p.z === 92 && p.projectile === -1 && p.energyEv === 1000000 && p.nuclearModel === 'fermi') return 'e-uranium-1mev';
+    if (p.z === 79 && p.projectile === 1 && p.energyEv === 100000 && p.exchangeModel === 'none') return 'e+-gold-100kev';
+    if (p.z === 1 && p.projectile === -1 && p.energyEv === 100 && p.nuclearModel === 'point') return 'e-hydrogen-100ev';
+    if (p.z === 54 && p.projectile === -1 && p.energyEv === 10000) return 'e-xenon-10kev';
+    return 'custom';
+  };
+
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors ${
+    <div className={`min-h-screen flex flex-col font-sans transition-colors overflow-x-hidden ${
       theme === 'light' ? 'bg-slate-100 text-slate-900' : 'bg-slate-950 text-slate-100'
     }`}>
       <Header
@@ -197,11 +207,12 @@ export default function App() {
         setActiveTab={setActiveTab}
         fortranStatus={fortranStatus}
         onLoadPreset={handleLoadPreset}
+        activePresetKey={getMatchingPresetKey(params)}
         theme={theme}
         onToggleTheme={handleToggleTheme}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 flex flex-col gap-5 sm:gap-6">
         {activeTab === 'workbench' && (
           <div className="flex flex-col gap-6">
             <InputGuiForm
@@ -242,16 +253,16 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className={`border-t py-4 px-6 text-center text-xs transition-colors ${
+      <footer className={`border-t py-4 px-4 sm:px-6 text-center text-xs transition-colors ${
         theme === 'light'
           ? 'bg-white border-slate-200 text-slate-600'
           : 'bg-slate-900 border-slate-800/80 text-slate-400'
       }`}>
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-2">
-          <div className="font-semibold text-slate-800 dark:text-slate-200 text-xs sm:text-sm">
-            Created by Golam Kuadir Khan Prince, Professor Dr. Md. Mahabub Hossain, Pankaj Bhowmick and HSTU Research Society
+          <div className="font-semibold text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed">
+            © Created by Golam Kuadir Khan Prince (Undergraduate Student, Dept. of Electrical and Electronic Engineering, HSTU), Professor Dr. Md. Mahabub Hossain (Faculty, Dept. of Electronics and Communication Engineering, HSTU), Pankaj Bhowmik (Faculty, Dept. of Computer Science and Engineering, HSTU) and HSTU Research Society
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full text-[11px] text-slate-500 pt-1 border-t border-slate-200/50 dark:border-slate-800/50 gap-1">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/50 dark:border-slate-800/50 gap-1">
             <span>
               Electron Scattering Simulator • ELSEPA Dirac Scattering Engine
             </span>
