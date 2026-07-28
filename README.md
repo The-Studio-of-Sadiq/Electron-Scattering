@@ -1,3 +1,6 @@
+<img width="1920" height="958" alt="Annotation 2026-07-27 074951" src="https://github.com/user-attachments/assets/19cee028-1294-4378-bfc2-282db1220cb3" />
+
+
 # Electron Scattering Simulator (ELSEPA Physics Workbench)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -220,6 +223,10 @@ Runs an atomic scattering calculation using native `elsepa_exec` or the Dirac fa
 Checks if `gfortran` compiler and `elsepa_exec` binaries are available on the server host.
 
 ---
+
+### UI typography
+<img width="1536" height="1024" alt="Electron scattering" src="https://github.com/user-attachments/assets/0da55e78-4019-4b29-87ab-89836808e4ef" />
+
 
 ## 📜 License
 
