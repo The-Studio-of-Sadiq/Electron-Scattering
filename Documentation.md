@@ -183,6 +183,8 @@ $$V(r) = V_{\text{stat}}(r) + V_{\text{ex}}(r) + V_{\text{pol}}(r) + i W_{\text{
 * **Sherman Function $S(\theta)$ (Mott Polarization Asymmetry)**:  
   $\displaystyle S(\theta) = i \frac{f(\theta)g^*(\theta) - f^*(\theta)g(\theta)}{|f(\theta)|^2 + |g(\theta)|^2}
   = \frac{2\,\mathrm{Im}\!\left[f(\theta)g^*(\theta)\right]}{\frac{d\sigma}{d\Omega}(\theta)}$
+<img width="458" height="61" alt="image" src="https://github.com/user-attachments/assets/f037835a-1926-4c13-81d1-9bdc5a20b1c7" />
+
 
 * **Total Elastic Cross Section $\sigma_{\mathrm{el}}$**:  
   $\displaystyle \sigma_{\mathrm{el}} = 2\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta)\,\sin\theta\, d\theta$
@@ -203,6 +205,9 @@ $$
 \left[ f_i(\theta) f_j^*(\theta) + g_i(\theta) g_j^*(\theta) \right]
 \frac{\sin(q R_{ij})}{q R_{ij}}
 $$
+
+<img width="622" height="91" alt="image" src="https://github.com/user-attachments/assets/ba3b6ea9-ddf5-42c2-b613-2fa65355e6eb" />
+
 
 Where $q = 2k \sin(\theta/2)$ is the magnitude of the momentum transfer vector, and $R_{ij} = |\mathbf{r}_i - \mathbf{r}_j|$.
 
