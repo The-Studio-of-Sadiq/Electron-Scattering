@@ -10,13 +10,14 @@ import {
   Sun,
   Moon,
   Smartphone,
+  BookOpen,
 } from 'lucide-react';
 import { FortranServerStatus } from '../types';
 import { ElectronScatteringLogo } from './Logo';
 
 interface HeaderProps {
-  activeTab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy';
-  setActiveTab: (tab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy') => void;
+  activeTab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics';
+  setActiveTab: (tab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics') => void;
   fortranStatus: FortranServerStatus | null;
   onLoadPreset: (presetKey: string) => void;
   activePresetKey: string;
@@ -316,6 +317,21 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Terminal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Fortran Source & Deploy</span>
+          </button>
+
+          <button
+            id="tab-physics"
+            onClick={() => setActiveTab('physics')}
+            className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
+              activeTab === 'physics'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : theme === 'light'
+                ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
+            <span>Physics Guide</span>
           </button>
         </nav>
       </div>

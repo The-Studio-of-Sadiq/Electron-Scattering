@@ -8,11 +8,12 @@ import { DatasetUploadPanel } from './components/DatasetUploadPanel';
 import { RenderDeploymentModal } from './components/RenderDeploymentModal';
 import { MolecularWorkbench } from './components/MolecularWorkbench';
 import { SavedRunsManager } from './components/SavedRunsManager';
+import { PhysicsGuide } from './components/PhysicsGuide';
 import { getElementByZ } from './data/elements';
 import { saveAtomicSimulationRun } from './utils/localStorage';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy'>('workbench');
+  const [activeTab, setActiveTab] = useState<'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics'>('workbench');
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('elsepa_theme');
@@ -249,6 +250,10 @@ export default function App() {
 
         {activeTab === 'deploy' && (
           <RenderDeploymentModal fortranStatus={fortranStatus} />
+        )}
+
+        {activeTab === 'physics' && (
+          <PhysicsGuide theme={theme} />
         )}
       </main>
 
