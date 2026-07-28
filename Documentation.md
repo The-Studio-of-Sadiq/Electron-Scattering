@@ -66,17 +66,27 @@ This software platform and research interface was developed by researchers and s
 ### 3. Core Feature Modules & User Interface
 
 #### 3.1 Atomic Physics Workbench
+
 * **Interactive Parameter Configuration**:
-  * **Target Element Selector**: Full periodic table support ($Z = 1$ to $Z = 103$), with preset atomic properties (Hydrogen, Argon, Gold, Uranium, Xenon, lead, etc.).
-  * **Projectile Selection**: Electron ($e^-, Q = -1$) vs. Positron ($e^+, Q = +1$).
-  * **Kinetic Energy Slider & Direct Input**: Continuous range from $10$ eV to $10^9$ eV with exponential and logarithmic scaling.
-  * **Nuclear Charge Models**: Point Charge, Uniform Charged Sphere ($R_N = 1.07 A^{1/3}$ fm), and 2-Parameter Fermi Distribution.
-  * **Exchange Potentials ($e^-$)**: Furness-McCarthy, Riley-Truhlar, or None.
+  * **Target Element Selector**: Full periodic table support ($Z = 1$ to $Z = 103$), with preset atomic properties (Hydrogen, Argon, Gold, Uranium, Xenon, Lead, etc.).
+  
+  * **Projectile Selection**: Electron ($e^-$, $Q=-1$) vs. Positron ($e^+$, $Q=+1$).
+  
+  * **Kinetic Energy Slider & Direct Input**: Continuous range from $10\ \mathrm{eV}$ to $10^9\ \mathrm{eV}$ with exponential and logarithmic scaling.
+  
+  * **Nuclear Charge Models**: Point Charge, Uniform Charged Sphere ($R_N = 1.07 A^{1/3}\ \mathrm{fm}$), and 2-Parameter Fermi Distribution.
+  
+  * **Exchange Potentials ($e^-$)**: Furness–McCarthy, Riley–Truhlar, or None.
+  
   * **Correlation-Polarization Models**: Buckingham Dipole + LDA, Padé Approximation, or Disabled.
+
 * **Results Dashboard**:
-  * **Differential Cross Section (DCS)** Plot: Logarithmic and linear scales for $d\sigma/d\Omega$ ($\text{cm}^2/\text{sr}$) vs. Scattering Angle $\theta$ ($0^\circ$ to $180^\circ$).
+  * **Differential Cross Section (DCS) Plot**: Logarithmic and linear scales for $d\sigma/d\Omega$ ($\mathrm{cm}^2/\mathrm{sr}$) vs. scattering angle $\theta$ ($0^\circ$ to $180^\circ$).
+  
   * **Sherman Function $S(\theta)$ (Spin Polarization Asymmetry)**: Polarized scattering function displaying Mott minima and spin-flip asymmetries.
-  * **Transport & Total Cross Section Summary Metrics**: Total Elastic ($\sigma_{\text{el}}$), 1st Transport ($\sigma_{\text{tr1}}$), and 2nd Transport ($\sigma_{\text{tr2}}$) cross sections with unit conversions ($\text{cm}^2$ and $\text{\AA}^2$).
+  
+  * **Transport & Total Cross Section Summary Metrics**: Total Elastic ($\sigma_{\mathrm{el}}$), 1st Transport ($\sigma_{\mathrm{tr1}}$), and 2nd Transport ($\sigma_{\mathrm{tr2}}$) cross sections with unit conversions ($\mathrm{cm}^2$ and $\mathrm{\AA}^2$).
+  
   * **Polar Scattering Intensity Diagram**: $2\pi$ polar lobe viewer displaying directional scattering lobes.
 
 #### 3.2 Molecular Mode (IAM & MIFS)
@@ -166,25 +176,35 @@ $$V(r) = V_{\text{stat}}(r) + V_{\text{ex}}(r) + V_{\text{pol}}(r) + i W_{\text{
    Joined smoothly at short distances to the Perdew-Zunger local density correlation potential $V_{\text{corr}}(r)$.
 
 #### 4.4 Physical Observables & Cross Sections
-* **Differential Cross Section (DCS)**:
-  $$\frac{d\sigma}{d\Omega}(\theta) = |f(\theta)|^2 + |g(\theta)|^2$$
 
-* **Sherman Function $S(\theta)$ (Mott Polarization Asymmetry)**:
-  $$S(\theta) = i \frac{f(\theta)g^*(\theta) - f^*(\theta)g(\theta)}{|f(\theta)|^2 + |g(\theta)|^2} = \frac{2 \text{Im}[f(\theta)g^*(\theta)]}{\frac{d\sigma}{d\Omega}(\theta)}$$
+* **Differential Cross Section (DCS)**:  
+  $\displaystyle \frac{d\sigma}{d\Omega}(\theta) = |f(\theta)|^2 + |g(\theta)|^2$
 
-* **Total Elastic Cross Section $\sigma_{\text{el}}$**:
-  $$\sigma_{\text{el}} = 2\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta) \sin\theta d\theta$$
+* **Sherman Function $S(\theta)$ (Mott Polarization Asymmetry)**:  
+  $\displaystyle S(\theta) = i \frac{f(\theta)g^*(\theta) - f^*(\theta)g(\theta)}{|f(\theta)|^2 + |g(\theta)|^2}
+  = \frac{2\,\mathrm{Im}\!\left[f(\theta)g^*(\theta)\right]}{\frac{d\sigma}{d\Omega}(\theta)}$
 
-* **First & Second Transport Cross Sections ($\sigma_{\text{tr1}}, \sigma_{\text{tr2}}$)**:
-  $$\sigma_{\text{tr1}} = 2\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta) (1 - \cos\theta) \sin\theta d\theta$$
-  $$\sigma_{\text{tr2}} = 3\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta) \sin^3\theta d\theta$$
+* **Total Elastic Cross Section $\sigma_{\mathrm{el}}$**:  
+  $\displaystyle \sigma_{\mathrm{el}} = 2\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta)\,\sin\theta\, d\theta$
+
+* **First & Second Transport Cross Sections ($\sigma_{\mathrm{tr1}}, \sigma_{\mathrm{tr2}}$)**:  
+  $\displaystyle \sigma_{\mathrm{tr1}} = 2\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta)\,(1 - \cos\theta)\,\sin\theta\, d\theta$  
+  
+  $\displaystyle \sigma_{\mathrm{tr2}} = 3\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta)\,\sin^3\theta\, d\theta$
 
 #### 4.5 Molecular Independent Atom Model (IAM) & Interference
+
 For a molecule containing $N$ atoms with positions $\mathbf{r}_i$, the molecular cross section includes atomic factors and interatomic interference terms:
 
-$$\left(\frac{d\sigma}{d\Omega}\right)_{\text{mol}}(\theta) = \sum_{i=1}^N \left(\frac{d\sigma}{d\Omega}\right)_i + \sum_{i \neq j}^N \left[ f_i(\theta)f_j^*(\theta) + g_i(\theta)g_j^*(\theta) \right] \frac{\sin(q R_{ij})}{q R_{ij}}$$
+$$
+\left(\frac{d\sigma}{d\Omega}\right)_{\mathrm{mol}}(\theta)
+= \sum_{i=1}^{N} \left(\frac{d\sigma}{d\Omega}\right)_i
++ \sum_{i \ne j}^{N}
+\left[ f_i(\theta) f_j^*(\theta) + g_i(\theta) g_j^*(\theta) \right]
+\frac{\sin(q R_{ij})}{q R_{ij}}
+$$
 
-Where $q = 2k \sin(\theta/2)$ is the magnitude of the momentum transfer vector and $R_{ij} = |\mathbf{r}_i - \mathbf{r}_j|$.
+Where $q = 2k \sin(\theta/2)$ is the magnitude of the momentum transfer vector, and $R_{ij} = |\mathbf{r}_i - \mathbf{r}_j|$.
 
 ---
 
