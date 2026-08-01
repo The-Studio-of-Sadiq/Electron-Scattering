@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
                         : 'bg-indigo-950 text-indigo-300 border-indigo-800'
                     }`}
                   >
-                    v3.0
+                    v1.1.2
                   </span>
                 </div>
                 <p

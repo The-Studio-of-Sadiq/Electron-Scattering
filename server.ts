@@ -12,6 +12,13 @@ import {
   ensureElscatmBinaryCompiled,
   runOfficialFortranSimulation,
   runOfficialMolecularFortranSimulation,
+  getFortranFileList,
+  getFortranFileContent,
+  saveFortranFileContent,
+  resetFortranFilesToOriginal,
+  getTsEngineContent,
+  saveTsEngineContent,
+  resetTsEngineContent,
 } from './server/fortranRunner';
 import { ElsepaInputParams, MolecularInputParams, UploadedDataset } from './src/types';
 
@@ -237,6 +244,88 @@ app.get('/api/render-files', (_req: Request, res: Response) => {
     renderYaml: RENDER_YAML_CONTENT,
     fortranSource,
   });
+});
+
+// API 7: Fortran Source Notebook Editor API - List Files
+app.get('/api/fortran-source/files', (_req: Request, res: Response) => {
+  try {
+    const files = getFortranFileList();
+    res.json({ files });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to list Fortran files' });
+  }
+});
+
+// API 8: Fortran Source Notebook Editor API - Get File Content
+app.get('/api/fortran-source/content', (req: Request, res: Response) => {
+  try {
+    const filename = (req.query.filename as string) || 'elsepa.f';
+    const data = getFortranFileContent(filename);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to read Fortran file' });
+  }
+});
+
+// API 9: Fortran Source Notebook Editor API - Save File & Compile
+app.post('/api/fortran-source/save', (req: Request, res: Response) => {
+  try {
+    const { filename, content } = req.body;
+    if (!filename || typeof content !== 'string') {
+      res.status(400).json({ error: 'Missing filename or content body' });
+      return;
+    }
+    const result = saveFortranFileContent(filename, content);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to save Fortran file' });
+  }
+});
+
+// API 10: Fortran Source Notebook Editor API - Reset to Original
+app.post('/api/fortran-source/reset', (req: Request, res: Response) => {
+  try {
+    const { filename } = req.body;
+    const result = resetFortranFilesToOriginal(filename);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to reset Fortran files' });
+  }
+});
+
+// API 11: TypeScript Engine Source Editor API - Get Content
+app.get('/api/ts-source/content', (_req: Request, res: Response) => {
+  try {
+    const data = getTsEngineContent();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to read TS engine file' });
+  }
+});
+
+// API 12: TypeScript Engine Source Editor API - Save Content
+app.post('/api/ts-source/save', (req: Request, res: Response) => {
+  try {
+    const { content } = req.body;
+    if (typeof content !== 'string') {
+      res.status(400).json({ error: 'Missing content body' });
+      return;
+    }
+    const result = saveTsEngineContent(content);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to save TS engine file' });
+  }
+});
+
+// API 13: TypeScript Engine Source Editor API - Reset Content
+app.post('/api/ts-source/reset', (_req: Request, res: Response) => {
+  try {
+    const result = resetTsEngineContent();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to reset TS engine file' });
+  }
 });
 
 // Vite Middleware Integration

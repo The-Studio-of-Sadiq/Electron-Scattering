@@ -263,7 +263,11 @@ export default function App() {
         )}
 
         {activeTab === 'deploy' && (
-          <RenderDeploymentModal fortranStatus={fortranStatus} />
+          <RenderDeploymentModal
+            fortranStatus={fortranStatus}
+            enginePreference={enginePreference}
+            setEnginePreference={setEnginePreference}
+          />
         )}
 
         {activeTab === 'physics' && (
