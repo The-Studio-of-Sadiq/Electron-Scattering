@@ -452,6 +452,16 @@ export const SavedRunsManager: React.FC<SavedRunsManagerProps> = ({
                   }}
                 />
                 <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#cbd5e1',
+                    color: '#000000',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)',
+                    padding: '10px 14px',
+                  }}
+                  labelStyle={{ color: '#000000', fontWeight: 'bold', fontSize: '13px', marginBottom: '4px' }}
+                  itemStyle={{ color: '#000000', fontWeight: 600, fontSize: '12px' }}
                   formatter={(val: number) => [
                     plotVariable === 'dcs' ? `${val.toExponential(4)} cm²/sr` : val.toFixed(4),
                     '',

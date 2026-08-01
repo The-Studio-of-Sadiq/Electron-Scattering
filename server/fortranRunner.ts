@@ -120,6 +120,11 @@ export function ensureFortranBinaryCompiled(): string | null {
 }
 
 export function runOfficialFortranSimulation(params: ElsepaInputParams): SimulationResult {
+  if ((params as any).forceEngine === 'typescript' || (params as any).forceEngine === 'ts') {
+    console.log('Explicitly requested TypeScript Dirac solver engine.');
+    return runDiracPartialWaveSimulation(params);
+  }
+
   const binaryPath = ensureFortranBinaryCompiled();
   if (!binaryPath) {
     console.log('Fortran binary not available. Using TypeScript Dirac solver.');
@@ -432,8 +437,14 @@ export function ensureElscatmBinaryCompiled(): string | null {
 }
 
 export function runOfficialMolecularFortranSimulation(params: MolecularInputParams): MolecularSimulationResult {
-  const binaryPath = ensureElscatmBinaryCompiled();
   const startTime = performance.now();
+  
+  if ((params as any).forceEngine === 'typescript' || (params as any).forceEngine === 'ts') {
+    console.log('Explicitly requested TypeScript molecular solver engine.');
+    return runFallbackMolecularSimulation(params, startTime, '');
+  }
+
+  const binaryPath = ensureElscatmBinaryCompiled();
   const rootDir = process.cwd();
 
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;
@@ -645,6 +656,246 @@ function runFallbackMolecularSimulation(params: MolecularInputParams, startTime:
       engineUsed: 'salvat-official-fortran',
     },
     elsepaInputFileText: inputContent,
+  };
+}
+
+// ============================================================================
+// FORTRAN SOURCE CODE FILE MANAGEMENT & RECOMPILATION ENGINE
+// ============================================================================
+
+const FORTRAN_DIR = path.join(process.cwd(), 'fortran');
+const ORIGINALS_DIR = path.join(FORTRAN_DIR, '.originals');
+const TS_ENGINE_PATH = path.join(process.cwd(), 'src', 'physics', 'elsepaPhysicsEngine.ts');
+const TS_ORIGINAL_PATH = path.join(ORIGINALS_DIR, 'elsepaPhysicsEngine.ts');
+
+export function initFortranOriginals(): void {
+  try {
+    if (!fs.existsSync(ORIGINALS_DIR)) {
+      fs.mkdirSync(ORIGINALS_DIR, { recursive: true });
+    }
+    if (fs.existsSync(FORTRAN_DIR)) {
+      const files = fs.readdirSync(FORTRAN_DIR);
+      for (const f of files) {
+        if (f.endsWith('.f')) {
+          const srcPath = path.join(FORTRAN_DIR, f);
+          const origPath = path.join(ORIGINALS_DIR, f);
+          if (!fs.existsSync(origPath) && fs.statSync(srcPath).isFile()) {
+            fs.copyFileSync(srcPath, origPath);
+          }
+        }
+      }
+    }
+    if (fs.existsSync(TS_ENGINE_PATH) && !fs.existsSync(TS_ORIGINAL_PATH)) {
+      fs.copyFileSync(TS_ENGINE_PATH, TS_ORIGINAL_PATH);
+    }
+  } catch (err) {
+    console.warn('Error initializing Fortran/TS originals backup:', err);
+  }
+}
+
+export function getFortranFileList() {
+  initFortranOriginals();
+  try {
+    if (!fs.existsSync(FORTRAN_DIR)) return [];
+    const files = fs.readdirSync(FORTRAN_DIR).filter((f) => f.endsWith('.f'));
+    return files.map((filename) => {
+      const filePath = path.join(FORTRAN_DIR, filename);
+      const origPath = path.join(ORIGINALS_DIR, filename);
+      const stats = fs.statSync(filePath);
+      const content = fs.readFileSync(filePath, 'utf-8');
+
+      let modified = false;
+      if (fs.existsSync(origPath)) {
+        const origContent = fs.readFileSync(origPath, 'utf-8');
+        modified = content !== origContent;
+      }
+
+      return {
+        name: filename,
+        lineCount: content.split('\n').length,
+        sizeBytes: stats.size,
+        modified,
+      };
+    });
+  } catch (err) {
+    console.error('Error getting Fortran file list:', err);
+    return [];
+  }
+}
+
+export function getFortranFileContent(filename: string) {
+  initFortranOriginals();
+  const safeFilename = path.basename(filename);
+  const filePath = path.join(FORTRAN_DIR, safeFilename);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Fortran file ${safeFilename} does not exist`);
+  }
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const origPath = path.join(ORIGINALS_DIR, safeFilename);
+  let modified = false;
+  if (fs.existsSync(origPath)) {
+    const origContent = fs.readFileSync(origPath, 'utf-8');
+    modified = content !== origContent;
+  }
+  return {
+    name: safeFilename,
+    content,
+    modified,
+  };
+}
+
+export function saveFortranFileContent(filename: string, content: string) {
+  initFortranOriginals();
+  const safeFilename = path.basename(filename);
+  const filePath = path.join(FORTRAN_DIR, safeFilename);
+  fs.writeFileSync(filePath, content, 'utf-8');
+
+  // Invalidate compiled binaries cache
+  compiledBinaryPath = null;
+  compiledMolBinaryPath = null;
+  const rootDir = process.cwd();
+  try { fs.unlinkSync(path.join(rootDir, 'elsepa_exec')); } catch (_) {}
+  try { fs.unlinkSync(path.join(rootDir, 'elscatm_exec')); } catch (_) {}
+
+  // Attempt re-compilation immediately and return compilation log
+  return triggerFortranCompilation();
+}
+
+export function resetFortranFilesToOriginal(filename?: string) {
+  initFortranOriginals();
+  if (filename) {
+    const safeFilename = path.basename(filename);
+    const origPath = path.join(ORIGINALS_DIR, safeFilename);
+    const filePath = path.join(FORTRAN_DIR, safeFilename);
+    if (fs.existsSync(origPath)) {
+      fs.copyFileSync(origPath, filePath);
+    }
+  } else {
+    if (fs.existsSync(ORIGINALS_DIR)) {
+      const origFiles = fs.readdirSync(ORIGINALS_DIR);
+      for (const f of origFiles) {
+        if (f.endsWith('.f')) {
+          fs.copyFileSync(path.join(ORIGINALS_DIR, f), path.join(FORTRAN_DIR, f));
+        }
+      }
+    }
+  }
+
+  // Invalidate compiled binaries cache
+  compiledBinaryPath = null;
+  compiledMolBinaryPath = null;
+  const rootDir = process.cwd();
+  try { fs.unlinkSync(path.join(rootDir, 'elsepa_exec')); } catch (_) {}
+  try { fs.unlinkSync(path.join(rootDir, 'elscatm_exec')); } catch (_) {}
+
+  return triggerFortranCompilation();
+}
+
+export function triggerFortranCompilation() {
+  const rootDir = process.cwd();
+  const fortranDir = path.join(rootDir, 'fortran');
+  const atomicTarget = path.join(rootDir, 'elsepa_exec');
+  const molTarget = path.join(rootDir, 'elscatm_exec');
+
+  let logs = `[Fortran Build Manager] Starting gfortran compilation sweep...\n`;
+
+  if (!checkGFortranAvailable()) {
+    logs += `[WARN] gfortran compiler binary not detected in runtime environment.\n`;
+    logs += `[INFO] Fortran source files updated successfully on disk.\n`;
+    logs += `[INFO] When running simulations without gfortran, the workbench automatically uses the high-precision Dirac partial-wave TypeScript engine.\n`;
+    return {
+      success: true,
+      compiled: false,
+      hasGFortran: false,
+      logs,
+    };
+  }
+
+  let atomicOk = false;
+  let molOk = false;
+
+  try {
+    logs += `[gfortran] Compiling Atomic ELSEPA executable (elsepa_exec)...\n`;
+    const atomicOutput = execSync(
+      `gfortran -O2 -I"${fortranDir}" -o "${atomicTarget}" "${path.join(fortranDir, 'elscata.f')}" "${path.join(fortranDir, 'elsepa.f')}"`,
+      { encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
+    );
+    if (atomicOutput) logs += atomicOutput + '\n';
+    if (checkAndCleanBinary(atomicTarget)) {
+      compiledBinaryPath = atomicTarget;
+      atomicOk = true;
+      logs += `[SUCCESS] Atomic ELSEPA binary compiled successfully (${atomicTarget})\n`;
+    }
+  } catch (err: any) {
+    const errMsg = err?.stderr?.toString() || err?.stdout?.toString() || err?.message || 'Unknown compile error';
+    logs += `[ERROR] Atomic ELSEPA compilation failed:\n${errMsg}\n`;
+  }
+
+  try {
+    logs += `[gfortran] Compiling Molecular ELSCATM executable (elscatm_exec)...\n`;
+    const molOutput = execSync(
+      `gfortran -O2 -I"${fortranDir}" -o "${molTarget}" "${path.join(fortranDir, 'elscatm.f')}" "${path.join(fortranDir, 'elsepa.f')}"`,
+      { encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
+    );
+    if (molOutput) logs += molOutput + '\n';
+    if (checkAndCleanBinary(molTarget)) {
+      compiledMolBinaryPath = molTarget;
+      molOk = true;
+      logs += `[SUCCESS] Molecular ELSCATM binary compiled successfully (${molTarget})\n`;
+    }
+  } catch (err: any) {
+    const errMsg = err?.stderr?.toString() || err?.stdout?.toString() || err?.message || 'Unknown compile error';
+    logs += `[ERROR] Molecular ELSCATM compilation failed:\n${errMsg}\n`;
+  }
+
+  const compiled = atomicOk || molOk;
+  return {
+    success: compiled,
+    compiled,
+    hasGFortran: true,
+    logs,
+  };
+}
+
+// ============================================================================
+// TYPESCRIPT PHYSICS ENGINE FILE MANAGEMENT
+// ============================================================================
+
+export function getTsEngineContent() {
+  initFortranOriginals();
+  if (!fs.existsSync(TS_ENGINE_PATH)) {
+    throw new Error('TypeScript physics engine file does not exist');
+  }
+  const content = fs.readFileSync(TS_ENGINE_PATH, 'utf-8');
+  let modified = false;
+  if (fs.existsSync(TS_ORIGINAL_PATH)) {
+    const origContent = fs.readFileSync(TS_ORIGINAL_PATH, 'utf-8');
+    modified = content !== origContent;
+  }
+  return {
+    name: 'elsepaPhysicsEngine.ts',
+    content,
+    modified,
+  };
+}
+
+export function saveTsEngineContent(content: string) {
+  initFortranOriginals();
+  fs.writeFileSync(TS_ENGINE_PATH, content, 'utf-8');
+  return {
+    success: true,
+    logs: `[TypeScript Engine] Successfully saved elsepaPhysicsEngine.ts to disk.\nNext simulation runs using the TypeScript engine will evaluate updated Dirac partial-wave routines.\n`,
+  };
+}
+
+export function resetTsEngineContent() {
+  initFortranOriginals();
+  if (fs.existsSync(TS_ORIGINAL_PATH)) {
+    fs.copyFileSync(TS_ORIGINAL_PATH, TS_ENGINE_PATH);
+  }
+  return {
+    success: true,
+    logs: `[TypeScript Engine] Successfully restored elsepaPhysicsEngine.ts to original default Dirac solver implementation.\n`,
   };
 }
 
