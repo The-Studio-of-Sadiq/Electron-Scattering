@@ -31,6 +31,7 @@ import { MathTex, LaTeXText } from './LaTeX';
 interface MolecularWorkbenchProps {
   onSimulationComplete?: (result: MolecularSimulationResult) => void;
   openPeriodicTableForIndex?: (index: number) => void;
+  enginePreference?: 'gfortran' | 'typescript';
 }
 
 const PRESET_MOLECULES: Record<string, { name: string; polarizability: number; atoms: MolecularAtom[] }> = {
@@ -106,6 +107,7 @@ const PRESET_MOLECULES: Record<string, { name: string; polarizability: number; a
 
 export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
   onSimulationComplete,
+  enginePreference = 'gfortran',
 }) => {
   const [selectedPreset, setSelectedPreset] = useState<string>('water');
   const [moleculeName, setMoleculeName] = useState<string>('Water (H₂O)');
@@ -124,6 +126,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
   const [simResult, setSimResult] = useState<MolecularSimulationResult | null>(null);
   const [showLogScale, setShowLogScale] = useState<boolean>(true);
   const [savedNotification, setSavedNotification] = useState<boolean>(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState<boolean>(false);
 
   const handleSelectPreset = (key: string) => {
     setSelectedPreset(key);
@@ -156,7 +159,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
     setIsLoading(true);
     setSavedNotification(false);
 
-    const params: MolecularInputParams = {
+    const params: MolecularInputParams & { forceEngine?: string } = {
       moleculeName,
       atoms,
       projectile,
@@ -167,6 +170,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
       absorptionModel,
       absorptionStrength,
       excitationEnergy,
+      forceEngine: enginePreference,
     };
 
     try {
@@ -183,7 +187,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
       const data: MolecularSimulationResult = await response.json();
       setSimResult(data);
 
-      // Save automatically to local state
+      // Save automatically to local storage history
       saveMolecularSimulationRun(data);
       setSavedNotification(true);
       setTimeout(() => setSavedNotification(false), 3000);
@@ -196,6 +200,38 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveToLocalStorage = () => {
+    if (!simResult) return;
+    saveMolecularSimulationRun(simResult, `${simResult.params.moleculeName} (Saved Run)`);
+    setSavedNotification(true);
+    setTimeout(() => setSavedNotification(false), 3000);
+  };
+
+  const handleDownloadCsv = () => {
+    if (!simResult) return;
+    const headers = 'Angle_deg,Coherent_DCS_cm2_sr,Incoherent_DCS_cm2_sr,Coherent_DCS_a02_sr,Incoherent_DCS_a02_sr\n';
+    const rows = simResult.scatteringData
+      .map((p) => `${p.angleDeg},${p.dcsCohCm2},${p.dcsIncohCm2},${p.dcsCohAu},${p.dcsIncohAu}`)
+      .join('\n');
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ELSCATM_${simResult.params.moleculeName.replace(/\s+/g, '_')}_${simResult.params.energyEv}eV_DCS.csv`;
+    a.click();
+  };
+
+  const handleDownloadJson = () => {
+    if (!simResult) return;
+    const jsonStr = JSON.stringify(simResult, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ELSCATM_${simResult.params.moleculeName.replace(/\s+/g, '_')}_${simResult.params.energyEv}eV_Result.json`;
+    a.click();
   };
 
   return (
@@ -527,7 +563,62 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
               </h3>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                id="btn-save-molecular-run"
+                onClick={handleSaveToLocalStorage}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all"
+                title="Save molecular run parameters and results to browser LocalStorage history"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Save to History</span>
+              </button>
+
+              <div className="relative">
+                <button
+                  id="btn-download-molecular-data"
+                  onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Data</span>
+                </button>
+
+                {showDownloadMenu && (
+                  <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1 font-sans text-xs">
+                    <button
+                      id="btn-export-mol-csv"
+                      onClick={() => {
+                        handleDownloadCsv();
+                        setShowDownloadMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-emerald-50 text-slate-800 flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4 text-emerald-600" />
+                      <div>
+                        <div className="font-bold">Export CSV Dataset</div>
+                        <div className="text-[10px] text-slate-500">Coherent & incoherent DCS table</div>
+                      </div>
+                    </button>
+
+                    <button
+                      id="btn-export-mol-json"
+                      onClick={() => {
+                        handleDownloadJson();
+                        setShowDownloadMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-indigo-50 text-slate-800 flex items-center gap-2 border-t border-slate-100"
+                    >
+                      <Download className="w-4 h-4 text-indigo-600" />
+                      <div>
+                        <div className="font-bold">Export JSON File</div>
+                        <div className="text-[10px] text-slate-500">Full parameters & physics data</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => setShowLogScale(!showLogScale)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
@@ -536,7 +627,7 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
                     : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
                 }`}
               >
-                {showLogScale ? 'Logarithmic Scale (Y)' : 'Linear Scale'}
+                {showLogScale ? 'Log Scale (Y)' : 'Linear Scale'}
               </button>
             </div>
           </div>

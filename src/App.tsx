@@ -52,31 +52,40 @@ export default function App() {
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [fortranStatus, setFortranStatus] = useState<FortranServerStatus | null>(null);
+  const [enginePreference, setEnginePreference] = useState<'gfortran' | 'typescript'>('gfortran');
   const [uploadedDatasets, setUploadedDatasets] = useState<UploadedDataset[]>([]);
+  const [selectedOverlayId, setSelectedOverlayId] = useState<string>('');
 
-  // Fetch Fortran status on mount
+  // Fetch Fortran status and datasets on mount (No auto-run on startup to conserve compute)
   useEffect(() => {
     fetch('/api/fortran-status')
       .then((res) => res.json())
-      .then((status) => setFortranStatus(status))
+      .then((status) => {
+        setFortranStatus(status);
+        if (status && !status.hasGFortran) {
+          setEnginePreference('typescript');
+        }
+      })
       .catch((err) => console.warn('Fortran status check failed:', err));
 
     fetch('/api/datasets')
       .then((res) => res.json())
       .then((data) => setUploadedDatasets(data))
       .catch((err) => console.warn('Fetch datasets failed:', err));
-
-    // Run initial benchmark simulation
-    runSimulation(params);
   }, []);
 
   const runSimulation = async (inputParams: ElsepaInputParams) => {
     setIsSimulating(true);
     try {
+      const payload = {
+        ...inputParams,
+        forceEngine: enginePreference,
+      };
+
       const res = await fetch('/api/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inputParams),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
@@ -84,7 +93,6 @@ export default function App() {
         setSimulationResult(result);
         saveAtomicSimulationRun(result);
       } else {
-
         console.error('Simulation server error');
       }
     } catch (err) {
@@ -207,6 +215,8 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         fortranStatus={fortranStatus}
+        enginePreference={enginePreference}
+        setEnginePreference={setEnginePreference}
         onLoadPreset={handleLoadPreset}
         activePresetKey={getMatchingPresetKey(params)}
         theme={theme}
@@ -227,11 +237,13 @@ export default function App() {
             <ResultsDashboard
               result={simulationResult}
               uploadedDatasets={uploadedDatasets}
+              selectedOverlayId={selectedOverlayId}
+              setSelectedOverlayId={setSelectedOverlayId}
             />
           </div>
         )}
 
-        {activeTab === 'molecular' && <MolecularWorkbench />}
+        {activeTab === 'molecular' && <MolecularWorkbench enginePreference={enginePreference} />}
 
         {activeTab === 'sweep' && <EnergySweepViewer baseParams={params} />}
 
@@ -240,11 +252,13 @@ export default function App() {
         )}
 
         {activeTab === 'datasets' && (
-
           <DatasetUploadPanel
             uploadedDatasets={uploadedDatasets}
             setUploadedDatasets={setUploadedDatasets}
-            onSelectOverlay={() => setActiveTab('workbench')}
+            onSelectOverlay={(id) => {
+              setSelectedOverlayId(id);
+              setActiveTab('workbench');
+            }}
           />
         )}
 

@@ -11,6 +11,7 @@ import {
   Moon,
   Smartphone,
   BookOpen,
+  Cpu,
 } from 'lucide-react';
 import { FortranServerStatus } from '../types';
 import { ElectronScatteringLogo } from './Logo';
@@ -19,6 +20,8 @@ interface HeaderProps {
   activeTab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics';
   setActiveTab: (tab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics') => void;
   fortranStatus: FortranServerStatus | null;
+  enginePreference: 'gfortran' | 'typescript';
+  setEnginePreference: (engine: 'gfortran' | 'typescript') => void;
   onLoadPreset: (presetKey: string) => void;
   activePresetKey: string;
   theme: 'dark' | 'light';
@@ -29,6 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   fortranStatus,
+  enginePreference,
+  setEnginePreference,
   onLoadPreset,
   activePresetKey,
   theme,
@@ -162,24 +167,47 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="hidden lg:flex items-center space-x-2">
-              {/* Fortran Status Badge */}
+              {/* Interactive Physics Engine Switcher Toggle */}
               <div
-                id="fortran-status-badge"
-                className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                  fortranStatus?.hasGFortran
-                    ? theme === 'light'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                    : theme === 'light'
-                    ? 'bg-amber-50 text-amber-800 border-amber-300'
-                    : 'bg-amber-950/80 text-amber-300 border-amber-800'
+                id="engine-selector-group"
+                className={`flex items-center space-x-1 p-0.5 rounded-lg border text-xs font-semibold ${
+                  theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-slate-800/80 border-slate-700'
                 }`}
-                title={fortranStatus?.versionInfo || 'Fortran compiler status'}
               >
-                <Server className="w-3.5 h-3.5" />
-                <span>
-                  {fortranStatus?.hasGFortran ? 'gfortran Native' : 'Dirac TS Engine'}
-                </span>
+                <button
+                  id="engine-btn-gfortran"
+                  onClick={() => setEnginePreference('gfortran')}
+                  title={fortranStatus?.hasGFortran ? "Use compiled gFortran native ELSEPA binary" : "gFortran not available (will fallback to TS engine)"}
+                  className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1 ${
+                    enginePreference === 'gfortran'
+                      ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                      : theme === 'light'
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <Server className="w-3.5 h-3.5" />
+                  <span>gFortran Engine</span>
+                  {fortranStatus?.hasGFortran && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                  )}
+                </button>
+
+                <button
+                  id="engine-btn-typescript"
+                  onClick={() => setEnginePreference('typescript')}
+                  title="Use pure TypeScript Dirac partial-wave fallback engine"
+                  className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1 ${
+                    enginePreference === 'typescript'
+                      ? 'bg-indigo-600 text-white shadow-sm font-bold'
+                      : theme === 'light'
+                      ? 'text-slate-600 hover:text-slate-900'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <Cpu className="w-3.5 h-3.5" />
+                  <span>TypeScript Engine</span>
+                </button>
               </div>
 
               {/* PWA Install Button */}

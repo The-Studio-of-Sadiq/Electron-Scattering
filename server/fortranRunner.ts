@@ -120,6 +120,11 @@ export function ensureFortranBinaryCompiled(): string | null {
 }
 
 export function runOfficialFortranSimulation(params: ElsepaInputParams): SimulationResult {
+  if ((params as any).forceEngine === 'typescript' || (params as any).forceEngine === 'ts') {
+    console.log('Explicitly requested TypeScript Dirac solver engine.');
+    return runDiracPartialWaveSimulation(params);
+  }
+
   const binaryPath = ensureFortranBinaryCompiled();
   if (!binaryPath) {
     console.log('Fortran binary not available. Using TypeScript Dirac solver.');
@@ -432,8 +437,14 @@ export function ensureElscatmBinaryCompiled(): string | null {
 }
 
 export function runOfficialMolecularFortranSimulation(params: MolecularInputParams): MolecularSimulationResult {
-  const binaryPath = ensureElscatmBinaryCompiled();
   const startTime = performance.now();
+  
+  if ((params as any).forceEngine === 'typescript' || (params as any).forceEngine === 'ts') {
+    console.log('Explicitly requested TypeScript molecular solver engine.');
+    return runFallbackMolecularSimulation(params, startTime, '');
+  }
+
+  const binaryPath = ensureElscatmBinaryCompiled();
   const rootDir = process.cwd();
 
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;

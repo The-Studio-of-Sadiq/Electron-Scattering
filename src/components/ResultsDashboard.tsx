@@ -32,26 +32,38 @@ import { MathTex, LaTeXText } from './LaTeX';
 interface ResultsDashboardProps {
   result: SimulationResult | null;
   uploadedDatasets: UploadedDataset[];
+  selectedOverlayId?: string;
+  setSelectedOverlayId?: (id: string) => void;
 }
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   result,
   uploadedDatasets,
+  selectedOverlayId: propsSelectedOverlayId,
+  setSelectedOverlayId: propsSetSelectedOverlayId,
 }) => {
   const [activeView, setActiveView] = useState<'dcs' | 'spin' | 'polar' | 'potentials' | 'phases' | 'file' | 'table'>('dcs');
   const [useLogScale, setUseLogScale] = useState(true);
   const [dcsUnit, setDcsUnit] = useState<'au' | 'cm2' | 'angstrom2'>('au');
-  const [selectedOverlayId, setSelectedOverlayId] = useState<string>('');
+  const [internalOverlayId, setInternalOverlayId] = useState<string>('');
   const [copiedFile, setCopiedFile] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+
+  const activeOverlayId = propsSelectedOverlayId !== undefined ? propsSelectedOverlayId : internalOverlayId;
+  const handleOverlayChange = (id: string) => {
+    setInternalOverlayId(id);
+    if (propsSetSelectedOverlayId) {
+      propsSetSelectedOverlayId(id);
+    }
+  };
 
   if (!result) {
     return (
       <div id="no-results-placeholder" className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
-        <Activity className="w-12 h-12 text-slate-600 mx-auto mb-3 animate-pulse" />
-        <h3 className="text-lg font-bold text-slate-200">No Simulation Results Yet</h3>
-        <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
-          Configure atomic parameters above and click "Run ELSEPA Simulation" to solve Dirac partial waves and plot differential cross sections in real time.
+        <Activity className="w-12 h-12 text-indigo-500 mx-auto mb-3 animate-bounce" />
+        <h3 className="text-xl font-bold text-slate-100">Ready for Dirac Partial-Wave Simulation</h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto mt-2 leading-relaxed">
+          Select an atomic preset or customize target parameters above, then click <strong className="text-indigo-400 font-bold">"Run ELSEPA Simulation"</strong> to calculate differential cross sections and spin polarization observables.
         </p>
       </div>
     );
@@ -60,9 +72,28 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const { summary, scatteringData, potentialProfile, phaseShifts, elsepaInputFileText, element } = result;
 
   // Selected Overlay dataset
-  const overlayDataset = uploadedDatasets.find((d) => d.id === selectedOverlayId);
+  const overlayDataset = uploadedDatasets.find((d) => d.id === activeOverlayId);
 
-  // Prepare chart data for DCS with optional overlay
+  // Compute unit scaling factor for overlay dataset
+  let overlayScaleFactor = 1.0;
+  if (overlayDataset && overlayDataset.parsedData.length > 0) {
+    const validY = overlayDataset.parsedData.map((dp) => dp.y).filter((y) => !isNaN(y) && y > 0);
+    const avgY = validY.length > 0 ? validY.reduce((a, b) => a + b, 0) / validY.length : 1.0;
+    const isDatasetInCm2 = avgY < 1e-10;
+
+    if (isDatasetInCm2) {
+      if (dcsUnit === 'cm2') overlayScaleFactor = 1.0;
+      else if (dcsUnit === 'au') overlayScaleFactor = 1.0 / 2.8002852e-17;
+      else if (dcsUnit === 'angstrom2') overlayScaleFactor = 1.0 / 1e-16;
+    } else {
+      if (dcsUnit === 'au') overlayScaleFactor = 1.0;
+      else if (dcsUnit === 'cm2') overlayScaleFactor = 2.8002852e-17;
+      else if (dcsUnit === 'angstrom2') overlayScaleFactor = 0.28002852;
+    }
+  }
+
+  // Build chart data including simulation and optional overlay dataset
+  const stepTolerance = Math.max(1.5, (result.params.angleStep || 1.0) * 1.5);
   const dcsChartData = scatteringData.map((pt) => {
     const val =
       dcsUnit === 'cm2'
@@ -71,13 +102,21 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         ? pt.dcsAngstrom2
         : pt.dcsAu;
 
-    // Find matching point in overlay dataset if any
     let overlayVal: number | undefined = undefined;
     if (overlayDataset && overlayDataset.parsedData.length > 0) {
-      const match = overlayDataset.parsedData.find(
-        (dp) => Math.abs(dp.x - pt.angleDeg) < (result.params.angleStep || 1.0)
-      );
-      if (match) overlayVal = match.y;
+      // Find nearest data point in overlay dataset
+      let closestDp = overlayDataset.parsedData[0];
+      let minDiff = Math.abs(closestDp.x - pt.angleDeg);
+      for (let i = 1; i < overlayDataset.parsedData.length; i++) {
+        const diff = Math.abs(overlayDataset.parsedData[i].x - pt.angleDeg);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestDp = overlayDataset.parsedData[i];
+        }
+      }
+      if (minDiff <= stepTolerance) {
+        overlayVal = closestDp.y * overlayScaleFactor;
+      }
     }
 
     return {
@@ -318,9 +357,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               {/* Dataset Overlay Selector */}
               {uploadedDatasets.length > 0 && (
                 <select
-                  value={selectedOverlayId}
-                  onChange={(e) => setSelectedOverlayId(e.target.value)}
-                  className="bg-white border border-slate-300 text-slate-800 text-xs rounded-md px-2.5 py-1.5 focus:outline-none"
+                  value={activeOverlayId}
+                  onChange={(e) => handleOverlayChange(e.target.value)}
+                  className="bg-white border border-slate-300 text-slate-800 text-xs rounded-md px-2.5 py-1.5 focus:outline-none font-semibold"
                 >
                   <option value="">-- No Overlay Dataset --</option>
                   {uploadedDatasets.map((ds) => (
