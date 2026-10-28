@@ -103,31 +103,58 @@ function runNative(binary: string, input: string): Files {
   }
 }
 
-// Every number in a dcs file: header cross sections plus the DCS table.
-function numbers(text: string): number[] {
-  return (text.replace(/\r/g, '').match(/[-+]?\d+\.\d+E[-+]\d+/gi) || []).map(Number);
+// Sherman function S (|S| <= 1) is compared absolutely: where S is ~1e-10 the
+// last printed digit is floating-point noise between libf2c and gfortran's
+// libm, far below ELSEPA's own error estimate printed on the same line.
+const SHERMAN_ABS_TOL = 1e-9;
+const NUMBER = /[-+]?\d+\.\d+E[-+]\d+/gi;
+
+interface Value {
+  value: number;
+  sherman: boolean;
+  line: string;
+}
+
+// Every number in a dcs file: header cross sections plus the DCS table. In the
+// table rows (THETA, MU, DCS, DCS, Sherman[, error]) column 5 is the Sherman function.
+function values(text: string): Value[] {
+  const out: Value[] = [];
+  for (const line of text.replace(/\r/g, '').split('\n')) {
+    const isTableRow = !line.trim().startsWith('#');
+    (line.match(NUMBER) || []).forEach((tok, col) => out.push({ value: Number(tok), sherman: isTableRow && col === 4, line: line.trim() }));
+  }
+  return out;
 }
 
 function compare(a: string, b: string): { count: number; maxRel: number; worst?: string; error?: string } {
-  const x = numbers(a);
-  const y = numbers(b);
+  const x = values(a);
+  const y = values(b);
   if (x.length === 0) return { count: 0, maxRel: Infinity, error: 'no numbers in output' };
   if (x.length !== y.length) return { count: x.length, maxRel: Infinity, error: `${x.length} vs ${y.length} values` };
   let maxRel = 0;
   let worst = -1;
+  let shermanFailure: string | undefined;
   for (let i = 0; i < x.length; i++) {
-    const scale = Math.max(Math.abs(x[i]), Math.abs(y[i]));
+    if (x[i].sherman) {
+      const diff = Math.abs(x[i].value - y[i].value);
+      const rel = diff / Math.max(Math.abs(x[i].value), Math.abs(y[i].value), 1e-300);
+      if (diff > SHERMAN_ABS_TOL && rel > REL_TOL && !shermanFailure) {
+        shermanFailure = `Sherman ${x[i].value} vs ${y[i].value} in line "${x[i].line}"`;
+      }
+      continue;
+    }
+    const scale = Math.max(Math.abs(x[i].value), Math.abs(y[i].value));
     if (scale < 1e-30) continue;
-    const rel = Math.abs(x[i] - y[i]) / scale;
+    const rel = Math.abs(x[i].value - y[i].value) / scale;
     if (rel > maxRel) {
       maxRel = rel;
       worst = i;
     }
   }
+  if (shermanFailure) return { count: x.length, maxRel: Infinity, error: shermanFailure };
   if (worst < 0) return { count: x.length, maxRel };
   // Show the line holding the worst value so a failure is easy to interpret.
-  const line = a.replace(/\r/g, '').split('\n').find((l) => (l.match(/[-+]?\d+\.\d+E[-+]\d+/gi) || []).length && l.includes(a.replace(/\r/g, '').match(/[-+]?\d+\.\d+E[-+]\d+/gi)![worst]));
-  return { count: x.length, maxRel, worst: `value #${worst}: ${x[worst]} vs ${y[worst]} in line "${line?.trim()}"` };
+  return { count: x.length, maxRel, worst: `${x[worst].value} vs ${y[worst].value} in line "${x[worst].line}"` };
 }
 
 const native: Record<Program, string | undefined> = {
