@@ -22,29 +22,39 @@ export function buildAtomicInput(params: ElsepaInputParams): string {
   const nucModInt = params.nuclearModel === 'point' ? 1 : params.nuclearModel === 'uniform' ? 2 : 3;
   const melecInt = params.densityModel === 'dirac-fock' ? 4 : params.densityModel === 'thomas-fermi' ? 1 : 4;
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;
-  const mcpolInt = params.polarizationModel === 'none' ? 0 : 2;
+  // ELSCATA codes: MCPOL 0=none, 1=Buckingham, 2=LDA
+  const mcpolInt = params.polarizationModel === 'buckingham' ? 1 : 0;
   const mabsInt = params.absorptionModel === 'staszewska-lda' ? 1 : 0;
 
   // Convert polarizability from a0^3 to cm^3 (1 a0^3 = 1.481847e-25 cm^3)
-  const polarCm3 = (params.polarizability * 1.4818474e-25).toExponential(6);
+  const polarCm3 = (params.polarizability * 1.4818474e-25).toExponential(5);
 
-  return `IZ      ${params.z}
-MNUCL   ${nucModInt}
-NELEC   ${params.z}
-MELEC   ${melecInt}
-MUFFIN  0
-RMUF    0
-IELEC   ${params.projectile}
-MEXCH   ${mexchInt}
-MCPOL   ${mcpolInt}
-VPOLA   ${polarCm3}
-VPOLB   -1
-MABS    ${mabsInt}
-VABSA   ${params.absorptionStrength || 2.0}
-VABSD   -1.0
-IHEF    2
-EV      ${params.energyEv.toExponential(6)}
-`;
+  return [
+    keywordLine('IZ', params.z),
+    keywordLine('MNUCL', nucModInt),
+    keywordLine('NELEC', params.z),
+    keywordLine('MELEC', melecInt),
+    keywordLine('MUFFIN', 0),
+    keywordLine('RMUF', 0),
+    keywordLine('IELEC', params.projectile),
+    keywordLine('MEXCH', mexchInt),
+    keywordLine('MCPOL', mcpolInt),
+    keywordLine('VPOLA', polarCm3),
+    keywordLine('VPOLB', -1),
+    keywordLine('MABS', mabsInt),
+    keywordLine('VABSA', params.absorptionStrength || 2.0),
+    keywordLine('VABSD', '-1.0'),
+    keywordLine('IHEF', 2),
+    keywordLine('EV', params.energyEv.toExponential(5)),
+  ].join('\n') + '\n';
+}
+
+// ELSCATA reads each line as READ(5,'(A6,1X,A12)'): keyword in columns 1-6 and
+// the value in columns 8-19, so values must start at column 8 and fit 12 chars.
+function keywordLine(keyword: string, value: number | string): string {
+  const text = String(value);
+  if (text.length > 12) throw new Error(`ELSEPA input value for ${keyword} is longer than 12 characters: ${text}`);
+  return `${keyword.padEnd(6)} ${text}`;
 }
 
 const isDataLine = (trimmed: string) => !!trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('-');
@@ -179,6 +189,9 @@ export function parseAtomicOutputs(
   const gammaRelativistic = 1 + eKinAu / (c * c);
   const betaRelativistic = Math.sqrt(Math.max(0, 1 - 1 / (gammaRelativistic * gammaRelativistic)));
 
+  // ELSEPA writes the header before computing; a STOP mid-run leaves no table.
+  if (scatteringData.length === 0 || !sigmaElAu) return null;
+
   return {
     params,
     element: getElementByZ(params.z),
@@ -205,7 +218,8 @@ export function parseAtomicOutputs(
 
 export function buildMolecularInput(params: MolecularInputParams): string {
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;
-  const mcpolInt = params.polarizationModel === 'none' ? 0 : 2;
+  // ELSCATM codes: MCPOL 0=none, 1=Buckingham, 2=LDA
+  const mcpolInt = params.polarizationModel === 'buckingham' ? 1 : 0;
   const mabsInt = params.absorptionModel === 'staszewska-lda' ? 1 : 0;
   const vabsA = params.absorptionStrength ?? 2.0;
   const fExce = params.excitationEnergy ?? 6.20;
@@ -285,6 +299,8 @@ export function parseMolecularOutputs(
       }
     }
   }
+
+  if (scatteringData.length === 0) return null;
 
   return {
     params,
