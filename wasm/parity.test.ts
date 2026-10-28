@@ -108,18 +108,26 @@ function numbers(text: string): number[] {
   return (text.replace(/\r/g, '').match(/[-+]?\d+\.\d+E[-+]\d+/gi) || []).map(Number);
 }
 
-function compare(a: string, b: string): { count: number; maxRel: number; error?: string } {
+function compare(a: string, b: string): { count: number; maxRel: number; worst?: string; error?: string } {
   const x = numbers(a);
   const y = numbers(b);
   if (x.length === 0) return { count: 0, maxRel: Infinity, error: 'no numbers in output' };
   if (x.length !== y.length) return { count: x.length, maxRel: Infinity, error: `${x.length} vs ${y.length} values` };
   let maxRel = 0;
+  let worst = -1;
   for (let i = 0; i < x.length; i++) {
     const scale = Math.max(Math.abs(x[i]), Math.abs(y[i]));
     if (scale < 1e-30) continue;
-    maxRel = Math.max(maxRel, Math.abs(x[i] - y[i]) / scale);
+    const rel = Math.abs(x[i] - y[i]) / scale;
+    if (rel > maxRel) {
+      maxRel = rel;
+      worst = i;
+    }
   }
-  return { count: x.length, maxRel };
+  if (worst < 0) return { count: x.length, maxRel };
+  // Show the line holding the worst value so a failure is easy to interpret.
+  const line = a.replace(/\r/g, '').split('\n').find((l) => (l.match(/[-+]?\d+\.\d+E[-+]\d+/gi) || []).length && l.includes(a.replace(/\r/g, '').match(/[-+]?\d+\.\d+E[-+]\d+/gi)![worst]));
+  return { count: x.length, maxRel, worst: `value #${worst}: ${x[worst]} vs ${y[worst]} in line "${line?.trim()}"` };
 }
 
 const native: Record<Program, string | undefined> = {
@@ -134,7 +142,7 @@ let failures = 0;
 const report = (name: string, check: string, r: ReturnType<typeof compare>) => {
   const ok = !r.error && r.maxRel <= REL_TOL;
   if (!ok) failures++;
-  const detail = r.error ?? `${r.count} values, max rel diff ${r.maxRel.toExponential(1)}`;
+  const detail = r.error ?? `${r.count} values, max rel diff ${r.maxRel.toExponential(1)}${ok || !r.worst ? '' : `; ${r.worst}`}`;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} [${check}] ${detail}`);
 };
 
