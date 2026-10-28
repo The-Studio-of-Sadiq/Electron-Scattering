@@ -1,0 +1,4 @@
+# Packaged ELSEPA WebAssembly: byte offsets in elsepa.js index into elsepa.data,
+# so these must never get line-ending conversion.
+public/elsepa/* binary
+*.sh text eol=lf

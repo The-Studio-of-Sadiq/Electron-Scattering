@@ -1,9 +1,13 @@
-const CACHE_NAME = 'elsepa-pwa-v1';
+const CACHE_NAME = 'elsepa-pwa-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg'
+  '/favicon.svg',
+  // Official ELSEPA Fortran compiled to WebAssembly + atomic data tables (offline simulations)
+  '/elsepa/elsepa.js',
+  '/elsepa/elsepa.wasm',
+  '/elsepa/elsepa.data'
 ];
 
 // Install event - Cache core static assets

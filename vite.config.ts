@@ -6,6 +6,8 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
+    // The ELSEPA WebAssembly worker loads public/elsepa/elsepa.js via dynamic import().
+    worker: { format: 'es' as const },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
