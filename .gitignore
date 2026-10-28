@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# WebAssembly build intermediates (output in public/elsepa is committed)
+wasm/build/

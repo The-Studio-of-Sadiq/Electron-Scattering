@@ -1,0 +1,51 @@
+name: ELSEPA WebAssembly parity
+
+# Checks that the in-browser WebAssembly ELSEPA (public/elsepa) reproduces
+# native gfortran ELSEPA, including correlation-polarization and absorption
+# cases, and that both match the reference tables in validations/.
+on:
+  push:
+    paths:
+      - 'fortran/**'
+      - 'data/**'
+      - 'public/elsepa/**'
+      - 'src/physics/elsepaFortranIO.ts'
+      - 'validations/**'
+      - 'wasm/**'
+      - '.github/workflows/elsepa-parity.yml'
+  pull_request:
+    paths:
+      - 'fortran/**'
+      - 'data/**'
+      - 'public/elsepa/**'
+      - 'src/physics/elsepaFortranIO.ts'
+      - 'validations/**'
+      - 'wasm/**'
+      - '.github/workflows/elsepa-parity.yml'
+  workflow_dispatch:
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install gfortran
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gfortran
+
+      - name: Build native ELSEPA (same flags as the Dockerfile)
+        run: |
+          mkdir -p native
+          gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f fortran/elsepa.f
+          gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f fortran/elsepa.f
+
+      - name: Compare WebAssembly with gfortran and validations
+        env:
+          NATIVE_ELSCATA: ${{ github.workspace }}/native/elscata
+          NATIVE_ELSCATM: ${{ github.workspace }}/native/elscatm
+        run: npx --yes tsx@4.21.0 wasm/parity.test.ts

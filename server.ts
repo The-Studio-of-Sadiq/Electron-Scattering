@@ -21,6 +21,7 @@ import {
   resetTsEngineContent,
 } from './server/fortranRunner';
 import { ElsepaInputParams, MolecularInputParams, UploadedDataset } from './src/types';
+import { parseUploadedDataset } from './src/utils/datasetParser';
 
 import {
   OFFICIAL_ELSEPA_FORTRAN_SOURCE,
@@ -178,41 +179,7 @@ app.post('/api/upload-dataset', upload.single('datasetFile'), (req: Request, res
     const fileContent = req.file.buffer.toString('utf-8');
     const datasetType = (req.body.datasetType as any) || 'dcs-comparison';
 
-    // Parse data points line by line
-    const lines = fileContent.split('\n');
-    const parsedData: Array<{ x: number; y: number; label?: string }> = [];
-    const headerLines: string[] = [];
-
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line) continue;
-      if (line.startsWith('#') || line.startsWith('C') || line.startsWith('!')) {
-        headerLines.push(line);
-        continue;
-      }
-
-      // Split by space, comma, or tab
-      const tokens = line.split(/[\s,\t]+/).filter(Boolean);
-      if (tokens.length >= 2) {
-        const x = parseFloat(tokens[0]);
-        const y = parseFloat(tokens[1]);
-        if (!isNaN(x) && !isNaN(y)) {
-          parsedData.push({ x, y, label: tokens[2] || undefined });
-        }
-      }
-    }
-
-    const dataset: UploadedDataset = {
-      id: `ds_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      filename: req.file.originalname,
-      originalName: req.file.originalname,
-      uploadDate: new Date().toISOString(),
-      sizeBytes: req.file.size,
-      type: datasetType,
-      dataPointsCount: parsedData.length,
-      parsedData,
-      headerText: headerLines.join('\n') || 'Uploaded numeric dataset',
-    };
+    const dataset = parseUploadedDataset(fileContent, req.file.originalname, req.file.size, datasetType);
 
     uploadedDatasetsStore.unshift(dataset);
     res.json({ success: true, dataset });
