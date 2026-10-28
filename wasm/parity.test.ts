@@ -27,6 +27,7 @@ interface Case {
   program: Program;
   input: string;
   reference?: string; // validations/ .dat to match for the first DCS file
+  referenceDir?: string; // validations/ folder holding every dcs_*.dat under its ELSEPA name
 }
 
 const base: ElsepaInputParams = {
@@ -55,13 +56,13 @@ function validationCases(): Case[] {
 const cases: Case[] = [
   ...validationCases(),
   // Inputs exactly as the app builds them, with correlation-polarization / absorption.
-  { name: 'app: Au e- 1 keV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, polarizationModel: 'buckingham', polarizability: 36 }) },
-  { name: 'app: Hg e- 1 keV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, z: 80, massNumber: 200.59, polarizationModel: 'buckingham', polarizability: 33.9 }) },
-  { name: 'app: Cu e+ 500 eV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, z: 29, massNumber: 63.546, projectile: 1, energyEv: 500, exchangeModel: 'none', polarizationModel: 'buckingham', polarizability: 42.5 }) },
-  { name: 'app: Au e- 1 keV absorption', program: 'atomic', input: buildAtomicInput({ ...base, absorptionModel: 'staszewska-lda' }) },
+  { name: 'app: Au e- 1 keV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, polarizationModel: 'buckingham', polarizability: 36 }), referenceDir: 'T18' },
+  { name: 'app: Hg e- 1 keV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, z: 80, massNumber: 200.59, polarizationModel: 'buckingham', polarizability: 33.9 }), referenceDir: 'T19' },
+  { name: 'app: Cu e+ 500 eV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, z: 29, massNumber: 63.546, projectile: 1, energyEv: 500, exchangeModel: 'none', polarizationModel: 'buckingham', polarizability: 42.5 }), referenceDir: 'T20' },
+  { name: 'app: Au e- 1 keV absorption', program: 'atomic', input: buildAtomicInput({ ...base, absorptionModel: 'staszewska-lda' }), referenceDir: 'T21' },
   // Example inputs shipped with the official ELSEPA distribution (CPC ADUS_v1_0).
-  { name: 'official: Hg e- 100 eV + 1 keV, LDA polarization + absorption', program: 'atomic', input: read('wasm/tests/official_hg_lda_abs.in') },
-  { name: 'official: H2O e- 100 + 200 eV (ELSCATM)', program: 'molecular', input: read('wasm/tests/official_h2o.in') },
+  { name: 'official: Hg e- 100 eV + 1 keV, LDA polarization + absorption', program: 'atomic', input: read('wasm/tests/official_hg_lda_abs.in'), referenceDir: 'T22' },
+  { name: 'official: H2O e- 100 + 200 eV (ELSCATM)', program: 'molecular', input: read('wasm/tests/official_h2o.in'), referenceDir: 'T23' },
 ];
 
 function read(rel: string): string {
@@ -184,6 +185,18 @@ for (const c of cases) {
 
   if (c.reference) {
     report(c.name, 'wasm vs validations', compare(wasmFiles[names[0]], fs.readFileSync(c.reference, 'utf8')));
+  }
+  if (c.referenceDir) {
+    const dir = path.join(ROOT, 'validations', c.referenceDir);
+    for (const f of names) {
+      const ref = path.join(dir, f);
+      if (!fs.existsSync(ref)) {
+        failures++;
+        console.log(`FAIL  ${c.name} [wasm vs validations/${c.referenceDir}] missing ${f}`);
+        continue;
+      }
+      report(c.name, `wasm vs validations/${c.referenceDir}/${f}`, compare(wasmFiles[f], fs.readFileSync(ref, 'utf8')));
+    }
   }
 
   const binary = native[c.program];
