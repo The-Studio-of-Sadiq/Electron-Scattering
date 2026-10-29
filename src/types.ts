@@ -4,13 +4,14 @@
 
 export type ProjectileType = -1 | 1; // -1: Electron, +1: Positron
 
-export type NuclearModel = 'point' | 'uniform' | 'fermi';
+export type NuclearModel = 'point' | 'uniform' | 'fermi' | 'helm';
 
-export type ElectronDensityModel = 'dirac-fock' | 'thomas-fermi' | 'custom-file';
+// ELSEPA MELEC: 1 Thomas-Fermi-Moliere ('thomas-fermi'), 2 TFD, 3 DHFS, 4 numerical Dirac-Fock.
+export type ElectronDensityModel = 'dirac-fock' | 'thomas-fermi' | 'thomas-fermi-dirac' | 'dhfs' | 'custom-file';
 
 export type ExchangeModel = 'none' | 'furness-mccarthy' | 'riley-truhlar' | 'free-electron-gas';
 
-export type PolarizationModel = 'none' | 'buckingham';
+export type PolarizationModel = 'none' | 'buckingham' | 'lda';
 
 export type AbsorptionModel = 'none' | 'staszewska-lda';
 
@@ -37,6 +38,9 @@ export interface ElsepaInputParams {
   fermiC?: number; // Half-density radius in fm (if Fermi model)
   fermiT?: number; // Skin thickness parameter in fm (default ~0.5229 fm)
   densityModel: ElectronDensityModel;
+  ionCharge?: number; // positive-ion charge q; ELSEPA NELEC = Z - q (default 0, neutral atom)
+  muffinTin?: boolean; // atom in a solid: ELSEPA muffin-tin model (neutral atoms only)
+  muffinTinRadiusAngstrom?: number; // muffin-tin radius; 0/undefined = ELSEPA default (half the nearest-neighbour distance)
   customDensityFile?: string; // filename or raw content if uploaded
   exchangeModel: ExchangeModel;
   polarizationModel: PolarizationModel;
@@ -117,6 +121,7 @@ export interface SimulationResult {
     engineUsed: 'salvat-official-fortran' | 'fortran-native' | 'typescript-dirac-solver';
   };
   elsepaInputFileText: string;
+  elsepaWarnings?: string[]; // warnings ELSEPA printed in its output (e.g. angular limits for ions)
 }
 
 export interface UploadedDataset {

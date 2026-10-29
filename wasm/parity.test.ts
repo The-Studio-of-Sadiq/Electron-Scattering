@@ -8,20 +8,12 @@
 // fortran/*.f with gfortran; see .github/workflows/elsepa-parity.yml). Without
 // them only the WebAssembly-vs-validations checks run.
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
-import { execFileSync } from 'child_process';
-import { fileURLToPath, pathToFileURL } from 'url';
 import { buildAtomicInput } from '../src/physics/elsepaFortranIO';
-import { ElsepaInputParams } from '../src/types';
+import { Program, ROOT, base, native, read, runNative, runWasm } from './harness';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const WASM_DIR = path.join(ROOT, 'public', 'elsepa');
-const DATA_DIR = path.join(ROOT, 'data');
 const REL_TOL = 1e-5; // output is printed with 6 significant digits
 
-type Program = 'atomic' | 'molecular';
-type Files = Record<string, string>;
 interface Case {
   name: string;
   program: Program;
@@ -29,12 +21,6 @@ interface Case {
   reference?: string; // validations/ .dat to match for the first DCS file
   referenceDir?: string; // validations/ folder holding every dcs_*.dat under its ELSEPA name
 }
-
-const base: ElsepaInputParams = {
-  z: 79, projectile: -1, energyEv: 1000, massNumber: 196.97, nuclearModel: 'fermi', fermiC: 6.55, fermiT: 0.5229,
-  densityModel: 'dirac-fock', exchangeModel: 'furness-mccarthy', polarizationModel: 'none', polarizability: 0,
-  cutoffRadius: 1.7, absorptionModel: 'none', minAngle: 0, maxAngle: 180, angleStep: 1,
-};
 
 function validationCases(): Case[] {
   const defs: Array<[string, number, -1 | 1, number]> = [
@@ -63,46 +49,15 @@ const cases: Case[] = [
   // Example inputs shipped with the official ELSEPA distribution (CPC ADUS_v1_0).
   { name: 'official: Hg e- 100 eV + 1 keV, LDA polarization + absorption', program: 'atomic', input: read('wasm/tests/official_hg_lda_abs.in'), referenceDir: 'T22' },
   { name: 'official: H2O e- 100 + 200 eV (ELSCATM)', program: 'molecular', input: read('wasm/tests/official_h2o.in'), referenceDir: 'T23' },
+  // Model options exposed in v1.2 (checked against native gfortran when available).
+  { name: 'app: Au+ e- 1 keV (ion, q = 1)', program: 'atomic', input: buildAtomicInput({ ...base, ionCharge: 1 }) },
+  { name: 'app: Cu e- 1 keV muffin-tin (solid)', program: 'atomic', input: buildAtomicInput({ ...base, z: 29, massNumber: 63.546, muffinTin: true }) },
+  { name: 'app: Hg e- 100 eV LDA polarization', program: 'atomic', input: buildAtomicInput({ ...base, z: 80, massNumber: 200.59, energyEv: 100, polarizationModel: 'lda' }) },
+  { name: 'app: Au e- 100 keV Helm nucleus', program: 'atomic', input: buildAtomicInput({ ...base, energyEv: 1e5, nuclearModel: 'helm' }) },
+  { name: 'app: Au e- 1 keV TFD density', program: 'atomic', input: buildAtomicInput({ ...base, densityModel: 'thomas-fermi-dirac' }) },
+  { name: 'app: Au e- 1 keV DHFS density', program: 'atomic', input: buildAtomicInput({ ...base, densityModel: 'dhfs' }) },
+  { name: 'app: Au e- 1 keV TFM density', program: 'atomic', input: buildAtomicInput({ ...base, densityModel: 'thomas-fermi' }) },
 ];
-
-function read(rel: string): string {
-  return fs.readFileSync(path.join(ROOT, rel), 'latin1').replace(/\r/g, '');
-}
-
-async function runWasm(program: Program, input: string): Promise<Files> {
-  const { default: createElsepa } = await import(pathToFileURL(path.join(WASM_DIR, 'elsepa.js')).href);
-  let pos = 0;
-  const module = await createElsepa({
-    locateFile: (f: string) => path.join(WASM_DIR, f),
-    stdin: () => (pos < input.length ? input.charCodeAt(pos++) : null),
-    print: () => {},
-    printErr: () => {},
-  });
-  try {
-    module.callMain([program]);
-  } catch (err: any) {
-    if (err?.name !== 'ExitStatus') throw err;
-  }
-  const files: Files = {};
-  for (const name of module.FS.readdir('/')) {
-    if (name.startsWith('dcs_') && name.endsWith('.dat')) files[name] = module.FS.readFile(`/${name}`, { encoding: 'utf8' });
-  }
-  return files;
-}
-
-function runNative(binary: string, input: string): Files {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'elsepa-'));
-  try {
-    execFileSync(binary, [], { cwd: dir, input, env: { ...process.env, ELSEPA_DATA: DATA_DIR }, stdio: ['pipe', 'ignore', 'pipe'] });
-    const files: Files = {};
-    for (const name of fs.readdirSync(dir)) {
-      if (name.startsWith('dcs_') && name.endsWith('.dat')) files[name] = fs.readFileSync(path.join(dir, name), 'utf8');
-    }
-    return files;
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
-}
 
 // Sherman function S (|S| <= 1) is compared absolutely: where S is ~1e-10 the
 // last printed digit is floating-point noise between libf2c and gfortran's
@@ -158,10 +113,6 @@ function compare(a: string, b: string): { count: number; maxRel: number; worst?:
   return { count: x.length, maxRel, worst: `${x[worst].value} vs ${y[worst].value} in line "${x[worst].line}"` };
 }
 
-const native: Record<Program, string | undefined> = {
-  atomic: process.env.NATIVE_ELSCATA,
-  molecular: process.env.NATIVE_ELSCATM,
-};
 if (!native.atomic || !native.molecular) {
   console.warn('NATIVE_ELSCATA / NATIVE_ELSCATM not set: skipping WebAssembly-vs-gfortran comparisons.\n');
 }

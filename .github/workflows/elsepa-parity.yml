@@ -54,3 +54,13 @@ jobs:
 
       - name: Server engine runs native ELSEPA, never the TypeScript model
         run: npx --yes tsx@4.21.0 wasm/server.test.ts
+
+      - name: App reads every ELSEPA output; every model option reaches ELSEPA
+        run: npx --yes tsx@4.21.0 wasm/outputs.test.ts
+
+      - name: Benchmark WebAssembly against native gfortran
+        env:
+          NATIVE_ELSCATA: ${{ github.workspace }}/native/elscata
+          NATIVE_ELSCATM: ${{ github.workspace }}/native/elscatm
+          BENCH_RUNS: 3
+        run: npx --yes tsx@4.21.0 wasm/benchmark.ts | tee -a "$GITHUB_STEP_SUMMARY"
