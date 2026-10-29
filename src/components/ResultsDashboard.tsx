@@ -163,6 +163,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   return (
     <div id="results-dashboard-container" className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm text-slate-900 flex flex-col gap-5">
+      {summary.engineUsed === 'typescript-dirac-solver' && (
+        <div id="approximation-warning" className="bg-amber-50 border border-amber-300 text-amber-900 rounded-lg px-4 py-2.5 text-xs">
+          <strong>Approximate result.</strong> These numbers come from the simplified TypeScript model, which uses approximate
+          phase shifts rather than solving the Dirac equation. Switch to the ELSEPA engine for quantitative work.
+        </div>
+      )}
       {/* Top Metrics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         <div className="bg-indigo-50/60 border border-indigo-200 rounded-lg p-3.5 shadow-sm">

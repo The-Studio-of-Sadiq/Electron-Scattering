@@ -11,6 +11,7 @@ import {
   parseAtomicOutputs,
   buildMolecularInput,
   parseMolecularOutputs,
+  toSweepPoint,
 } from './elsepaFortranIO';
 
 // Browser-side runner for the official ELSEPA Fortran compiled to WebAssembly.
@@ -80,23 +81,7 @@ export async function runElsepaWasmMolecular(params: MolecularInputParams): Prom
 export async function runElsepaWasmEnergySweep(baseParams: ElsepaInputParams, energiesEv: number[]): Promise<EnergySweepPoint[]> {
   const sweep: EnergySweepPoint[] = [];
   for (const energyEv of energiesEv) {
-    const res = await runElsepaWasmAtomic({ ...baseParams, energyEv });
-    let shermanMin = 0;
-    let shermanMax = 0;
-    for (const pt of res.scatteringData) {
-      if (pt.shermanS < shermanMin) shermanMin = pt.shermanS;
-      if (pt.shermanS > shermanMax) shermanMax = pt.shermanS;
-    }
-    sweep.push({
-      energyEv,
-      sigmaElAu: res.summary.sigmaElAu,
-      sigmaElCm2: res.summary.sigmaElCm2,
-      sigma1Au: res.summary.sigma1Au,
-      sigma2Au: res.summary.sigma2Au,
-      sigmaAbsAu: res.summary.sigmaAbsAu,
-      shermanPeakMin: shermanMin,
-      shermanPeakMax: shermanMax,
-    });
+    sweep.push(toSweepPoint(energyEv, await runElsepaWasmAtomic({ ...baseParams, energyEv })));
   }
   return sweep;
 }

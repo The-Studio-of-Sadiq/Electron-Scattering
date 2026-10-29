@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   id="engine-btn-gfortran"
                   onClick={() => setEnginePreference('gfortran')}
-                  title={fortranStatus?.hasGFortran ? "Use compiled gFortran native ELSEPA binary" : "gFortran not available (will fallback to TS engine)"}
+                  title={fortranStatus?.hasGFortran ? "Official ELSEPA Fortran (native on the server, or WebAssembly in this browser)" : "Official ELSEPA Fortran, compiled to WebAssembly and run in this browser"}
                   className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1 ${
                     enginePreference === 'gfortran'
                       ? 'bg-emerald-600 text-white shadow-sm font-bold'
@@ -187,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }`}
                 >
                   <Server className="w-3.5 h-3.5" />
-                  <span>gFortran Engine</span>
+                  <span>ELSEPA Engine</span>
                   {fortranStatus?.hasGFortran && (
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
                   )}
@@ -196,7 +196,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   id="engine-btn-typescript"
                   onClick={() => setEnginePreference('typescript')}
-                  title="Use pure TypeScript Dirac partial-wave fallback engine"
+                  title="Simplified TypeScript model with approximate phase shifts, for qualitative demos only (not ELSEPA)"
                   className={`px-2.5 py-1 rounded-md transition-all flex items-center space-x-1 ${
                     enginePreference === 'typescript'
                       ? 'bg-indigo-600 text-white shadow-sm font-bold'
@@ -206,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }`}
                 >
                   <Cpu className="w-3.5 h-3.5" />
-                  <span>TypeScript Engine</span>
+                  <span>TS Approximation</span>
                 </button>
               </div>
 

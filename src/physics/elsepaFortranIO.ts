@@ -7,6 +7,7 @@ import {
   MolecularInputParams,
   MolecularSimulationResult,
   MolecularScatteringDataPoint,
+  EnergySweepPoint,
 } from '../types';
 import { getElementByZ } from '../data/elements';
 import { BOHR_SQ_TO_CM2, BOHR_SQ_TO_ANGSTROM2, HARtree_EV, SPEED_OF_LIGHT } from './elsepaPhysicsEngine';
@@ -318,5 +319,25 @@ export function parseMolecularOutputs(
       engineUsed: 'salvat-official-fortran',
     },
     elsepaInputFileText: inputContent,
+  };
+}
+
+// One point of an energy sweep, from a full ELSCATA run at that energy.
+export function toSweepPoint(energyEv: number, res: SimulationResult): EnergySweepPoint {
+  let shermanMin = 0;
+  let shermanMax = 0;
+  for (const pt of res.scatteringData) {
+    if (pt.shermanS < shermanMin) shermanMin = pt.shermanS;
+    if (pt.shermanS > shermanMax) shermanMax = pt.shermanS;
+  }
+  return {
+    energyEv,
+    sigmaElAu: res.summary.sigmaElAu,
+    sigmaElCm2: res.summary.sigmaElCm2,
+    sigma1Au: res.summary.sigma1Au,
+    sigma2Au: res.summary.sigma2Au,
+    sigmaAbsAu: res.summary.sigmaAbsAu,
+    shermanPeakMin: shermanMin,
+    shermanPeakMax: shermanMax,
   };
 }

@@ -4,14 +4,11 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import multer from 'multer';
 import {
-  runDiracPartialWaveSimulation,
-  runEnergySweep,
-} from './src/physics/elsepaPhysicsEngine';
-import {
   ensureFortranBinaryCompiled,
   ensureElscatmBinaryCompiled,
   runOfficialFortranSimulation,
   runOfficialMolecularFortranSimulation,
+  runOfficialEnergySweep,
   getFortranFileList,
   getFortranFileContent,
   saveFortranFileContent,
@@ -70,7 +67,7 @@ app.get('/api/fortran-status', (_req: Request, res: Response) => {
     gfortranPath = execSync('which gfortran', { encoding: 'utf-8', timeout: 2000 }).trim();
   } catch (err) {
     hasGFortran = false;
-    versionInfo = 'gfortran not found in system PATH. Fallback to TypeScript Dirac partial-wave physics engine.';
+    versionInfo = 'gfortran not found in system PATH. ELSEPA runs as WebAssembly in the browser.';
   }
 
   const binaryPath = ensureFortranBinaryCompiled();
@@ -93,7 +90,6 @@ app.post('/api/simulate', (req: Request, res: Response) => {
       return;
     }
 
-    // Run official Salvat Fortran simulation if gfortran/binary is present, or fallback
     const result = runOfficialFortranSimulation(params);
     res.json(result);
   } catch (err: any) {
@@ -160,7 +156,7 @@ app.post('/api/energy-sweep', (req: Request, res: Response) => {
       return;
     }
 
-    const sweepResults = runEnergySweep(params, energies);
+    const sweepResults = runOfficialEnergySweep(params, energies);
     res.json(sweepResults);
   } catch (err: any) {
     console.error('Energy sweep error:', err);
