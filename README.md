@@ -278,7 +278,9 @@ The response is a `SimulationResult` (DCS, Sherman function, amplitudes, cross s
 
 ## 📜 License
 
-This project is open-source under the **MIT License**. The ELSEPA Fortran code in `fortran/` remains the work of F. Salvat, A. Jablonski and C. J. Powell and is distributed under its authors' license.
+The code written for this project is open-source under the **MIT License** (see `LICENSE` and `Licence.txt`).
+
+**ELSEPA is not covered by the MIT License.** The ELSEPA Fortran source (2005 version) in `fortran/` and `wasm/`, its atomic data tables in `data/`, and the WebAssembly build in `public/elsepa/` are the work of F. Salvat, A. Jablonski and C. J. Powell ([Comput. Phys. Commun. 165 (2005) 157](https://doi.org/10.1016/j.cpc.2004.09.006)) and remain subject to their authors' Computer Physics Communications Program Library licence: academic and non-profit use only, and publications that use ELSEPA must cite that article. See `Licence.txt` for details.
 
 ---
 

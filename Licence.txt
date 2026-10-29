@@ -1,0 +1,52 @@
+MIT License
+
+Copyright (c) 2026 Golam Kuadir Khan Prince
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+This repository may include or interface with third-party software, including
+ELSEPA and ELSCATM. Such third-party components remain the intellectual
+property of their respective authors and are distributed under their own
+licenses. This MIT License applies only to the original code, documentation,
+and other materials authored for this repository unless otherwise stated.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+Third-party component: ELSEPA
+--------------------------------------------------------------------------------
+
+The MIT License above covers the code written for this project (the web
+application, the optional server, the WebAssembly build scripts, the tests and
+the documentation). It does NOT cover ELSEPA.
+
+ELSEPA (programs ELSCATA and ELSCATM, their subroutines and atomic data tables)
+is the work of F. Salvat, A. Jablonski and C. J. Powell:
+
+  F. Salvat, A. Jablonski, C.J. Powell, Comput. Phys. Commun. 165 (2005) 157-190,
+  https://doi.org/10.1016/j.cpc.2004.09.006
+
+This repository contains the 2005 (Fortran 77) version of ELSEPA in fortran/ and
+wasm/, its atomic data tables in data/, and a WebAssembly build of both in
+public/elsepa/.
+These files remain the property of their authors and are subject to the licence
+under which the authors distribute ELSEPA through the Computer Physics
+Communications Program Library, not to the MIT License. The CPC licence permits
+academic and non-profit use and requires that publications using the program
+cite the article above; it does not permit commercial use. The 2021 version of
+ELSEPA (Comput. Phys. Commun. 261 (2021) 107704) is distributed under
+CC BY-NC 3.0.
