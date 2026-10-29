@@ -29,6 +29,9 @@ import { SimulationResult, UploadedDataset } from '../types';
 import { PolarPlot } from './PolarPlot';
 import { MathTex, LaTeXText } from './LaTeX';
 
+// Scattering angles are plotted on a true 0-180 degree scale; ELSEPA's grid is dense at small angles.
+const ANGLE_TICKS = [0, 30, 60, 90, 120, 150, 180];
+
 interface ResultsDashboardProps {
   result: SimulationResult | null;
   uploadedDatasets: UploadedDataset[];
@@ -462,6 +465,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis
                     dataKey="angle"
+                    type="number"
+                    domain={[0, 180]}
+                    ticks={ANGLE_TICKS}
                     stroke="#64748b"
                     label={{ value: 'Scattering Angle θ (degrees)', position: 'insideBottom', offset: -15, fill: '#64748b', style: { fontSize: '12px' } }}
                     tick={{ fontSize: 12 }}
@@ -494,6 +500,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     stroke="#6366f1"
                     strokeWidth={2.5}
                     dot={false}
+                    isAnimationActive={false}
                     activeDot={{ r: 6 }}
                   />
                   {overlayDataset && (
@@ -505,6 +512,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       dot={true}
+                      isAnimationActive={false}
                     />
                   )}
                 </LineChart>
@@ -521,6 +529,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis
                   dataKey="angleDeg"
+                  type="number"
+                  domain={[0, 180]}
+                  ticks={ANGLE_TICKS}
                   stroke="#94a3b8"
                   label={{ value: 'Scattering Angle θ (degrees)', position: 'insideBottom', offset: -15, fill: '#94a3b8' }}
                 />
@@ -542,6 +553,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   stroke="#f59e0b"
                   strokeWidth={2.5}
                   dot={false}
+                  isAnimationActive={false}
                 />
                 <Line
                   type="monotone"
@@ -551,6 +563,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                   dot={false}
+                  isAnimationActive={false}
                 />
                 <Line
                   type="monotone"
@@ -560,6 +573,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   strokeWidth={1.5}
                   strokeDasharray="2 2"
                   dot={false}
+                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
