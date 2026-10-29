@@ -1,0 +1,43 @@
+{
+  "upload_type": "software",
+  "title": "Electron Scattering: A complete PWA of ELSEPA software with GUI",
+  "description": "Electron Scattering Simulator: an installable Progressive Web App that runs the official ELSEPA Fortran programs (ELSCATA and ELSCATM; F. Salvat, A. Jablonski and C. J. Powell) compiled to WebAssembly, for Dirac partial-wave calculations of elastic electron and positron scattering by atoms, positive ions and molecules. It adds a graphical workbench, energy sweeps, run comparison and experimental-data overlay, and is verified against native ELSEPA by automated parity tests. ELSEPA itself remains under its authors' license.",
+  "creators": [
+    {
+      "name": "Prince, Golam Kuadir Khan",
+      "affiliation": "Department of Electrical and Electronic Engineering, Hajee Mohammad Danesh Science and Technology University, Dinajpur, Bangladesh",
+      "orcid": "0009-0009-6843-1775"
+    },
+    {
+      "name": "Hossain, Md. Mahabub",
+      "affiliation": "Department of Electronics and Communication Engineering, Hajee Mohammad Danesh Science and Technology University, Dinajpur, Bangladesh",
+      "orcid": "0000-0003-2840-5352"
+    },
+    {
+      "name": "Bhowmik, Pankaj",
+      "affiliation": "Department of Computer Science and Engineering, Hajee Mohammad Danesh Science and Technology University, Dinajpur, Bangladesh",
+      "orcid": "0000-0003-2296-5308"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "elastic electron scattering",
+    "Dirac partial-wave analysis",
+    "ELSEPA",
+    "electron/positron-atom scattering",
+    "WebAssembly",
+    "Progressive Web App"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.1016/j.cpc.2004.09.006",
+      "relation": "references",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1016/j.cpc.2020.107704",
+      "relation": "references",
+      "scheme": "doi"
+    }
+  ]
+}
