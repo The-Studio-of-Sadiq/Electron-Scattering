@@ -20,23 +20,28 @@ export type FortranOutputFiles = Record<string, string>;
 
 export function buildAtomicInput(params: ElsepaInputParams): string {
   // Map input params to Salvat's Fortran keywords
-  const nucModInt = params.nuclearModel === 'point' ? 1 : params.nuclearModel === 'uniform' ? 2 : 3;
-  const melecInt = params.densityModel === 'dirac-fock' ? 4 : params.densityModel === 'thomas-fermi' ? 1 : 4;
+  const nucModInt = { point: 1, uniform: 2, fermi: 3, helm: 4 }[params.nuclearModel] ?? 3;
+  const melecInt = { 'thomas-fermi': 1, 'thomas-fermi-dirac': 2, dhfs: 3, 'dirac-fock': 4 }[params.densityModel as string] ?? 4;
+  const ionCharge = Math.min(params.z, Math.max(0, Math.round(params.ionCharge || 0)));
+  // ELSEPA only applies the muffin-tin model to neutral atoms; RMUF 0 selects its default radius.
+  const muffinInt = params.muffinTin && ionCharge === 0 ? 1 : 0;
+  const rmufCm = muffinInt && params.muffinTinRadiusAngstrom ? (params.muffinTinRadiusAngstrom * 1e-8).toExponential(5) : 0;
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;
   // ELSCATA codes: MCPOL 0=none, 1=Buckingham, 2=LDA
-  const mcpolInt = params.polarizationModel === 'buckingham' ? 1 : 0;
+  const mcpolInt = params.polarizationModel === 'buckingham' ? 1 : params.polarizationModel === 'lda' ? 2 : 0;
   const mabsInt = params.absorptionModel === 'staszewska-lda' ? 1 : 0;
 
-  // Convert polarizability from a0^3 to cm^3 (1 a0^3 = 1.481847e-25 cm^3)
-  const polarCm3 = (params.polarizability * 1.4818474e-25).toExponential(5);
+  // Convert polarizability from a0^3 to cm^3 (1 a0^3 = 1.481847e-25 cm^3). With no value
+  // given, VPOLA -1 makes ELSEPA use its tabulated (measured) polarizability.
+  const polarCm3 = mcpolInt && !(params.polarizability > 0) ? -1 : (params.polarizability * 1.4818474e-25).toExponential(5);
 
   return [
     keywordLine('IZ', params.z),
     keywordLine('MNUCL', nucModInt),
-    keywordLine('NELEC', params.z),
+    keywordLine('NELEC', params.z - ionCharge),
     keywordLine('MELEC', melecInt),
-    keywordLine('MUFFIN', 0),
-    keywordLine('RMUF', 0),
+    keywordLine('MUFFIN', muffinInt),
+    keywordLine('RMUF', rmufCm),
     keywordLine('IELEC', params.projectile),
     keywordLine('MEXCH', mexchInt),
     keywordLine('MCPOL', mcpolInt),
@@ -74,7 +79,9 @@ export function parseAtomicOutputs(
   let sigmaElAu = 0;
   let sigma1Au = 0;
   let sigma2Au = 0;
-  const sigmaAbsAu = 0;
+  let sigmaAbsAu = 0;
+  const warnings: string[] = [];
+  let inWarning = false;
 
   for (const line of files[dcsFile].split('\n')) {
     const csMatch = line.match(/=\s*([0-9.E+-]+)\s*cm\*\*2\s*=\s*([0-9.E+-]+)\s*a0\*\*2/i);
@@ -82,6 +89,19 @@ export function parseAtomicOutputs(
       if (line.includes('Total elastic cross section =')) sigmaElAu = parseFloat(csMatch[2]);
       if (line.includes('1st transport cross section =')) sigma1Au = parseFloat(csMatch[2]);
       if (line.includes('2nd transport cross section =')) sigma2Au = parseFloat(csMatch[2]);
+      if (line.includes('Absorption cross section =')) sigmaAbsAu = parseFloat(csMatch[2]);
+    }
+    // ELSEPA's warnings (e.g. for ions: DCS and cross sections only above a minimum angle)
+    // span a "# WARNING:" line and indented continuation lines.
+    const isComment = line.trim().startsWith('#');
+    const comment = line.trim().replace(/^#/, '').trim();
+    if (isComment && comment.startsWith('WARNING:')) {
+      warnings.push(comment.slice('WARNING:'.length).trim());
+      inWarning = true;
+    } else if (inWarning && isComment && comment) {
+      warnings[warnings.length - 1] += ' ' + comment;
+    } else {
+      inWarning = false;
     }
 
     const trimmed = line.trim();
@@ -102,8 +122,8 @@ export function parseAtomicOutputs(
           dcsCm2,
           dcsAngstrom2: dcsAu * BOHR_SQ_TO_ANGSTROM2,
           shermanS: isNaN(shermanS) ? 0 : shermanS,
-          spinT: 1.0,
-          spinU: 0.0,
+          spinT: NaN, // computed from f and g below
+          spinU: NaN,
           reF: 0,
           imF: 0,
           reG: 0,
@@ -113,7 +133,10 @@ export function parseAtomicOutputs(
     }
   }
 
-  // scatamp.dat: f and g scattering amplitudes
+  // scatamp.dat: f and g scattering amplitudes, on the same angular grid as the DCS table.
+  // The spin-rotation functions follow from them in Kessler's convention, which is ELSEPA's
+  // (S = -2 Im(f g*)/D reproduces the printed Sherman function), with D = |f|^2 + |g|^2:
+  //   T = (|f|^2 - |g|^2)/D,  U = 2 Re(f g*)/D.
   if (files['scatamp.dat']) {
     let idx = 0;
     for (const line of files['scatamp.dat'].split('\n')) {
@@ -121,11 +144,18 @@ export function parseAtomicOutputs(
       if (!isDataLine(trimmed)) continue;
       const tokens = trimmed.split(/\s+/);
       if (tokens.length >= 6 && idx < scatteringData.length) {
-        scatteringData[idx].reF = parseFloat(tokens[2]);
-        scatteringData[idx].imF = parseFloat(tokens[3]);
-        scatteringData[idx].reG = parseFloat(tokens[4]);
-        scatteringData[idx].imG = parseFloat(tokens[5]);
-        idx++;
+        const pt = scatteringData[idx++];
+        if (Math.abs(parseFloat(tokens[0]) - pt.angleDeg) > 1e-9 * Math.max(1, pt.angleDeg)) continue;
+        pt.reF = parseFloat(tokens[2]);
+        pt.imF = parseFloat(tokens[3]);
+        pt.reG = parseFloat(tokens[4]);
+        pt.imG = parseFloat(tokens[5]);
+        const f2 = pt.reF * pt.reF + pt.imF * pt.imF;
+        const g2 = pt.reG * pt.reG + pt.imG * pt.imG;
+        if (f2 + g2 > 0) {
+          pt.spinT = (f2 - g2) / (f2 + g2);
+          pt.spinU = (2 * (pt.reF * pt.reG + pt.imF * pt.imG)) / (f2 + g2);
+        }
       }
     }
   }
@@ -161,9 +191,21 @@ export function parseAtomicOutputs(
     }
   }
 
-  // dpwa.dat: Dirac phase shifts
+  // Dirac phase shifts: dpwai.dat (complex) when an absorption potential is used, else dpwa.dat.
   const phaseShifts: PhaseShiftPoint[] = [];
-  if (files['dpwa.dat']) {
+  if (files['dpwai.dat']) {
+    for (const line of files['dpwai.dat'].split('\n')) {
+      const tokens = line.trim().split(/\s+/);
+      if (tokens.length < 5) continue;
+      const l = parseInt(tokens[0], 10);
+      const [reUp, imUp, reDown, imDown] = tokens.slice(1, 5).map(Number);
+      if (isNaN(l) || isNaN(reUp) || isNaN(imUp)) continue;
+      phaseShifts.push({ kappa: -l - 1, l, j: l + 0.5, deltaRe: reUp, deltaIm: imUp, eta: Math.exp(-2 * imUp) });
+      if (l > 0 && !isNaN(reDown)) {
+        phaseShifts.push({ kappa: l, l, j: l - 0.5, deltaRe: reDown, deltaIm: imDown, eta: Math.exp(-2 * imDown) });
+      }
+    }
+  } else if (files['dpwa.dat']) {
     for (const line of files['dpwa.dat'].split('\n')) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith('*') || trimmed.startsWith('-') || trimmed.startsWith('KINETIC')) continue;
@@ -214,6 +256,7 @@ export function parseAtomicOutputs(
       engineUsed: 'salvat-official-fortran',
     },
     elsepaInputFileText: inputContent,
+    elsepaWarnings: warnings,
   };
 }
 

@@ -152,6 +152,24 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 />
               </div>
             </div>
+            <div className="mt-2 text-xs">
+              <label className="block text-[11px] text-slate-400 mb-1">Ion charge q (positive ion, 0 = neutral atom):</label>
+              <input
+                id="input-ion-charge"
+                type="number"
+                min="0"
+                max={params.z}
+                step="1"
+                value={params.ionCharge ?? 0}
+                onChange={(e) =>
+                  setParams((prev) => ({
+                    ...prev,
+                    ionCharge: Math.min(prev.z, Math.max(0, parseInt(e.target.value) || 0)),
+                  }))
+                }
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 
@@ -266,8 +284,58 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
               >
                 <option value="fermi">Fermi 2-Parameter (Smooth Density)</option>
                 <option value="uniform">Uniform Sphere (R_N = 1.07 A^1/3 fm)</option>
+                <option value="helm">Helm Uniform-Uniform (Uu)</option>
                 <option value="point">Point Charge Nucleus</option>
               </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-[11px] text-slate-400 mb-1">Electron Density:</label>
+              <select
+                id="select-density-model"
+                value={params.densityModel}
+                onChange={(e) =>
+                  setParams((prev) => ({ ...prev, densityModel: e.target.value as any }))
+                }
+                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                <option value="dirac-fock">Dirac-Fock (numerical, recommended)</option>
+                <option value="dhfs">Dirac-Hartree-Fock-Slater (DHFS)</option>
+                <option value="thomas-fermi-dirac">Thomas-Fermi-Dirac (TFD)</option>
+                <option value="thomas-fermi">Thomas-Fermi-Molière (TFM)</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-[11px] text-slate-400 mb-1">Target Environment:</label>
+              <select
+                id="select-target-environment"
+                disabled={(params.ionCharge ?? 0) > 0}
+                value={params.muffinTin && !(params.ionCharge ?? 0) ? 'solid' : 'free'}
+                onChange={(e) => setParams((prev) => ({ ...prev, muffinTin: e.target.value === 'solid' }))}
+                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50"
+              >
+                <option value="free">Free atom</option>
+                <option value="solid">Atom in a solid (muffin-tin model)</option>
+              </select>
+              {params.muffinTin && !(params.ionCharge ?? 0) && (
+                <div className="mt-2">
+                  <label className="block text-[10px] text-slate-400 mb-1">
+                    Muffin-tin radius (Å, 0 = half the nearest-neighbour distance):
+                  </label>
+                  <input
+                    id="input-muffin-tin-radius"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={params.muffinTinRadiusAngstrom ?? 0}
+                    onChange={(e) =>
+                      setParams((prev) => ({ ...prev, muffinTinRadiusAngstrom: Math.max(0, parseFloat(e.target.value) || 0) }))
+                    }
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  />
+                </div>
+              )}
             </div>
 
             {params.nuclearModel === 'fermi' && (
@@ -325,8 +393,24 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
               >
                 <option value="furness-mccarthy">Furness-McCarthy Local Exchange</option>
                 <option value="riley-truhlar">Riley-Truhlar Exchange</option>
-                <option value="free-electron-gas">Free Electron Gas (Mittleman-Watson)</option>
+                <option value="free-electron-gas">Thomas-Fermi (Local Free-Electron Gas)</option>
                 <option value="none">None (Static Electrostatic Only)</option>
+              </select>
+            </div>
+
+            <div className="mb-2">
+              <label className="block text-[11px] text-slate-400 mb-1">Correlation-Polarization:</label>
+              <select
+                id="select-polarization-model"
+                value={params.polarizationModel}
+                onChange={(e) =>
+                  setParams((prev) => ({ ...prev, polarizationModel: e.target.value as any }))
+                }
+                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                <option value="buckingham">Buckingham</option>
+                <option value="lda">LDA (Perdew-Zunger correlation)</option>
+                <option value="none">None</option>
               </select>
             </div>
 

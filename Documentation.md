@@ -71,13 +71,13 @@ This software platform and research interface was developed by researchers and s
 
 #### 3.1 Atomic Physics Workbench
 * **Interactive Parameter Configuration** (`src/components/InputGuiForm.tsx`; mapped to ELSCATA keywords by `buildAtomicInput` in `src/physics/elsepaFortranIO.ts`):
-  * **Target Element Selector**: neutral free atoms, $Z = 1$ to $Z = 103$, chosen from a periodic table (`NELEC = Z`, no muffin-tin).
+  * **Target Element Selector**: $Z = 1$ to $Z = 103$, chosen from a periodic table. An **ion charge** $q$ gives a positive ion (`NELEC = Z - q`); for neutral atoms the **muffin-tin model** (`MUFFIN 1`, optional radius `RMUF`) describes an atom in a solid.
   * **Projectile Selection**: Electron ($e^-$) or Positron ($e^+$).
   * **Kinetic Energy**: direct input in eV, keV or MeV, with presets from 10 eV to 1 MeV. ELSEPA rejects energies below 10 eV.
-  * **Nuclear Charge Models**: Point Charge, Uniform Sphere, or Fermi distribution (`MNUCL` 1/2/3). ELSEPA uses its own built-in nuclear parameters.
-  * **Electron Density**: Dirac–Fock (`MELEC 4`, always).
-  * **Exchange Potentials ($e^-$)**: None, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi (`MEXCH` 0/1/3/2; the Thomas–Fermi option is labelled "Free Electron Gas" in the UI).
-  * **Correlation–Polarization**: None or Buckingham (`MCPOL` 0/1), with a user-set dipole polarizability; the cutoff parameter is left to ELSEPA's default.
+  * **Nuclear Charge Models**: Point Charge, Uniform Sphere, Fermi, or Helm uniform-uniform distribution (`MNUCL` 1/2/3/4). ELSEPA uses its own built-in nuclear parameters.
+  * **Electron Density**: Thomas–Fermi–Molière, Thomas–Fermi–Dirac, Dirac–Hartree–Fock–Slater, or numerical Dirac–Fock (`MELEC` 1/2/3/4; default 4).
+  * **Exchange Potentials ($e^-$)**: None, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi (`MEXCH` 0/1/3/2).
+  * **Correlation–Polarization**: None, Buckingham, or LDA (`MCPOL` 0/1/2), with a user-set dipole polarizability (or ELSEPA's tabulated value when none is given); the cutoff parameter is left to ELSEPA's default.
   * **Absorption**: None or the LDA absorption potential (`MABS` 1) with adjustable strength.
   * High-energy factorization is enabled (`IHEF 2`).
   * The mass number, Fermi $c$/$t$, cutoff radius and angle-grid fields are kept in the parameter object but are **not** passed to ELSEPA; results are reported on ELSEPA's own fixed angular grid (about 606 angles from $0^\circ$ to $180^\circ$).
@@ -88,7 +88,8 @@ This software platform and research interface was developed by researchers and s
   * **Scattering amplitudes, interaction potentials and phase shifts** read from ELSEPA's output files.
   * **Polar Scattering Diagram** (`PolarPlot.tsx`).
   * The generated ELSCATA input deck, and CSV/JSON export.
-  * The spin-rotation functions $T(\theta)$, $U(\theta)$ and the absorption cross section are not read from ELSEPA's output; their fields hold fixed placeholder values.
+  * **Spin-rotation functions** $T(\theta) = (|f|^2-|g|^2)/D$ and $U(\theta) = 2\,\mathrm{Re}(f g^*)/D$, $D = |f|^2+|g|^2$, computed from ELSEPA's amplitudes in the convention that reproduces its Sherman function $S = -2\,\mathrm{Im}(f g^*)/D$.
+  * The **absorption cross section** (when an absorption potential is used), complex phase shifts from `dpwai.dat`, and any warnings ELSEPA prints (for ions, the DCS and cross sections are computed only above a minimum angle).
 
 #### 3.2 Molecular Mode (ELSCATM)
 * **Molecular Target Builder** (`src/components/MolecularWorkbench.tsx`):
@@ -293,7 +294,7 @@ export interface ScatteringDataPoint {
   dcsCm2: number;              // cm^2/sr
   dcsAngstrom2: number;        // Angstrom^2/sr
   shermanS: number;            // Sherman function S(theta)
-  spinT: number; spinU: number; // placeholders (not read from ELSEPA output)
+  spinT: number; spinU: number; // spin-rotation functions, computed from f and g
   reF: number; imF: number; reG: number; imG: number; // amplitudes f, g
 }
 
@@ -307,7 +308,7 @@ export interface SimulationResult {
     sigmaElAu: number; sigmaElCm2: number;
     sigma1Au: number; sigma1Cm2: number;
     sigma2Au: number;
-    sigmaAbsAu: number;        // placeholder (not read from ELSEPA output)
+    sigmaAbsAu: number;        // absorption cross section (0 without absorption)
     computationTimeMs: number;
     engineUsed: 'salvat-official-fortran' | 'fortran-native' | 'typescript-dirac-solver';
     // ... plus k, gamma, beta, maxL
@@ -358,7 +359,7 @@ docker run -p 3000:3000 elsepa-simulator
 
 ### 9. Validation & Testing
 
-**Parity test (`wasm/parity.test.ts`).** Thirteen cases covering H, Cu, Au, Hg and H₂O; electrons and positrons; energies from 100 eV to 100 keV; Furness–McCarthy exchange, Buckingham and LDA correlation–polarization, and LDA absorption. The inputs include decks built by the application's own `buildAtomicInput` and the official CPC example inputs `elscata.in` and `h2o.in` (`wasm/tests/`). For each case, every number in every `dcs_*.dat` file is compared between the WebAssembly build, native `gfortran` ELSEPA, and the reference outputs in `validations/` (relative tolerance $10^{-5}$, matching the 6 significant digits ELSEPA prints; absolute tolerance $10^{-9}$ for the Sherman function). In the latest CI run all 34 comparisons were identical (maximum relative difference 0).
+**Parity test (`wasm/parity.test.ts`).** Twenty cases. Seven cover the model options added in v1.2 (positive ion, muffin-tin, LDA polarization, Helm nucleus, TFM, TFD and DHFS densities) and are compared with native gfortran ELSEPA. The other thirteen cover H, Cu, Au, Hg and H₂O; electrons and positrons; energies from 100 eV to 100 keV; Furness–McCarthy exchange, Buckingham and LDA correlation–polarization, and LDA absorption. The inputs include decks built by the application's own `buildAtomicInput` and the official CPC example inputs `elscata.in` and `h2o.in` (`wasm/tests/`). For each case, every number in every `dcs_*.dat` file is compared between the WebAssembly build, native `gfortran` ELSEPA, and the reference outputs in `validations/` (relative tolerance $10^{-5}$, matching the 6 significant digits ELSEPA prints; absolute tolerance $10^{-9}$ for the Sherman function). In the latest CI run all 34 comparisons were identical (maximum relative difference 0).
 
 **Server test (`wasm/server.test.ts`).** Checks that the server's atomic, molecular and energy-sweep paths run native ELSEPA, that failures produce errors rather than approximate results, and that the TypeScript model is used only when explicitly requested.
 
