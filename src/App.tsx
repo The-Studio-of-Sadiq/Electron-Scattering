@@ -62,9 +62,6 @@ export default function App() {
       .then((res) => res.json())
       .then((status) => {
         setFortranStatus(status);
-        if (status && !status.hasGFortran) {
-          setEnginePreference('typescript');
-        }
       })
       .catch((err) => console.warn('Fortran status check failed:', err));
 

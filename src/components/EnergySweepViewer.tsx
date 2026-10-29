@@ -20,9 +20,11 @@ interface EnergySweepViewerProps {
 export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams }) => {
   const [sweepPoints, setSweepPoints] = useState<EnergySweepPoint[]>([]);
   const [isSweeping, setIsSweeping] = useState(false);
+  const [sweepError, setSweepError] = useState<string | null>(null);
 
   const handleRunSweep = async () => {
     setIsSweeping(true);
+    setSweepError(null);
     // Energies array from 10 eV to 1,000,000 eV (logarithmically spaced)
     const energies = [
       10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000,
@@ -34,12 +36,12 @@ export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ params: baseParams, energies }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setSweepPoints(data);
-      }
-    } catch (err) {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || `Energy sweep failed (${res.status})`);
+      setSweepPoints(data);
+    } catch (err: any) {
       console.error('Energy sweep fetch error:', err);
+      setSweepError(err?.message || 'Energy sweep failed');
     } finally {
       setIsSweeping(false);
     }
@@ -68,6 +70,12 @@ export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams
           <span>{isSweeping ? 'Computing Spectrum...' : 'Run Energy Sweep (10 eV - 1 MeV)'}</span>
         </button>
       </div>
+
+      {sweepError && (
+        <div id="energy-sweep-error" className="bg-rose-50 border border-rose-200 text-rose-800 rounded-lg px-4 py-2.5 text-xs">
+          {sweepError}
+        </div>
+      )}
 
       {sweepPoints.length === 0 ? (
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-12 text-center text-slate-500">

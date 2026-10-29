@@ -39,7 +39,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/fortran ./fortran
 COPY --from=builder /app/data ./data
-COPY --from=builder /app/elsepa_exec* ./
+COPY --from=builder /app/elsepa_exec /app/elscatm_exec ./
 
 EXPOSE 3000
 

@@ -7,18 +7,20 @@ on:
   push:
     paths:
       - 'fortran/**'
+      - 'server/**'
+      - 'src/physics/**'
       - 'data/**'
       - 'public/elsepa/**'
-      - 'src/physics/elsepaFortranIO.ts'
       - 'validations/**'
       - 'wasm/**'
       - '.github/workflows/elsepa-parity.yml'
   pull_request:
     paths:
       - 'fortran/**'
+      - 'server/**'
+      - 'src/physics/**'
       - 'data/**'
       - 'public/elsepa/**'
-      - 'src/physics/elsepaFortranIO.ts'
       - 'validations/**'
       - 'wasm/**'
       - '.github/workflows/elsepa-parity.yml'
@@ -49,3 +51,6 @@ jobs:
           NATIVE_ELSCATA: ${{ github.workspace }}/native/elscata
           NATIVE_ELSCATM: ${{ github.workspace }}/native/elscatm
         run: npx --yes tsx@4.21.0 wasm/parity.test.ts
+
+      - name: Server engine runs native ELSEPA, never the TypeScript model
+        run: npx --yes tsx@4.21.0 wasm/server.test.ts

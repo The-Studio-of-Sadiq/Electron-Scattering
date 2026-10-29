@@ -5,8 +5,9 @@ import {
 } from '../types';
 import { BOHR_SQ_TO_CM2 } from './elsepaPhysicsEngine';
 
-// Approximate IAM molecular result used when the ELSCATM binary is unavailable.
-// Kept free of Node APIs so it can run both on the server and in the browser.
+// Toy molecular model behind the "TypeScript" engine option: hardcoded cross
+// sections and a schematic DCS, for UI demonstrations only. It is never used in
+// place of ELSCATM. Kept free of Node APIs so it can run on the server and in the browser.
 export function runFallbackMolecularSimulation(params: MolecularInputParams, startTime: number, inputContent: string): MolecularSimulationResult {
   const scatteringData: MolecularScatteringDataPoint[] = [];
   const numSteps = 181;
@@ -66,7 +67,7 @@ export function runFallbackMolecularSimulation(params: MolecularInputParams, sta
       sigma2CohCm2: 1.2e-17,
       sigma2IncohCm2: 1.1e-17,
       computationTimeMs: Math.round((endTime - startTime) * 10) / 10,
-      engineUsed: 'salvat-official-fortran',
+      engineUsed: 'typescript-dirac-solver',
     },
     elsepaInputFileText: inputContent,
   };

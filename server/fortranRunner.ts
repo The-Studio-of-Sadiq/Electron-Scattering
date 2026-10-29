@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
-import { ElsepaInputParams, SimulationResult, MolecularInputParams, MolecularSimulationResult } from '../src/types';
+import { ElsepaInputParams, SimulationResult, MolecularInputParams, MolecularSimulationResult, EnergySweepPoint } from '../src/types';
 
-import { runDiracPartialWaveSimulation } from '../src/physics/elsepaPhysicsEngine';
+import { runDiracPartialWaveSimulation, runEnergySweep } from '../src/physics/elsepaPhysicsEngine';
 import { runFallbackMolecularSimulation } from '../src/physics/molecularFallback';
 import {
   FortranOutputFiles,
@@ -11,7 +11,17 @@ import {
   parseAtomicOutputs,
   buildMolecularInput,
   parseMolecularOutputs,
+  toSweepPoint,
 } from '../src/physics/elsepaFortranIO';
+
+const wantsTypeScript = (params: any) => params?.forceEngine === 'typescript' || params?.forceEngine === 'ts';
+
+// ELSEPA reports invalid input with a STOP message and writes no DCS file.
+function elsepaFailure(err: any): Error {
+  const detail = [err?.stdout, err?.stderr].map((x) => (x || '').toString().trim()).filter(Boolean).join('\n');
+  const lastLines = detail.split('\n').slice(-3).join(' ').trim();
+  return new Error(`ELSEPA produced no DCS table${lastLines ? `: ${lastLines}` : ''}`);
+}
 
 function readOutputFiles(dir: string): FortranOutputFiles {
   const files: FortranOutputFiles = {};
@@ -123,15 +133,15 @@ export function ensureFortranBinaryCompiled(): string | null {
 }
 
 export function runOfficialFortranSimulation(params: ElsepaInputParams): SimulationResult {
-  if ((params as any).forceEngine === 'typescript' || (params as any).forceEngine === 'ts') {
-    console.log('Explicitly requested TypeScript Dirac solver engine.');
+  if (wantsTypeScript(params)) {
     return runDiracPartialWaveSimulation(params);
   }
 
+  // Never substitute the approximate TypeScript model for ELSEPA: callers get an
+  // error instead (the browser then runs ELSEPA as WebAssembly).
   const binaryPath = ensureFortranBinaryCompiled();
   if (!binaryPath) {
-    console.log('Fortran binary not available. Using TypeScript Dirac solver.');
-    return runDiracPartialWaveSimulation(params);
+    throw new Error('Native ELSEPA (ELSCATA) is not available on this server');
   }
 
   const startTime = performance.now();
@@ -155,6 +165,8 @@ export function runOfficialFortranSimulation(params: ElsepaInputParams): Simulat
     fs.chmodSync(binaryPath, 0o755);
   } catch (e) {}
 
+  let result: SimulationResult | null = null;
+  let failure: any;
   try {
     execSync(`"${binaryPath}" < "${inputFilePath}"`, {
       cwd: tempDir,
@@ -162,19 +174,23 @@ export function runOfficialFortranSimulation(params: ElsepaInputParams): Simulat
       timeout: 15000,
       encoding: 'utf-8',
     });
-
-    const result = parseAtomicOutputs(params, readOutputFiles(tempDir), inputContent, performance.now() - startTime);
-    try {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch (e) {}
-    return result ?? runDiracPartialWaveSimulation(params);
+    result = parseAtomicOutputs(params, readOutputFiles(tempDir), inputContent, performance.now() - startTime);
   } catch (err) {
-    console.error('Fortran execution failed in temp directory:', err);
+    failure = err;
+  } finally {
     try {
       fs.rmSync(tempDir, { recursive: true, force: true });
     } catch (e) {}
-    return runDiracPartialWaveSimulation(params);
   }
+  if (!result) throw elsepaFailure(failure);
+  return result;
+}
+
+export function runOfficialEnergySweep(params: ElsepaInputParams, energiesEv: number[]): EnergySweepPoint[] {
+  if (wantsTypeScript(params)) {
+    return runEnergySweep(params, energiesEv);
+  }
+  return energiesEv.map((energyEv) => toSweepPoint(energyEv, runOfficialFortranSimulation({ ...params, energyEv })));
 }
 
 let compiledMolBinaryPath: string | null = null;
@@ -229,8 +245,7 @@ export function ensureElscatmBinaryCompiled(): string | null {
 export function runOfficialMolecularFortranSimulation(params: MolecularInputParams): MolecularSimulationResult {
   const startTime = performance.now();
 
-  if ((params as any).forceEngine === 'typescript' || (params as any).forceEngine === 'ts') {
-    console.log('Explicitly requested TypeScript molecular solver engine.');
+  if (wantsTypeScript(params)) {
     return runFallbackMolecularSimulation(params, startTime, '');
   }
 
@@ -239,8 +254,7 @@ export function runOfficialMolecularFortranSimulation(params: MolecularInputPara
   const inputContent = buildMolecularInput(params);
 
   if (!binaryPath) {
-    console.warn('ELSCATM binary not available, generating fallback molecular result');
-    return runFallbackMolecularSimulation(params, startTime, inputContent);
+    throw new Error('Native ELSEPA (ELSCATM) is not available on this server');
   }
 
   const tempDir = path.join(rootDir, `tmp_mol_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
@@ -259,6 +273,8 @@ export function runOfficialMolecularFortranSimulation(params: MolecularInputPara
     fs.chmodSync(binaryPath, 0o755);
   } catch (e) {}
 
+  let result: MolecularSimulationResult | null = null;
+  let failure: any;
   try {
     execSync(`"${binaryPath}" < "${inputFilePath}"`, {
       cwd: tempDir,
@@ -266,19 +282,16 @@ export function runOfficialMolecularFortranSimulation(params: MolecularInputPara
       timeout: 30000,
       encoding: 'utf-8',
     });
-
-    const result = parseMolecularOutputs(params, readOutputFiles(tempDir), inputContent, performance.now() - startTime);
-    try {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch (e) {}
-    return result ?? runFallbackMolecularSimulation(params, startTime, inputContent);
+    result = parseMolecularOutputs(params, readOutputFiles(tempDir), inputContent, performance.now() - startTime);
   } catch (err) {
-    console.error('ELSCATM Fortran execution failed:', err);
+    failure = err;
+  } finally {
     try {
       fs.rmSync(tempDir, { recursive: true, force: true });
     } catch (e) {}
-    return runFallbackMolecularSimulation(params, startTime, inputContent);
   }
+  if (!result) throw elsepaFailure(failure);
+  return result;
 }
 
 // ============================================================================
@@ -424,7 +437,7 @@ export function triggerFortranCompilation() {
   if (!checkGFortranAvailable()) {
     logs += `[WARN] gfortran compiler binary not detected in runtime environment.\n`;
     logs += `[INFO] Fortran source files updated successfully on disk.\n`;
-    logs += `[INFO] When running simulations without gfortran, the workbench automatically uses the high-precision Dirac partial-wave TypeScript engine.\n`;
+    logs += `[INFO] When running simulations without gfortran, ELSEPA runs as WebAssembly in the browser instead.\n`;
     return {
       success: true,
       compiled: false,
@@ -506,7 +519,7 @@ export function saveTsEngineContent(content: string) {
   fs.writeFileSync(TS_ENGINE_PATH, content, 'utf-8');
   return {
     success: true,
-    logs: `[TypeScript Engine] Successfully saved elsepaPhysicsEngine.ts to disk.\nNext simulation runs using the TypeScript engine will evaluate updated Dirac partial-wave routines.\n`,
+    logs: `[TypeScript Engine] Successfully saved elsepaPhysicsEngine.ts to disk.\nNext simulation runs using the TS Approximation engine will use the updated model.\n`,
   };
 }
 
@@ -517,7 +530,7 @@ export function resetTsEngineContent() {
   }
   return {
     success: true,
-    logs: `[TypeScript Engine] Successfully restored elsepaPhysicsEngine.ts to original default Dirac solver implementation.\n`,
+    logs: `[TypeScript Engine] Successfully restored elsepaPhysicsEngine.ts to the original approximate model.\n`,
   };
 }
 

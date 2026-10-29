@@ -13,8 +13,8 @@ import { UploadedDataset } from '../types';
 // the approximate TypeScript engine is only used when explicitly selected.
 //
 // The same in-browser Fortran engine is used when a backend exists but has no
-// compiled ELSEPA binary (no gfortran), since that backend would otherwise
-// silently answer with the TypeScript approximation.
+// compiled ELSEPA binary (no gfortran), or when its native run fails: the
+// backend never substitutes the TypeScript approximation for ELSEPA.
 
 // Loaded lazily so the ~250 KB of Fortran source only downloads when viewed.
 const fortranSources = import.meta.glob('../../fortran/*.f', { query: '?raw', import: 'default' }) as Record<
@@ -210,6 +210,13 @@ export function installLocalApiFallback(): void {
     const runInBrowser =
       state === 'none' || (state === 'no-fortran' && (COMPUTE_ROUTES.has(url.pathname) || url.pathname === '/api/fortran-status'));
 
-    return runInBrowser ? handleLocally(url.pathname, url.search, method, init) : nativeFetch(input, init);
+    if (runInBrowser) return handleLocally(url.pathname, url.search, method, init);
+
+    const res = await nativeFetch(input, init);
+    if (res.status >= 500 && COMPUTE_ROUTES.has(url.pathname)) {
+      console.warn(`[ELSEPA] Native ELSEPA failed on the server (${res.status}); running ELSEPA (WebAssembly) in the browser.`);
+      return handleLocally(url.pathname, url.search, method, init);
+    }
+    return res;
   };
 }
