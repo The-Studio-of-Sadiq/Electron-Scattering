@@ -124,7 +124,7 @@ f.box(1110, 320, 360, 230, "Optional server", [
 f.box(1110, 610, 360, 160, "Reference and lab data", [
     "NIST SRD 64, literature,", "  measurements (.csv, .dat)"], "purple")
 f.box(370, 800, 660, 160, "GitHub repository and CI (GitHub Actions)", [
-    "Parity test: WebAssembly = native gfortran", "  = reference tables, in 13 cases",
+    "Parity test: WebAssembly = native gfortran", "  in 20 cases; = reference tables in 13",
     "Server test: real ELSEPA, no silent fallback"], "red")
 f.arrow([(300, 495), (368, 495)], "uses", 334, 482, both=True)
 f.arrow([(1108, 175), (1032, 175)], "HTTPS", 1070, 162)
@@ -137,8 +137,8 @@ f.save("fig1_system_context.svg")
 # ---------------------------------------------------------------- Figure 2
 f = Fig(1500, 1060, "Physics engine: from interface settings to ELSEPA results")
 f.box(30, 90, 300, 330, "Atomic input", [
-    "Z = 1–103, neutral atom", "e⁻ or e⁺, E ≥ 10 eV", "Nucleus: point, uniform,", "  Fermi",
-    "Exchange: none, FM,", "  RT, Thomas–Fermi", "Buckingham polarization", "LDA absorption"], "slate", size=19)
+    "Z = 1–103, atom or ion", "e⁻ or e⁺, E ≥ 10 eV", "Nucleus: point, uniform,", "  Fermi, Helm",
+    "Densities: DF, DHFS,", "  TFD, TFM", "Exchange, polarization,", "  absorption, muffin-tin"], "slate", size=19)
 f.box(30, 450, 300, 220, "Molecular input", [
     "Atoms + coordinates (Å)", "Presets: H₂O, CO₂, CH₄,", "  N₂, C₆H₆, UF₆", "Exchange, polarization,", "  absorption"],
       "slate", size=19)
@@ -290,7 +290,7 @@ chip(285, 720, 560, "Docker (node:20-slim + gfortran)", "full app with native se
 chip(865, 720, 585, "Static hosting, browser only", "any static host (e.g. Vercel previews)", "purple")
 
 band(855, 120, "red", "Quality", "CI and tests")
-chip(285, 876, 560, "GitHub Actions: parity test", "13 cases: WASM = gfortran = reference", "red")
+chip(285, 876, 560, "GitHub Actions: parity test", "20 cases: WASM = native gfortran", "red")
 chip(865, 876, 585, "Server test", "native ELSEPA, errors instead of fallbacks", "red")
 f.save("fig4_tech_stack.svg")
 print("ok")
