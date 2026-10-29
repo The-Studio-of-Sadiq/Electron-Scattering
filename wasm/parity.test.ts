@@ -63,34 +63,56 @@ const cases: Case[] = [
 // last printed digit is floating-point noise between libf2c and gfortran's
 // libm, far below ELSEPA's own error estimate printed on the same line.
 const SHERMAN_ABS_TOL = 1e-9;
-const NUMBER = /[-+]?\d+\.\d+E[-+]\d+/gi;
+// Fortran D-format exponents: gfortran prints 1.18591D-01 where libf2c prints 1.18591E-01
+// (ELSEPA uses D12.5 for the analytical density parameters).
+const NUMBER = /[-+]?\d+\.\d+[ED][-+]\d+/gi;
 
 interface Value {
   value: number;
   sherman: boolean;
+  estimate: boolean; // ELSEPA's convergence-error estimate, printed with 2 significant digits
   line: string;
 }
 
 // Every number in a dcs file: header cross sections plus the DCS table. In the
-// table rows (THETA, MU, DCS, DCS, Sherman[, error]) column 5 is the Sherman function.
+// table rows (THETA, MU, DCS, DCS, Sherman[, error]) column 5 is the Sherman function
+// and column 6 ELSEPA's error estimate.
 function values(text: string): Value[] {
   const out: Value[] = [];
   for (const line of text.replace(/\r/g, '').split('\n')) {
     const isTableRow = !line.trim().startsWith('#');
-    (line.match(NUMBER) || []).forEach((tok, col) => out.push({ value: Number(tok), sherman: isTableRow && col === 4, line: line.trim() }));
+    (line.match(NUMBER) || []).forEach((tok, col) =>
+      out.push({
+        value: Number(tok.replace(/D/i, 'E')),
+        sherman: isTableRow && col === 4,
+        estimate: isTableRow && col === 5,
+        line: line.trim(),
+      })
+    );
   }
   return out;
 }
 
-function compare(a: string, b: string): { count: number; maxRel: number; worst?: string; error?: string } {
+function compare(a: string, b: string): { count: number; maxRel: number; differing: number; worst?: string; error?: string } {
   const x = values(a);
   const y = values(b);
-  if (x.length === 0) return { count: 0, maxRel: Infinity, error: 'no numbers in output' };
-  if (x.length !== y.length) return { count: x.length, maxRel: Infinity, error: `${x.length} vs ${y.length} values` };
+  if (x.length === 0) return { count: 0, maxRel: Infinity, differing: 0, error: 'no numbers in output' };
+  if (x.length !== y.length) return { count: x.length, maxRel: Infinity, differing: 0, error: `${x.length} vs ${y.length} values` };
+  // Values that are not bit-identical (all within tolerance when the check passes).
+  const differing = x.filter((v, i) => v.value !== y[i].value).length;
   let maxRel = 0;
   let worst = -1;
   let shermanFailure: string | undefined;
   for (let i = 0; i < x.length; i++) {
+    if (x[i].estimate) {
+      // An error estimate printed as a.bE-xx may differ by one unit in its last digit.
+      const scale = Math.max(Math.abs(x[i].value), Math.abs(y[i].value));
+      const unit = scale > 0 ? Math.pow(10, Math.floor(Math.log10(scale)) - 1) : 0;
+      if (Math.abs(x[i].value - y[i].value) > unit * 1.0001 && !shermanFailure) {
+        shermanFailure = `error estimate ${x[i].value} vs ${y[i].value} in line "${x[i].line}"`;
+      }
+      continue;
+    }
     if (x[i].sherman) {
       const diff = Math.abs(x[i].value - y[i].value);
       const rel = diff / Math.max(Math.abs(x[i].value), Math.abs(y[i].value), 1e-300);
@@ -107,10 +129,10 @@ function compare(a: string, b: string): { count: number; maxRel: number; worst?:
       worst = i;
     }
   }
-  if (shermanFailure) return { count: x.length, maxRel: Infinity, error: shermanFailure };
-  if (worst < 0) return { count: x.length, maxRel };
+  if (shermanFailure) return { count: x.length, maxRel: Infinity, differing, error: shermanFailure };
+  if (worst < 0) return { count: x.length, maxRel, differing };
   // Show the line holding the worst value so a failure is easy to interpret.
-  return { count: x.length, maxRel, worst: `${x[worst].value} vs ${y[worst].value} in line "${x[worst].line}"` };
+  return { count: x.length, maxRel, differing, worst: `${x[worst].value} vs ${y[worst].value} in line "${x[worst].line}"` };
 }
 
 if (!native.atomic || !native.molecular) {
@@ -121,7 +143,7 @@ let failures = 0;
 const report = (name: string, check: string, r: ReturnType<typeof compare>) => {
   const ok = !r.error && r.maxRel <= REL_TOL;
   if (!ok) failures++;
-  const detail = r.error ?? `${r.count} values, max rel diff ${r.maxRel.toExponential(1)}${ok || !r.worst ? '' : `; ${r.worst}`}`;
+  const detail = r.error ?? `${r.count} values, max rel diff ${r.maxRel.toExponential(1)}, ${r.differing} not identical${ok || !r.worst ? '' : `; ${r.worst}`}`;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name} [${check}] ${detail}`);
 };
 

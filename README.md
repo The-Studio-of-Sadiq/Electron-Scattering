@@ -35,15 +35,16 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 ## 🌟 Key Features & Functional Scope
 
 ### 1. ⚛️ Atomic Workbench (ELSCATA)
-* **Targets**: neutral free atoms, $Z = 1$ to $103$, selected from an interactive periodic table. Projectile: electron ($e^-$) or positron ($e^+$).
+* **Targets**: atoms and positive ions, $Z = 1$ to $103$, selected from an interactive periodic table, either free or embedded in a solid (muffin-tin model). Projectile: electron ($e^-$) or positron ($e^+$).
 * **Energy**: any kinetic energy accepted by ELSEPA ($E \ge 10\text{ eV}$; ELSEPA rejects lower energies), with presets from 10 eV to 1 MeV.
 * **Model options exposed in the UI** (mapped onto ELSCATA input keywords in `src/physics/elsepaFortranIO.ts`):
-  * **Nuclear charge distribution**: point, uniform sphere, or Fermi (ELSEPA uses its own built-in nuclear parameters).
-  * **Electron density**: Dirac–Fock (always).
-  * **Exchange** (electrons): none, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi (labelled "Free Electron Gas" in the UI).
-  * **Correlation–polarization**: none or Buckingham (user-set dipole polarizability).
+  * **Nuclear charge distribution**: point, uniform sphere, Fermi, or Helm uniform-uniform (ELSEPA uses its own built-in nuclear parameters).
+  * **Electron density**: Dirac–Fock (numerical), Dirac–Hartree–Fock–Slater, Thomas–Fermi–Dirac, or Thomas–Fermi–Molière.
+  * **Ion charge** $q$ (`NELEC = Z - q`) and the **muffin-tin model** for atoms in solids (neutral atoms only), with an optional muffin-tin radius.
+  * **Exchange** (electrons): none, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi.
+  * **Correlation–polarization**: none, Buckingham, or LDA (user-set dipole polarizability, or ELSEPA's tabulated value).
   * **Absorption**: none or the LDA absorption potential, with adjustable strength.
-* **Observables read from ELSEPA's output**: DCS ($d\sigma/d\Omega$, $\text{cm}^2/\text{sr}$ and $a_0^2/\text{sr}$) on ELSEPA's own angular grid from $0^\circ$ to $180^\circ$, Sherman function $S(\theta)$, scattering amplitudes $f(\theta)$ and $g(\theta)$, total elastic ($\sigma_{\text{el}}$), first ($\sigma_1$) and second ($\sigma_2$) transport cross sections, interaction potentials, and phase shifts.
+* **Observables read from ELSEPA's output**: DCS ($d\sigma/d\Omega$, $\text{cm}^2/\text{sr}$ and $a_0^2/\text{sr}$) on ELSEPA's own angular grid from $0^\circ$ to $180^\circ$, Sherman function $S(\theta)$, spin-rotation functions $T(\theta)$ and $U(\theta)$ (computed from the amplitudes), scattering amplitudes $f(\theta)$ and $g(\theta)$, total elastic ($\sigma_{\text{el}}$), first ($\sigma_1$) and second ($\sigma_2$) transport cross sections, the absorption cross section, interaction potentials, real or complex phase shifts, and ELSEPA's own warnings (e.g. the angular limit of the DCS for ions).
 * **Results dashboard**: log/linear DCS plot, Sherman function, polar scattering diagram, potentials, phase shifts, the generated ELSCATA input deck, and CSV/JSON export.
 
 ### 2. 🧪 Molecular Mode (ELSCATM)
@@ -218,7 +219,9 @@ docker run -p 3000:3000 elsepa-simulator
 
 ## 🧪 Validation / Testing
 
-`wasm/parity.test.ts` runs 13 cases (H, Cu, Au, Hg and H₂O; electrons and positrons; 100 eV–100 keV; Furness–McCarthy exchange, Buckingham and LDA polarization, LDA absorption; input decks built by the app plus the official CPC `elscata.in` and `h2o.in` examples). It compares every number in every `dcs_*.dat` file produced by the WebAssembly build, native `gfortran` ELSEPA, and the reference tables in `validations/` (relative tolerance $10^{-5}$; Sherman function absolute tolerance $10^{-9}$). In the latest CI run all 34 comparisons were identical (maximum relative difference 0).
+`wasm/parity.test.ts` runs 20 cases (H, Cu, Au, Hg and H₂O; electrons and positrons; 100 eV–100 keV; Furness–McCarthy exchange, Buckingham and LDA polarization, LDA absorption; positive ions, the muffin-tin model, the Helm nucleus and the TFM, TFD and DHFS densities; input decks built by the app plus the official CPC `elscata.in` and `h2o.in` examples). It compares every number in every `dcs_*.dat` file produced by the WebAssembly build, native `gfortran` ELSEPA, and (for 13 of the cases) the reference tables in `validations/` (relative tolerance $10^{-5}$; Sherman function absolute tolerance $10^{-9}$).
+
+`wasm/outputs.test.ts` checks that the app reads every quantity ELSEPA computes (absorption cross section, complex phase shifts, $T$ and $U$ consistent with ELSEPA's Sherman function, ELSEPA's warnings) and that every model option in the interface reaches ELSEPA. `wasm/benchmark.ts` times the WebAssembly build against native `gfortran` ELSEPA on the same inputs; CI writes the table to the run summary.
 
 `wasm/server.test.ts` checks that the server runs native ELSEPA (including the energy sweep), returns errors rather than approximations when ELSEPA fails, and uses the TypeScript model only when it is explicitly requested.
 
