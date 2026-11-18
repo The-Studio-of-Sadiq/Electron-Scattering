@@ -41,7 +41,8 @@ export interface ElsepaInputParams {
   ionCharge?: number; // positive-ion charge q; ELSEPA NELEC = Z - q (default 0, neutral atom)
   muffinTin?: boolean; // atom in a solid: ELSEPA muffin-tin model (neutral atoms only)
   muffinTinRadiusAngstrom?: number; // muffin-tin radius; 0/undefined = ELSEPA default (half the nearest-neighbour distance)
-  customDensityFile?: string; // filename or raw content if uploaded
+  customDensityName?: string; // original filename of user-supplied electron density
+  customDensityData?: string; // normalized ELSEPA-ready density file text (density.usr)
   exchangeModel: ExchangeModel;
   polarizationModel: PolarizationModel;
   polarizability: number; // alpha_d in a_0^3
@@ -51,6 +52,7 @@ export interface ElsepaInputParams {
   minAngle: number; // degrees, e.g. 0
   maxAngle: number; // degrees, e.g. 180
   angleStep: number; // degrees, e.g. 1.0 or 0.5
+  notes?: string;
 }
 
 export interface ScatteringDataPoint {
@@ -141,6 +143,7 @@ export interface FortranServerStatus {
   hasElsepaBinary: boolean;
   versionInfo?: string;
   gfortranPath?: string;
+  sourceEditing?: boolean;
 }
 
 // Molecular scattering types for ELSCATM (Salvat, Jablonski, Powell)

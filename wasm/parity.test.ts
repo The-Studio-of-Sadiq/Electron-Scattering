@@ -20,6 +20,7 @@ interface Case {
   input: string;
   reference?: string; // validations/ .dat to match for the first DCS file
   referenceDir?: string; // validations/ folder holding every dcs_*.dat under its ELSEPA name
+  dataFiles?: Record<string, string>;
 }
 
 function validationCases(): Case[] {
@@ -57,6 +58,16 @@ const cases: Case[] = [
   { name: 'app: Au e- 1 keV TFD density', program: 'atomic', input: buildAtomicInput({ ...base, densityModel: 'thomas-fermi-dirac' }) },
   { name: 'app: Au e- 1 keV DHFS density', program: 'atomic', input: buildAtomicInput({ ...base, densityModel: 'dhfs' }) },
   { name: 'app: Au e- 1 keV TFM density', program: 'atomic', input: buildAtomicInput({ ...base, densityModel: 'thomas-fermi' }) },
+  {
+    name: 'app: Au e- 1 keV, user-supplied density (z_079.den as density.usr)',
+    program: 'atomic',
+    input: buildAtomicInput({
+      ...base,
+      densityModel: 'custom-file',
+      customDensityData: read('data/z_079.den'),
+    }),
+    dataFiles: { 'density.usr': read('data/z_079.den') },
+  },
 ];
 
 // Sherman function S (|S| <= 1) is compared absolutely: where S is ~1e-10 the
@@ -148,7 +159,7 @@ const report = (name: string, check: string, r: ReturnType<typeof compare>) => {
 };
 
 for (const c of cases) {
-  const wasmFiles = await runWasm(c.program, c.input);
+  const wasmFiles = await runWasm(c.program, c.input, false, c.dataFiles);
   const names = Object.keys(wasmFiles).sort();
   if (names.length === 0) {
     failures++;
@@ -174,7 +185,7 @@ for (const c of cases) {
 
   const binary = native[c.program];
   if (binary) {
-    const nativeFiles = runNative(binary, c.input);
+    const nativeFiles = runNative(binary, c.input, false, c.dataFiles);
     const nativeNames = Object.keys(nativeFiles).sort();
     if (nativeNames.join() !== names.join()) {
       failures++;

@@ -4,12 +4,12 @@
 # Electron Scattering Simulator (ELSEPA Physics Workbench)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%5E20.19.0%20%7C%7C%20%3E%3D22.12.0-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-purple.svg)](https://web.dev/progressive-web-apps/)
 
-A browser-based graphical workbench (v1.2.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official, unmodified ELSEPA Fortran 77 programs **ELSCATA** (atoms) and **ELSCATM** (molecules) are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
+A browser-based graphical workbench (v1.3.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official, unmodified ELSEPA Fortran 77 programs **ELSCATA** (atoms) and **ELSCATM** (molecules) are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
 
 ---
 
@@ -39,7 +39,7 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 * **Energy**: any kinetic energy accepted by ELSEPA ($E \ge 10\text{ eV}$; ELSEPA rejects lower energies), with presets from 10 eV to 1 MeV.
 * **Model options exposed in the UI** (mapped onto ELSCATA input keywords in `src/physics/elsepaFortranIO.ts`):
   * **Nuclear charge distribution**: point, uniform sphere, Fermi, or Helm uniform-uniform (ELSEPA uses its own built-in nuclear parameters).
-  * **Electron density**: Dirac–Fock (numerical), Dirac–Hartree–Fock–Slater, Thomas–Fermi–Dirac, or Thomas–Fermi–Molière.
+  * **Electron density**: Dirac–Fock (numerical, default), Dirac–Hartree–Fock–Slater, Thomas–Fermi–Dirac, Thomas–Fermi–Molière, or **User-supplied density file** (`MELEC 5`, uploading custom radial electron density tables).
   * **Ion charge** $q$ (`NELEC = Z - q`) and the **muffin-tin model** for atoms in solids (neutral atoms only), with an optional muffin-tin radius.
   * **Exchange** (electrons): none, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi.
   * **Correlation–polarization**: none, Buckingham, or LDA (user-set dipole polarizability, or ELSEPA's tabulated value).
@@ -52,8 +52,24 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 * **Presets**: $H_2O$, $CO_2$, $CH_4$, $N_2$, $C_6H_6$, $UF_6$. Atoms can be added, removed and edited (coordinates in Å).
 * Electron/positron, exchange (none / Furness–McCarthy / Riley–Truhlar), Buckingham polarization and LDA absorption options; coherent and incoherent DCS and cross sections, with CSV export.
 
-### 3. 📈 Energy Sweep
-* Runs ELSEPA at 16 fixed energies from 10 eV to 1 MeV for the current atomic setup and plots $\sigma_{\text{el}}$, $\sigma_1$ and $\sigma_2$ against energy on log–log axes.
+### 3. 📈 Configurable Energy Spectrum Sweep
+* Computes integrated cross sections ($\sigma_{\text{el}}$, $\sigma_1$, $\sigma_2$) across energy and plots them on interactive log–log axes.
+* **Flexible grid modes**:
+  * **Default**: 16 log-spaced standard points from $10\text{ eV}$ to $1\text{ MeV}$.
+  * **Logarithmic range**: custom $E_{\min}$, $E_{\max}$, and number of points ($1 \le N \le 100$, $10\text{ eV} \le E \le 10^9\text{ eV}$), rounded to 4 significant digits.
+  * **Custom list**: arbitrary energy values separated by commas, spaces, semicolons, or newlines (supports decimal and exponential notation such as `1e3`, `2.5E4`).
+* Live grid count, point preview, and validation with instant error messages; server-side validation rejecting invalid arrays with HTTP 400.
+
+### 4. 📁 User-Supplied Electron Densities (MELEC 5)
+* Upload custom radial electron densities from file formats `.den`, `.dat`, `.txt`, or `.csv`.
+* **File Format & Units**:
+  * Skips blank lines and comment lines starting with `#`.
+  * Two numeric columns separated by whitespace or commas:
+    * Column 1: radial distance $r$ in **bohr** ($a_0$). Must be strictly positive ($r > 0$) and strictly increasing ($r_{i+1} > r_i$).
+    * Column 2: electron density $\rho(r)$ in **electrons/bohr$^3$** ($e/a_0^3$). Must be strictly positive ($\rho > 0$).
+  * Grid limits: between 5 and 996 points ($5 \le N \le 996$, satisfying ELSEPA's cubic spline interpolation requirements and table limits).
+  * Normalization condition: $4\pi \int_0^\infty \rho(r) r^2 \, dr = \text{NELEC} = Z - q$. The workbench calculates the trapezoidal integral and warns if it differs from the expected bound electron count by more than 1%.
+* **Execution isolation**: on the native server, concurrent runs receive an isolated, temporary data folder containing `density.usr` and the required atomic scattering tables, ensuring zero interference across simultaneous simulations. WebAssembly runs write `density.usr` directly to the in-memory virtual filesystem `/data/`.
 
 ### 4. 📊 Saved Runs & Comparative Analysis
 * Save runs with full parameters and results to browser `localStorage`; import/export them as JSON.
@@ -173,9 +189,15 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 ## 💻 Local Setup & Installation
 
 ### Prerequisites
-* **Node.js**: v18 or higher (CI uses v22)
+* **Node.js**: `^20.19.0 || >=22.12.0` (tested on Node 22 and 24; enforced by package.json engines)
 * **npm**
+* **Browser Requirements**: Web browser supporting WebAssembly, Web Workers, ES modules in workers (`{ type: "module" }`), and Service Workers (for offline PWA operation). Supported in Chrome 87+, Edge 88+, Firefox 114+ and Safari 15+.
 * *(Optional)* **gfortran**: only for native execution on the server. The browser engine needs no compiler; the compiled WebAssembly is committed in `public/elsepa/`.
+
+### Environment Variables & Security
+* `ENABLE_SOURCE_EDITING`: defaults to disabled. When unset or not `"true"`, all server write endpoints (`/api/fortran-source/save`, `/api/fortran-source/reset`, `/api/ts-source/save`, `/api/ts-source/reset`) return HTTP 403 Forbidden. **Security notice**: Source editing recompiles and executes Fortran code on the host system; enable this (`ENABLE_SOURCE_EDITING=true`) ONLY in trusted local development environments. Never enable on a public or multi-tenant deployment.
+* `PORT`: server listen port (default `3000`).
+* `ELSEPA_DATA`: path to atomic data tables directory (default `data/`).
 
 ### 1. Clone & Install Dependencies
 ```bash

@@ -164,6 +164,9 @@ export function runDiracPartialWaveSimulation(
   params: ElsepaInputParams,
   elementData?: ElementData
 ): SimulationResult {
+  if (params.densityModel === 'custom-file') {
+    throw new Error('User-supplied densities require the ELSEPA engine');
+  }
   const startTime = performance.now();
   const element = elementData || getElementByZ(params.z);
 

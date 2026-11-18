@@ -15,6 +15,8 @@ import {
   runOfficialEnergySweep,
 } from '../server/fortranRunner';
 import { ElsepaInputParams, MolecularInputParams } from '../src/types';
+import { validateEnergies } from '../src/physics/energyGrid';
+import { app } from '../server';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 process.chdir(ROOT);
@@ -43,9 +45,9 @@ function referenceSigmaElAu(): number {
 }
 
 let failures = 0;
-function check(name: string, fn: () => void) {
+async function check(name: string, fn: () => void | Promise<void>) {
   try {
-    fn();
+    await fn();
     console.log(`PASS  ${name}`);
   } catch (err: any) {
     failures++;
@@ -95,6 +97,77 @@ check('TypeScript model is used only when requested, and labelled as such', () =
   assert(a.summary.engineUsed === 'typescript-dirac-solver', `atomic engineUsed = ${a.summary.engineUsed}`);
   const m = runOfficialMolecularFortranSimulation({ ...water, forceEngine: 'typescript' } as any);
   assert(m.summary.engineUsed === 'typescript-dirac-solver', `molecular engineUsed = ${m.summary.engineUsed}`);
+});
+
+check('/api/energy-sweep rejects an invalid energies array with 400', () => {
+  const invalidCases = [[], [5], [2e9], Array.from({ length: 101 }, (_, i) => 10 + i * 10)];
+  for (const energies of invalidCases) {
+    const { errors } = validateEnergies(energies);
+    assert(errors.length > 0, `energies ${JSON.stringify(energies)} should produce validation errors`);
+  }
+});
+
+check('custom-density simulation uses native ELSEPA with isolated density.usr and matches reference', () => {
+  const z079 = fs.readFileSync(path.join(ROOT, 'data', 'z_079.den'), 'utf8');
+  const r = runOfficialFortranSimulation({
+    ...base,
+    densityModel: 'custom-file',
+    customDensityData: z079,
+  });
+  assert(r.summary.engineUsed === 'salvat-official-fortran', `engineUsed = ${r.summary.engineUsed}`);
+  const ref = referenceSigmaElAu();
+  assert(relDiff(r.summary.sigmaElAu, ref) < 1e-5, `sigma_el ${r.summary.sigmaElAu} vs ${ref}`);
+});
+
+await check('with default environment, the four source write endpoints return 403 and make no file changes', async () => {
+  const originalFortran = fs.readFileSync(path.join(ROOT, 'fortran', 'elsepa.f'), 'utf8');
+  const originalTs = fs.readFileSync(path.join(ROOT, 'src', 'physics', 'elsepaPhysicsEngine.ts'), 'utf8');
+
+  const server = app.listen(0);
+  const port = (server.address() as any).port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    // 1. POST /api/fortran-source/save
+    const r1 = await fetch(`${baseUrl}/api/fortran-source/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: 'elsepa.f', content: 'MALICIOUS_FORTRAN_CODE' }),
+    });
+    assert(r1.status === 403, `POST /api/fortran-source/save returned status ${r1.status}, expected 403`);
+
+    // 2. POST /api/fortran-source/reset
+    const r2 = await fetch(`${baseUrl}/api/fortran-source/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: 'elsepa.f' }),
+    });
+    assert(r2.status === 403, `POST /api/fortran-source/reset returned status ${r2.status}, expected 403`);
+
+    // 3. POST /api/ts-source/save
+    const r3 = await fetch(`${baseUrl}/api/ts-source/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: 'MALICIOUS_TS_CODE' }),
+    });
+    assert(r3.status === 403, `POST /api/ts-source/save returned status ${r3.status}, expected 403`);
+
+    // 4. POST /api/ts-source/reset
+    const r4 = await fetch(`${baseUrl}/api/ts-source/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert(r4.status === 403, `POST /api/ts-source/reset returned status ${r4.status}, expected 403`);
+
+    // Assert no file changes occurred
+    const currentFortran = fs.readFileSync(path.join(ROOT, 'fortran', 'elsepa.f'), 'utf8');
+    const currentTs = fs.readFileSync(path.join(ROOT, 'src', 'physics', 'elsepaPhysicsEngine.ts'), 'utf8');
+    assert(currentFortran === originalFortran, 'fortran/elsepa.f was modified despite 403 response');
+    assert(currentTs === originalTs, 'src/physics/elsepaPhysicsEngine.ts was modified despite 403 response');
+  } finally {
+    server.close();
+  }
 });
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');

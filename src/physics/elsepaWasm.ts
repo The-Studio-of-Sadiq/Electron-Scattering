@@ -46,11 +46,11 @@ function getWorker(): Worker {
   return worker;
 }
 
-function runProgram(program: 'atomic' | 'molecular', input: string): Promise<RunResponse> {
+function runProgram(program: 'atomic' | 'molecular', input: string, files?: Record<string, string>): Promise<RunResponse> {
   return new Promise((resolve, reject) => {
     const id = nextId++;
     pending.set(id, { resolve, reject });
-    getWorker().postMessage({ id, program, input });
+    getWorker().postMessage({ id, program, input, files });
   });
 }
 
@@ -60,10 +60,18 @@ function noOutputError(log: string | undefined): Error {
   return new Error(`ELSEPA produced no DCS table${lastLines ? `: ${lastLines}` : ''}`);
 }
 
+export async function runElsepaWasmRaw(program: 'atomic' | 'molecular', input: string, files?: Record<string, string>): Promise<RunResponse> {
+  return runProgram(program, input, files);
+}
+
 export async function runElsepaWasmAtomic(params: ElsepaInputParams): Promise<SimulationResult> {
   const start = performance.now();
   const input = buildAtomicInput(params);
-  const { files, log } = await runProgram('atomic', input);
+  const dataFiles: Record<string, string> = {};
+  if (params.densityModel === 'custom-file' && params.customDensityData) {
+    dataFiles['density.usr'] = params.customDensityData;
+  }
+  const { files, log } = await runProgram('atomic', input, Object.keys(dataFiles).length > 0 ? dataFiles : undefined);
   const result = parseAtomicOutputs(params, files || {}, input, performance.now() - start);
   if (!result) throw noOutputError(log);
   return result;

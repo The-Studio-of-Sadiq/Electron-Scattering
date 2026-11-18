@@ -229,6 +229,7 @@ export default function App() {
               onRunSimulation={() => runSimulation(params)}
               isSimulating={isSimulating}
               theme={theme}
+              enginePreference={enginePreference}
             />
 
             <ResultsDashboard
@@ -242,7 +243,7 @@ export default function App() {
 
         {activeTab === 'molecular' && <MolecularWorkbench enginePreference={enginePreference} />}
 
-        {activeTab === 'sweep' && <EnergySweepViewer baseParams={params} />}
+        {activeTab === 'sweep' && <EnergySweepViewer baseParams={params} enginePreference={enginePreference} />}
 
         {activeTab === 'saved' && (
           <SavedRunsManager onCloneToWorkbench={handleCloneToWorkbench} />

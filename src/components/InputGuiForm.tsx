@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Atom,
   Zap,
@@ -11,11 +11,15 @@ import {
   Info,
   Sliders,
   FileText,
+  AlertTriangle,
+  AlertCircle,
+  Upload,
 } from 'lucide-react';
 import { ElsepaInputParams, ElementData } from '../types';
 import { getElementByZ } from '../data/elements';
 import { PeriodicTableModal } from './PeriodicTableModal';
 import { LaTeXText, MathTex } from './LaTeX';
+import { parseDensityFile, checkElectronCountWarning } from '../physics/densityFile';
 
 interface InputGuiFormProps {
   params: ElsepaInputParams;
@@ -23,6 +27,7 @@ interface InputGuiFormProps {
   onRunSimulation: () => void;
   isSimulating: boolean;
   theme?: 'dark' | 'light';
+  enginePreference?: 'gfortran' | 'typescript';
 }
 
 export const InputGuiForm: React.FC<InputGuiFormProps> = ({
@@ -31,9 +36,52 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
   onRunSimulation,
   isSimulating,
   theme = 'dark',
+  enginePreference = 'gfortran',
 }) => {
+  const isElsepaEngine = enginePreference !== 'typescript';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [energyUnit, setEnergyUnit] = useState<'eV' | 'keV' | 'MeV'>('keV');
+  const [densityFileError, setDensityFileError] = useState<string | null>(null);
+  // Only the most recent file selection may update the density (file reads can finish out of order).
+  const densityReadId = useRef(0);
+
+  const nelec = params.z - Math.min(params.z, Math.max(0, Math.round(params.ionCharge || 0)));
+
+  const densityParseResult = useMemo(() => {
+    if (params.densityModel !== 'custom-file' || !params.customDensityData) return null;
+    return parseDensityFile(params.customDensityData, params.customDensityName);
+  }, [params.densityModel, params.customDensityData, params.customDensityName]);
+
+  const densityWarning = densityParseResult ? checkElectronCountWarning(densityParseResult.electrons, nelec) : null;
+  const isDensityInvalid =
+    params.densityModel === 'custom-file' &&
+    (!params.customDensityData || !!densityFileError || (densityParseResult?.errors.length ?? 0) > 0);
+
+  const handleCustomDensityFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const readId = ++densityReadId.current;
+    try {
+      const text = await file.text();
+      if (readId !== densityReadId.current) return;
+      const result = parseDensityFile(text, file.name);
+      if (result.errors.length > 0) {
+        setDensityFileError(result.errors.join('; '));
+        setParams((prev) => ({ ...prev, customDensityName: file.name, customDensityData: undefined }));
+      } else {
+        setDensityFileError(null);
+        setParams((prev) => ({
+          ...prev,
+          customDensityName: file.name,
+          customDensityData: result.normalized,
+        }));
+      }
+    } catch (err: any) {
+      if (readId !== densityReadId.current) return;
+      setDensityFileError(err?.message || 'Failed to read density file');
+      setParams((prev) => ({ ...prev, customDensityName: file.name, customDensityData: undefined }));
+    }
+  };
 
   const currentElement: ElementData = getElementByZ(params.z);
 
@@ -144,12 +192,18 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
+                  disabled={isElsepaEngine}
                   value={params.massNumber}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, massNumber: parseFloat(e.target.value) || 1 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
+                {isElsepaEngine && (
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                )}
               </div>
             </div>
             <div className="mt-2 text-xs">
@@ -303,7 +357,72 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <option value="dhfs">Dirac-Hartree-Fock-Slater (DHFS)</option>
                 <option value="thomas-fermi-dirac">Thomas-Fermi-Dirac (TFD)</option>
                 <option value="thomas-fermi">Thomas-Fermi-Molière (TFM)</option>
+                <option value="custom-file">User-supplied (upload file)</option>
               </select>
+
+              {params.densityModel === 'custom-file' && (
+                <div id="custom-density-file-container" className="mt-2 p-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-xs flex flex-col gap-2">
+                  <div>
+                    <label className="block text-[10px] text-slate-400 mb-1">
+                      Density File (.den, .dat, .txt, .csv):
+                    </label>
+                    <input
+                      id="input-custom-density-file"
+                      type="file"
+                      accept=".den,.dat,.txt,.csv"
+                      onChange={handleCustomDensityFileChange}
+                      className="w-full text-slate-300 text-[11px] file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[11px] file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Format: pairs of <span className="font-mono text-slate-300">r</span> (bohr, a₀) and <span className="font-mono text-slate-300">ρ</span> (electrons/a₀³), 5 to 996 points, strictly increasing in r. Normalized so that <span className="font-mono text-slate-300">4π∫ρr²dr = NELEC</span> (same format as ELSEPA's <span className="font-mono text-slate-300">z_NNN.den</span> files).
+                  </p>
+
+                  {params.customDensityName && (
+                    <div className="flex flex-col gap-1 text-[11px] bg-slate-900/80 p-2 rounded border border-slate-800">
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-400 font-medium">File:</span>
+                        <span className="font-mono font-semibold text-indigo-300">{params.customDensityName}</span>
+                      </div>
+                      {densityParseResult && (
+                        <>
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span className="text-slate-400 font-medium">Data Points:</span>
+                            <span className="font-mono">{densityParseResult.points}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span className="text-slate-400 font-medium">Integrated Electrons:</span>
+                            <span className="font-mono">
+                              {densityParseResult.electrons.toFixed(3)} <span className="text-slate-500">(NELEC = {nelec})</span>
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {densityWarning && (
+                    <div id="density-warning-box" className="p-2 bg-amber-950/40 border border-amber-600/40 rounded text-amber-300 text-[11px] flex items-start gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-400" />
+                      <span>{densityWarning}</span>
+                    </div>
+                  )}
+
+                  {(densityFileError || (densityParseResult?.errors.length ?? 0) > 0) && (
+                    <div id="density-error-box" className="p-2 bg-rose-950/40 border border-rose-600/40 rounded text-rose-300 text-[11px] flex items-start gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-rose-400" />
+                      <span>{densityFileError || densityParseResult?.errors.join('; ')}</span>
+                    </div>
+                  )}
+
+                  {params.densityModel === 'custom-file' && !params.customDensityData && !densityFileError && (
+                    <p className="text-[10px] text-amber-400/90 font-medium">
+                      * Please upload a density table to enable simulation.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mb-3">
@@ -345,24 +464,36 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                   <input
                     type="number"
                     step="0.01"
+                    disabled={isElsepaEngine}
                     value={params.fermiC || (1.07 * Math.pow(params.massNumber, 1 / 3)).toFixed(2)}
                     onChange={(e) =>
                       setParams((prev) => ({ ...prev, fermiC: parseFloat(e.target.value) || 1.0 }))
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   />
+                  {isElsepaEngine && (
+                    <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] text-slate-400 mb-1">Skin thickness t (fm):</label>
                   <input
                     type="number"
                     step="0.01"
+                    disabled={isElsepaEngine}
                     value={params.fermiT || 0.5229}
                     onChange={(e) =>
                       setParams((prev) => ({ ...prev, fermiT: parseFloat(e.target.value) || 0.5229 }))
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   />
+                  {isElsepaEngine && (
+                    <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                  )}
                 </div>
               </div>
             )}
@@ -447,6 +578,7 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
+                  disabled={isElsepaEngine}
                   value={params.cutoffRadius}
                   onChange={(e) =>
                     setParams((prev) => ({
@@ -454,8 +586,13 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                       cutoffRadius: parseFloat(e.target.value) || 1.0,
                     }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
+                {isElsepaEngine && (
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                )}
               </div>
             </div>
           </div>
@@ -490,22 +627,28 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <label className="block text-[10px] text-slate-400 mb-1">Min θ (°):</label>
                 <input
                   type="number"
+                  disabled={isElsepaEngine}
                   value={params.minAngle}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, minAngle: parseFloat(e.target.value) || 0 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
               <div>
                 <label className="block text-[10px] text-slate-400 mb-1">Max θ (°):</label>
                 <input
                   type="number"
+                  disabled={isElsepaEngine}
                   value={params.maxAngle}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, maxAngle: parseFloat(e.target.value) || 180 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
               <div>
@@ -513,13 +656,21 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
+                  disabled={isElsepaEngine}
                   value={params.angleStep}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, angleStep: parseFloat(e.target.value) || 1.0 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
+              {isElsepaEngine && (
+                <div className="col-span-3 text-[10px] text-slate-500 mt-0.5">
+                  Set by ELSEPA (not an input of ELSCATA)
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -562,7 +713,7 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
             <button
               id="btn-run-simulation"
               onClick={onRunSimulation}
-              disabled={isSimulating}
+              disabled={isSimulating || isDensityInvalid}
               className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
             >
               <Play className="w-4 h-4 fill-current" />

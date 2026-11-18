@@ -19,6 +19,8 @@ import {
 } from './server/fortranRunner';
 import { ElsepaInputParams, MolecularInputParams, UploadedDataset } from './src/types';
 import { parseUploadedDataset } from './src/utils/datasetParser';
+import { validateEnergies } from './src/physics/energyGrid';
+import { checkCustomDensity } from './src/physics/densityFile';
 
 import {
   OFFICIAL_ELSEPA_FORTRAN_SOURCE,
@@ -28,6 +30,18 @@ import {
 
 const app = express();
 const PORT = 3000;
+
+const isSourceEditingEnabled = () => process.env.ENABLE_SOURCE_EDITING === 'true';
+
+const requireSourceEditing = (_req: Request, res: Response, next: () => void) => {
+  if (!isSourceEditingEnabled()) {
+    res.status(403).json({
+      error: 'Source editing is disabled. Set ENABLE_SOURCE_EDITING=true in the server environment (local development only) to enable saving or resetting source files.',
+    });
+    return;
+  }
+  next();
+};
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -78,6 +92,7 @@ app.get('/api/fortran-status', (_req: Request, res: Response) => {
     hasElsepaBinary,
     versionInfo,
     gfortranPath,
+    sourceEditing: isSourceEditingEnabled(),
   });
 });
 
@@ -87,6 +102,11 @@ app.post('/api/simulate', (req: Request, res: Response) => {
     const params: ElsepaInputParams = req.body;
     if (!params || !params.z || !params.energyEv) {
       res.status(400).json({ error: 'Missing required simulation parameters (z, energyEv)' });
+      return;
+    }
+    const densityError = checkCustomDensity(params).error;
+    if (densityError) {
+      res.status(400).json({ error: densityError });
       return;
     }
 
@@ -156,7 +176,14 @@ app.post('/api/energy-sweep', (req: Request, res: Response) => {
       return;
     }
 
-    const sweepResults = runOfficialEnergySweep(params, energies);
+    const { energies: validEnergies, errors } = validateEnergies(energies);
+    const densityError = checkCustomDensity(params).error;
+    if (errors.length > 0 || densityError) {
+      res.status(400).json({ error: [...errors, densityError].filter(Boolean).join('; ') });
+      return;
+    }
+
+    const sweepResults = runOfficialEnergySweep(params, validEnergies);
     res.json(sweepResults);
   } catch (err: any) {
     console.error('Energy sweep error:', err);
@@ -231,7 +258,7 @@ app.get('/api/fortran-source/content', (req: Request, res: Response) => {
 });
 
 // API 9: Fortran Source Notebook Editor API - Save File & Compile
-app.post('/api/fortran-source/save', (req: Request, res: Response) => {
+app.post('/api/fortran-source/save', requireSourceEditing, (req: Request, res: Response) => {
   try {
     const { filename, content } = req.body;
     if (!filename || typeof content !== 'string') {
@@ -246,7 +273,7 @@ app.post('/api/fortran-source/save', (req: Request, res: Response) => {
 });
 
 // API 10: Fortran Source Notebook Editor API - Reset to Original
-app.post('/api/fortran-source/reset', (req: Request, res: Response) => {
+app.post('/api/fortran-source/reset', requireSourceEditing, (req: Request, res: Response) => {
   try {
     const { filename } = req.body;
     const result = resetFortranFilesToOriginal(filename);
@@ -267,7 +294,7 @@ app.get('/api/ts-source/content', (_req: Request, res: Response) => {
 });
 
 // API 12: TypeScript Engine Source Editor API - Save Content
-app.post('/api/ts-source/save', (req: Request, res: Response) => {
+app.post('/api/ts-source/save', requireSourceEditing, (req: Request, res: Response) => {
   try {
     const { content } = req.body;
     if (typeof content !== 'string') {
@@ -282,7 +309,7 @@ app.post('/api/ts-source/save', (req: Request, res: Response) => {
 });
 
 // API 13: TypeScript Engine Source Editor API - Reset Content
-app.post('/api/ts-source/reset', (_req: Request, res: Response) => {
+app.post('/api/ts-source/reset', requireSourceEditing, (_req: Request, res: Response) => {
   try {
     const result = resetTsEngineContent();
     res.json(result);
@@ -315,4 +342,10 @@ async function startServer() {
   });
 }
 
-startServer();
+export { app, startServer };
+
+// Only listen when run directly, not when imported by test suites
+const isDirectRun = process.argv[1] && /server\.(ts|js|cjs|mjs)$/.test(process.argv[1]);
+if (isDirectRun) {
+  startServer();
+}

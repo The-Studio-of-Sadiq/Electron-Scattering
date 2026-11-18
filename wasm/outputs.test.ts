@@ -97,5 +97,54 @@ for (const [name, change, expected] of options) {
   });
 }
 
+// Audit: ensure every ElsepaInputParams field that the form lets users edit with
+// the ELSEPA engine reaches the built ELSEPA input deck, and that every ignored
+// field (which the form disables in ELSEPA mode) does not affect the deck.
+await check('ELSEPA input deck builder audits all editable and ignored fields', async () => {
+  const baseDeck = buildAtomicInput(base);
+
+  const elsepaInputs: Array<[string, Partial<ElsepaInputParams>]> = [
+    ['z', { z: 80 }],
+    ['projectile', { projectile: 1 }],
+    ['energyEv', { energyEv: 5000 }],
+    ['nuclearModel', { nuclearModel: 'helm' }],
+    ['densityModel', { densityModel: 'thomas-fermi' }],
+    ['ionCharge', { ionCharge: 2 }],
+    ['muffinTin', { muffinTin: true }],
+    ['muffinTinRadiusAngstrom', { muffinTin: true, muffinTinRadiusAngstrom: 1.5 }],
+    ['exchangeModel', { exchangeModel: 'none' }],
+    ['polarizationModel', { polarizationModel: 'lda' }],
+    ['polarizability', { polarizationModel: 'buckingham', polarizability: 42 }],
+    ['absorptionModel', { absorptionModel: 'staszewska-lda' }],
+    ['absorptionStrength', { absorptionModel: 'staszewska-lda', absorptionStrength: 3.5 }],
+  ];
+
+  for (const [field, change] of elsepaInputs) {
+    const modifiedDeck = buildAtomicInput({ ...base, ...change });
+    assert(
+      modifiedDeck !== baseDeck,
+      `Field ${field} is an ELSEPA input but buildAtomicInput deck was unchanged`
+    );
+  }
+
+  const notElsepaInputs: Array<[string, Partial<ElsepaInputParams>]> = [
+    ['massNumber', { massNumber: 205 }],
+    ['fermiC', { fermiC: 7.2 }],
+    ['fermiT', { fermiT: 0.65 }],
+    ['cutoffRadius', { cutoffRadius: 3.0 }],
+    ['minAngle', { minAngle: 15 }],
+    ['maxAngle', { maxAngle: 165 }],
+    ['angleStep', { angleStep: 2.5 }],
+  ];
+
+  for (const [field, change] of notElsepaInputs) {
+    const modifiedDeck = buildAtomicInput({ ...base, ...change });
+    assert(
+      modifiedDeck === baseDeck,
+      `Field ${field} is not an ELSEPA input but changed the buildAtomicInput deck`
+    );
+  }
+});
+
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');
 process.exit(failures ? 1 : 0);

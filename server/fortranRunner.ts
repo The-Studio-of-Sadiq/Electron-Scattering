@@ -5,6 +5,7 @@ import { ElsepaInputParams, SimulationResult, MolecularInputParams, MolecularSim
 
 import { runDiracPartialWaveSimulation, runEnergySweep } from '../src/physics/elsepaPhysicsEngine';
 import { runFallbackMolecularSimulation } from '../src/physics/molecularFallback';
+import { checkCustomDensity } from '../src/physics/densityFile';
 import {
   FortranOutputFiles,
   buildAtomicInput,
@@ -144,22 +145,16 @@ export function runOfficialFortranSimulation(params: ElsepaInputParams): Simulat
     throw new Error('Native ELSEPA (ELSCATA) is not available on this server');
   }
 
+  const density = checkCustomDensity(params);
+  if (density.error) throw new Error(density.error);
+
   const startTime = performance.now();
   const rootDir = process.cwd();
   const inputContent = buildAtomicInput(params);
 
   // Create isolated execution temp folder
   const tempDir = path.join(rootDir, 'tmp_run_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
-  fs.mkdirSync(tempDir, { recursive: true });
-
   const inputFilePath = path.join(tempDir, 'in.dat');
-  fs.writeFileSync(inputFilePath, inputContent, 'utf-8');
-
-  // Set ELSEPA_DATA pointing to data directory
-  const env = {
-    ...process.env,
-    ELSEPA_DATA: path.join(rootDir, 'data'),
-  };
 
   try {
     fs.chmodSync(binaryPath, 0o755);
@@ -168,6 +163,25 @@ export function runOfficialFortranSimulation(params: ElsepaInputParams): Simulat
   let result: SimulationResult | null = null;
   let failure: any;
   try {
+    fs.mkdirSync(tempDir, { recursive: true });
+    fs.writeFileSync(inputFilePath, inputContent, 'utf-8');
+
+    // ELSEPA reads $ELSEPA_DATA/density.usr. Custom-density runs get their own data directory
+    // (density.usr plus copies of the atom's z_NNN.den / z_NNN.dfs) so concurrent runs never share it.
+    let elsepaDataDir = path.join(rootDir, 'data');
+    if (density.data) {
+      const runDataDir = path.join(tempDir, 'data');
+      fs.mkdirSync(runDataDir, { recursive: true });
+      fs.writeFileSync(path.join(runDataDir, 'density.usr'), density.data, 'utf-8');
+      const zPad = String(params.z).padStart(3, '0');
+      for (const ext of ['.den', '.dfs']) {
+        const srcFile = path.join(elsepaDataDir, `z_${zPad}${ext}`);
+        if (fs.existsSync(srcFile)) fs.copyFileSync(srcFile, path.join(runDataDir, `z_${zPad}${ext}`));
+      }
+      elsepaDataDir = runDataDir;
+    }
+    const env = { ...process.env, ELSEPA_DATA: elsepaDataDir };
+
     execSync(`"${binaryPath}" < "${inputFilePath}"`, {
       cwd: tempDir,
       env,

@@ -1,5 +1,5 @@
 # Electron Scattering Simulator (ELSEPA Physics Workbench)
-## Comprehensive Technical & Architectural Documentation (v1.2.0)
+## Comprehensive Technical & Architectural Documentation (v1.3.0)
 
 ---
 
@@ -75,7 +75,7 @@ This software platform and research interface was developed by researchers and s
   * **Projectile Selection**: Electron ($e^-$) or Positron ($e^+$).
   * **Kinetic Energy**: direct input in eV, keV or MeV, with presets from 10 eV to 1 MeV. ELSEPA rejects energies below 10 eV.
   * **Nuclear Charge Models**: Point Charge, Uniform Sphere, Fermi, or Helm uniform-uniform distribution (`MNUCL` 1/2/3/4). ELSEPA uses its own built-in nuclear parameters.
-  * **Electron Density**: Thomas–Fermi–Molière, Thomas–Fermi–Dirac, Dirac–Hartree–Fock–Slater, or numerical Dirac–Fock (`MELEC` 1/2/3/4; default 4).
+  * **Electron Density**: Thomas–Fermi–Molière, Thomas–Fermi–Dirac, Dirac–Hartree–Fock–Slater, numerical Dirac–Fock, or User-supplied density file (`MELEC` 1/2/3/4/5; default 4). When `custom-file` is chosen, users can upload external radial density tables in `.den`, `.dat`, `.txt`, or `.csv` format.
   * **Exchange Potentials ($e^-$)**: None, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi (`MEXCH` 0/1/3/2).
   * **Correlation–Polarization**: None, Buckingham, or LDA (`MCPOL` 0/1/2), with a user-set dipole polarizability (or ELSEPA's tabulated value when none is given); the cutoff parameter is left to ELSEPA's default.
   * **Absorption**: None or the LDA absorption potential (`MABS` 1) with adjustable strength.
@@ -99,8 +99,12 @@ This software platform and research interface was developed by researchers and s
 * **Calculation**: runs ELSEPA's ELSCATM program, which uses the independent-atom model (Section 4.5) and reports coherent and incoherent DCS and integrated cross sections. No Debye–Waller (thermal vibration) correction is applied.
 
 #### 3.3 Energy Spectrum Sweep Viewer
-* `src/components/EnergySweepViewer.tsx` runs ELSEPA for the current atomic parameters at 16 fixed energies from 10 eV to 1 MeV (10, 20, 50 … 500 keV, 1 MeV).
-* Plots $\sigma_{\text{el}}(E)$, $\sigma_1(E)$ and $\sigma_2(E)$ on a log–log chart.
+* `src/components/EnergySweepViewer.tsx` runs ELSEPA across a user-configurable energy grid:
+  * **Default grid**: 16 standard log-spaced energies from 10 eV to 1 MeV (10, 20, 50, 100, 200, 500 eV, 1, 2, 5, 10, 20, 50, 100, 200, 500 keV, 1 MeV).
+  * **Logarithmic range**: user-defined $E_{\min}$, $E_{\max}$, and number of points $N$ ($1 \le N \le 100$, $10\text{ eV} \le E \le 10^9\text{ eV}$), rounded to 4 significant digits.
+  * **Custom list**: arbitrary list of energies separated by spaces, commas, semicolons, or newlines (supports standard exponential syntax, e.g. `1e3`, `2.5E4`).
+* Provides live grid preview, point count, and client-side as well as server-side validation rejecting invalid ranges with HTTP 400.
+* Plots $\sigma_{\text{el}}(E)$, $\sigma_1(E)$ and $\sigma_2(E)$ on an interactive log–log chart.
 
 #### 3.4 Saved Runs & Comparison Engine
 * `src/components/SavedRunsManager.tsx`, `src/utils/localStorage.ts`:
@@ -117,8 +121,8 @@ This software platform and research interface was developed by researchers and s
 
 #### 3.6 Fortran Source Code & Deployment Tab
 * `src/components/RenderDeploymentModal.tsx`:
-  * **Source Code Viewer**: the ELSEPA Fortran 77 sources (`elsepa.f`, `elscata.f`, `elscatm.f`, `getpath.f`) and the TS Approximation source. With the Node server running, sources can be edited and reset; saving triggers recompilation with `gfortran`. The browser-only build is read-only.
-  * **Engine Status**: reports whether `gfortran` and a compiled ELSEPA binary are available on the server, or that ELSEPA is running as WebAssembly in the browser.
+  * **Source Code Viewer**: the ELSEPA Fortran 77 sources (`elsepa.f`, `elscata.f`, `elscatm.f`, `getpath.f`) and the TS Approximation source. With the Node server running, sources can be inspected in read-only mode by default. Saving or resetting requires `ENABLE_SOURCE_EDITING=true` in the server environment (local development only; forbidden on public servers to prevent remote code execution). When editing is disabled or when running in the browser-only build, the Save and Reset buttons are disabled with an explanatory note.
+  * **Engine Status**: reports whether `gfortran` and a compiled ELSEPA binary are available on the server, whether source editing is enabled (`sourceEditing`), or that ELSEPA is running as WebAssembly in the browser.
   * **Deployment files**: the `Dockerfile` and `render.yaml` used for container deployment (Section 8).
 
 #### 3.7 Physics Guide & Dirac Theory
@@ -176,6 +180,20 @@ $$V(r) = V_{\text{st}}(r) + V_{\text{ex}}(r) + V_{\text{cp}}(r) - i W_{\text{abs
    where $\alpha_d$ is the dipole polarizability and $d$ a cutoff parameter. ELSEPA's alternative LDA option (not exposed in the UI) joins this long-range form to a local-density correlation potential at short distances.
 
 4. **Absorption Potential $W_{\text{abs}}(r)$**: ELSEPA's LDA absorption potential, describing loss of flux to inelastic channels, scaled by the user-set strength parameter.
+
+#### 4.3.1 User-Supplied Electron Densities (MELEC 5)
+ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa.f` to read external radial electron densities from `density.usr` (`$ELSEPA_DATA/density.usr` natively or `/data/density.usr` in WebAssembly).
+* **Format & Header**: ELSEPA skips exactly 3 header lines, then reads list-directed pairs of $(r, \rho(r))$ until EOF. The workbench normalizes uploaded text to start with 3 header lines prefixed by ` #` followed by scientific pairs formatted as ` R RHO`.
+* **Grid Constraints**:
+  * Point count: $5 \le N \le 996$ (ELSEPA stops if $N < 5$ because cubic spline interpolation requires more than 4 points; $N_{\max} = 996$ points in Fortran array limits).
+  * Radius: $r > 0$, strictly increasing ($r_{i+1} > r_i$). Units: **bohr** ($a_0$).
+  * Density: $\rho(r) > 0$, strictly positive because ELSEPA fits a natural cubic spline to $\ln \rho(r)$. Units: **electrons/bohr$^3$** ($e/a_0^3$).
+* **Charge Conservation & Normalization**:
+  $$4\pi \int_0^\infty \rho(r) r^2 \, dr = \text{NELEC} = Z - q$$
+  The workbench computes the trapezoidal integral and warns the user if the integrated electron count deviates from $\text{NELEC}$ by more than $1\%$.
+* **Execution & Concurrency Isolation**:
+  * **WebAssembly**: custom files are written to Emscripten's virtual filesystem at `/data/density.usr` on a fresh module instance per worker.
+  * **Native Node Server**: each simulation runs inside an isolated execution directory (`tmp_run_*`). When a custom density is requested, an isolated `tmp_run_*/data/` directory is created containing `density.usr` alongside copies of any atom data tables read by ELSCATA (`z_NNN.den`, `z_NNN.dfs`), with `ELSEPA_DATA` pointing to it. The entire temporary folder is automatically deleted upon simulation completion.
 
 #### 4.4 Physical Observables & Cross Sections
 * **Differential Cross Section (DCS)**:
@@ -359,14 +377,44 @@ docker run -p 3000:3000 elsepa-simulator
 
 ### 9. Validation & Testing
 
-**Parity test (`wasm/parity.test.ts`).** Twenty cases. Seven cover the model options added in v1.2 (positive ion, muffin-tin, LDA polarization, Helm nucleus, TFM, TFD and DHFS densities) and are compared with native gfortran ELSEPA. The other thirteen cover H, Cu, Au, Hg and H₂O; electrons and positrons; energies from 100 eV to 100 keV; Furness–McCarthy exchange, Buckingham and LDA correlation–polarization, and LDA absorption. The inputs include decks built by the application's own `buildAtomicInput` and the official CPC example inputs `elscata.in` and `h2o.in` (`wasm/tests/`). For each case, every number in every `dcs_*.dat` file is compared between the WebAssembly build, native `gfortran` ELSEPA, and the reference outputs in `validations/` (relative tolerance $10^{-5}$, matching the 6 significant digits ELSEPA prints; absolute tolerance $10^{-9}$ for the Sherman function). In the latest CI run all 34 comparisons were identical (maximum relative difference 0).
+**Parity test (`wasm/parity.test.ts`).** Twenty-one cases. Eight cover the model options added in v1.2 and v1.3 (positive ion, muffin-tin, LDA polarization, Helm nucleus, TFM, TFD, DHFS densities, and user-supplied density with `z_079.den` as `density.usr`) and are compared with native gfortran ELSEPA. The other thirteen cover H, Cu, Au, Hg and H₂O; electrons and positrons; energies from 100 eV to 100 keV; Furness–McCarthy exchange, Buckingham and LDA correlation–polarization, and LDA absorption. The inputs include decks built by the application's own `buildAtomicInput` and the official CPC example inputs `elscata.in` and `h2o.in` (`wasm/tests/`). For each case, every number in every `dcs_*.dat` file is compared between the WebAssembly build, native `gfortran` ELSEPA, and the reference outputs in `validations/` (relative tolerance $10^{-5}$, matching the 6 significant digits ELSEPA prints; absolute tolerance $10^{-9}$ for the Sherman function).
 
-**Server test (`wasm/server.test.ts`).** Checks that the server's atomic, molecular and energy-sweep paths run native ELSEPA, that failures produce errors rather than approximate results, and that the TypeScript model is used only when explicitly requested.
+**Features test (`wasm/features.test.ts`).** Unit and functional tests for the features added in v1.3:
+* Energy grid: default 16-point grid, logarithmic grid generation (`logGrid`) with exact endpoints and 4-significant-figure rounding, multi-separator parsing (`parseEnergyList`), sorting and deduplication, and boundary limit validations.
+* User-supplied density file: parsing of reference `data/z_079.den` (777 points, integrated electron count $79.006 \pm 0.01$), comment/header stripping, Fortran D exponent translation, and all validation error cases.
+* ELSCATA deck generation: confirms `MELEC 5` emission for `custom-file` and error throwing when data is absent.
+* WebAssembly bit-for-bit parity between `dirac-fock` and `custom-file` with `z_079.den` (excluding density file header labels).
+* WebAssembly energy sweep returning 3 ordered points at 150, 750, and 3000 eV.
 
-Both tests run in GitHub Actions (`.github/workflows/elsepa-parity.yml`) on changes to the Fortran, physics, data, WebAssembly, validation or server files.
+**Server test (`wasm/server.test.ts`).** Checks that the server's atomic, molecular and energy-sweep paths run native ELSEPA, that `/api/energy-sweep` rejects invalid grids with HTTP 400, that native runs with custom density tables isolate `density.usr` in a per-run folder matching reference outputs, that the TypeScript model is used only when explicitly requested, and that the default server environment rejects all four source-editing endpoints (`/api/fortran-source/save`, `/api/fortran-source/reset`, `/api/ts-source/save`, `/api/ts-source/reset`) with HTTP 403 Forbidden without modifying any files.
+
+**Browser and offline test (`wasm/browser.test.ts`).** Automates a real Chromium/Edge browser over the Chrome DevTools Protocol (CDP) using Node's built-in fetch and WebSocket:
+* Tests static site serving in browser-only mode (no backend server).
+* Verifies `fetch('/api/simulate')` computes Au 1 keV total elastic cross section equal to 8.94335 $a_0^2$.
+* Verifies Service Worker caching of app assets and WebAssembly binaries.
+* Tests offline simulation after killing the static server and emulating network disconnection.
+* Runs in-browser WebAssembly benchmarks for all benchmark cases and measures median execution times.
+
+### 10. System & Browser Requirements
+* **Node.js**: `^20.19.0 || >=22.12.0` (enforced by `package.json` engines field).
+* **Browser Capabilities**:
+  * **WebAssembly**: required for running compiled Salvat ELSEPA Fortran routines.
+  * **Web Workers**: required for executing scattering calculations off the main UI thread.
+  * **ES Modules in Workers**: `{ type: "module" }` worker instantiation.
+  * **Service Workers & Cache Storage**: required for offline simulation and PWA capabilities.
+* **Supported Browsers**: Google Chrome 87+, Microsoft Edge 88+, Mozilla Firefox 114+, Apple Safari 15+ (the Vite 6 build target, plus ES-module Web Workers, which Firefox supports from 114 and Safari from 15).
+* **Security Configuration**: `ENABLE_SOURCE_EDITING=true` must only be set for trusted local development. Production deployments must keep it unset (disabled).
+
+All tests run in GitHub Actions (`.github/workflows/elsepa-parity.yml`) on changes to the Fortran, physics, data, WebAssembly, validation or server files.
 
 **Reproducing locally:**
 ```bash
+# Features & unit tests (no gfortran needed, runs on WebAssembly)
+npx tsx wasm/features.test.ts
+
+# Output tests (no gfortran needed)
+npx tsx wasm/outputs.test.ts
+
 # WebAssembly vs validations/ (no gfortran needed)
 npx tsx wasm/parity.test.ts
 
@@ -394,7 +442,7 @@ npx tsx wasm/server.test.ts
 ├── render.yaml                         # Render.com blueprint
 ├── index.html                          # Entry HTML with PWA tags & SW registration
 ├── metadata.json                       # Applet metadata
-├── package.json                        # Dependencies and scripts (version 1.2.0)
+├── package.json                        # Dependencies and scripts (version 1.3.0)
 ├── server.ts                           # Optional Express server & API routes
 ├── vite.config.ts                      # Vite build configuration
 │
@@ -409,6 +457,8 @@ npx tsx wasm/server.test.ts
 ├── wasm/                               # WebAssembly build & tests
 │   ├── build.sh                        # Fortran → f2c → Emscripten build script
 │   ├── f77fix.py                       # DATA-statement reordering for f2c
+│   ├── features.test.ts                # Unit and feature tests (grids, densities)
+│   ├── outputs.test.ts                 # Output quantity verification
 │   ├── parity.test.ts                  # WASM / native / reference parity test
 │   ├── server.test.ts                  # Server engine test
 │   └── tests/                          # Official CPC example inputs
@@ -453,10 +503,12 @@ npx tsx wasm/server.test.ts
     │   └── elsepaFortranSource.ts      # Fortran source excerpt, Dockerfile / render.yaml templates
     │
     ├── physics/
+    │   ├── densityFile.ts              # User density file parser, validator & formatter
     │   ├── elsepaFortranIO.ts          # ELSEPA input decks & output parsing
+    │   ├── elsepaPhysicsEngine.ts      # TS Approximation, atoms (demo only)
     │   ├── elsepaWasm.ts               # WebAssembly engine client
     │   ├── elsepaWasm.worker.ts        # Web Worker running ELSEPA WASM
-    │   ├── elsepaPhysicsEngine.ts      # TS Approximation, atoms (demo only)
+    │   ├── energyGrid.ts               # Energy grid generators & validators
     │   └── molecularFallback.ts        # TS Approximation, molecules (demo only)
     │
     └── utils/

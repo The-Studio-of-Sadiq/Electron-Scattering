@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elsepa-pwa-v3';
+const CACHE_NAME = 'elsepa-pwa-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -10,11 +10,36 @@ const ASSETS_TO_CACHE = [
   '/elsepa/elsepa.data'
 ];
 
-// Install event - Cache core static assets
+// Install event - Cache core static assets and discover Vite-built bundles
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await cache.addAll(ASSETS_TO_CACHE);
+      try {
+        const htmlRes = await fetch('/index.html');
+        if (htmlRes && htmlRes.ok) {
+          const htmlText = await htmlRes.text();
+          const matches = htmlText.matchAll(/(?:src|href)=["'](\/assets\/[^"']+)["']/g);
+          const assets = Array.from(matches, (m) => m[1]);
+          if (assets.length > 0) {
+            await cache.addAll(assets);
+          }
+          // Also pre-cache the WebAssembly worker script referenced in the bundle
+          const mainJs = assets.find((a) => a.endsWith('.js'));
+          if (mainJs) {
+            const jsRes = await fetch(mainJs);
+            if (jsRes && jsRes.ok) {
+              const jsText = await jsRes.text();
+              const workerMatch = jsText.match(/["'](\/assets\/[^"']*worker[^"']*\.js)["']/);
+              if (workerMatch && workerMatch[1]) {
+                await cache.add(workerMatch[1]);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Continue even if dynamic asset discovery fails
+      }
     }).then(() => self.skipWaiting())
   );
 });
@@ -73,7 +98,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Fallback for document navigation when offline
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('/index.html').then((r) => r || caches.match('/'));
         }
       });
     })
