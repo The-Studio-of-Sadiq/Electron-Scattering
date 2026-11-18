@@ -408,7 +408,7 @@ ${browserLog.slice(-2000)}`);
         ['Au, e-, 1 keV, Buckingham polarization', 'atomic', buildAtomicInput({ ...base, polarizationModel: 'buckingham', polarizability: 36 })],
         ['Au, e-, 1 keV, LDA absorption', 'atomic', buildAtomicInput({ ...base, absorptionModel: 'staszewska-lda' })],
         ['Hg, e-, 100 eV + 1 keV (official example)', 'atomic', read('wasm/tests/official_hg_lda_abs.in')],
-        ['H2O, e-, 100 + 200 eV (official example)', 'molecular', read('wasm/tests/official_h2o.in')],
+        ['H2O, e-, 500 eV with absorption (official example)', 'molecular', read('wasm/tests/official_h2o.in')],
       ];
 
       console.log('| Case | Browser WebAssembly |');

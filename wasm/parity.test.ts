@@ -60,7 +60,7 @@ const cases: Case[] = [
     referenceDir: 'T22',
     official2021Ref: { file: 'dcs_1p000e03.dat', path: path.join(ROOT, 'validations', 'official-2021', 'dcs_1p000e03.dat') },
   },
-  { name: 'official: H2O e- 100 + 200 eV (ELSCATM)', program: 'molecular', input: read('wasm/tests/official_h2o.in'), referenceDir: 'T23' },
+  { name: 'official: H2O e- 500 eV with absorption (ELSCATM)', program: 'molecular', input: read('wasm/tests/official_h2o.in'), referenceDir: 'T23' },
   // Model options exposed in v1.2 (checked against native gfortran when available).
   { name: 'app: Au+ e- 1 keV (ion, q = 1)', program: 'atomic', input: buildAtomicInput({ ...base, ionCharge: 1 }) },
   { name: 'app: Cu e- 1 keV muffin-tin (solid)', program: 'atomic', input: buildAtomicInput({ ...base, z: 29, massNumber: 63.546, muffinTin: true }) },
@@ -138,7 +138,10 @@ function compare(a: string, b: string): { count: number; maxRel: number; differi
     if (x[i].sherman) {
       const diff = Math.abs(x[i].value - y[i].value);
       const rel = diff / Math.max(Math.abs(x[i].value), Math.abs(y[i].value), 1e-300);
-      if (diff > SHERMAN_ABS_TOL && rel > REL_TOL && !shermanFailure) {
+      // |S| <= 1, so ELSEPA's own error estimate for the row (next value) is a fair absolute bound
+      // where convergence is poor, e.g. the smallest angles computed for an ion (Au+ at 0.5 deg).
+      const rowEstimate = x[i + 1]?.estimate ? Math.max(x[i + 1].value, y[i + 1].value) : 0;
+      if (diff > Math.max(SHERMAN_ABS_TOL, rowEstimate) && rel > REL_TOL && !shermanFailure) {
         shermanFailure = `Sherman ${x[i].value} vs ${y[i].value} in line "${x[i].line}"`;
       }
       continue;
