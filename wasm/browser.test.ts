@@ -246,12 +246,16 @@ async function run() {
       '--disable-background-networking',
       '--disable-default-apps',
       '--no-default-browser-check',
+      // CI runners (e.g. GitHub's Ubuntu images) cannot start Chrome's sandbox; local runs keep it.
+      ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] : []),
       'about:blank',
     ]);
+    let browserLog = '';
+    browserProc.stderr?.on('data', (d) => (browserLog += d.toString()));
 
     // Wait for CDP endpoint
     let versionData: any = null;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 150; i++) {
       await new Promise((r) => setTimeout(r, 200));
       try {
         const res = await fetch(`http://127.0.0.1:${cdpPort}/json/version`);
@@ -261,7 +265,8 @@ async function run() {
         }
       } catch {}
     }
-    assert(versionData?.webSocketDebuggerUrl, 'Failed to connect to browser CDP within 8 seconds');
+    assert(versionData?.webSocketDebuggerUrl, `Failed to connect to browser CDP within 30 seconds
+${browserLog.slice(-2000)}`);
 
     browserCDP = await connectCDP(versionData.webSocketDebuggerUrl);
 
