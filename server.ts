@@ -19,6 +19,8 @@ import {
 } from './server/fortranRunner';
 import { ElsepaInputParams, MolecularInputParams, UploadedDataset } from './src/types';
 import { parseUploadedDataset } from './src/utils/datasetParser';
+import { validateEnergies } from './src/physics/energyGrid';
+import { checkCustomDensity } from './src/physics/densityFile';
 
 import {
   OFFICIAL_ELSEPA_FORTRAN_SOURCE,
@@ -89,6 +91,11 @@ app.post('/api/simulate', (req: Request, res: Response) => {
       res.status(400).json({ error: 'Missing required simulation parameters (z, energyEv)' });
       return;
     }
+    const densityError = checkCustomDensity(params).error;
+    if (densityError) {
+      res.status(400).json({ error: densityError });
+      return;
+    }
 
     const result = runOfficialFortranSimulation(params);
     res.json(result);
@@ -156,7 +163,14 @@ app.post('/api/energy-sweep', (req: Request, res: Response) => {
       return;
     }
 
-    const sweepResults = runOfficialEnergySweep(params, energies);
+    const { energies: validEnergies, errors } = validateEnergies(energies);
+    const densityError = checkCustomDensity(params).error;
+    if (errors.length > 0 || densityError) {
+      res.status(400).json({ error: [...errors, densityError].filter(Boolean).join('; ') });
+      return;
+    }
+
+    const sweepResults = runOfficialEnergySweep(params, validEnergies);
     res.json(sweepResults);
   } catch (err: any) {
     console.error('Energy sweep error:', err);

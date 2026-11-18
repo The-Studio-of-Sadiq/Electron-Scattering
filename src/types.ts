@@ -41,7 +41,8 @@ export interface ElsepaInputParams {
   ionCharge?: number; // positive-ion charge q; ELSEPA NELEC = Z - q (default 0, neutral atom)
   muffinTin?: boolean; // atom in a solid: ELSEPA muffin-tin model (neutral atoms only)
   muffinTinRadiusAngstrom?: number; // muffin-tin radius; 0/undefined = ELSEPA default (half the nearest-neighbour distance)
-  customDensityFile?: string; // filename or raw content if uploaded
+  customDensityName?: string; // original filename of user-supplied electron density
+  customDensityData?: string; // normalized ELSEPA-ready density file text (density.usr)
   exchangeModel: ExchangeModel;
   polarizationModel: PolarizationModel;
   polarizability: number; // alpha_d in a_0^3

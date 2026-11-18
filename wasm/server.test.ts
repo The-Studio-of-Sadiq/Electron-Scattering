@@ -15,6 +15,7 @@ import {
   runOfficialEnergySweep,
 } from '../server/fortranRunner';
 import { ElsepaInputParams, MolecularInputParams } from '../src/types';
+import { validateEnergies } from '../src/physics/energyGrid';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 process.chdir(ROOT);
@@ -95,6 +96,26 @@ check('TypeScript model is used only when requested, and labelled as such', () =
   assert(a.summary.engineUsed === 'typescript-dirac-solver', `atomic engineUsed = ${a.summary.engineUsed}`);
   const m = runOfficialMolecularFortranSimulation({ ...water, forceEngine: 'typescript' } as any);
   assert(m.summary.engineUsed === 'typescript-dirac-solver', `molecular engineUsed = ${m.summary.engineUsed}`);
+});
+
+check('/api/energy-sweep rejects an invalid energies array with 400', () => {
+  const invalidCases = [[], [5], [2e9], Array.from({ length: 101 }, (_, i) => 10 + i * 10)];
+  for (const energies of invalidCases) {
+    const { errors } = validateEnergies(energies);
+    assert(errors.length > 0, `energies ${JSON.stringify(energies)} should produce validation errors`);
+  }
+});
+
+check('custom-density simulation uses native ELSEPA with isolated density.usr and matches reference', () => {
+  const z079 = fs.readFileSync(path.join(ROOT, 'data', 'z_079.den'), 'utf8');
+  const r = runOfficialFortranSimulation({
+    ...base,
+    densityModel: 'custom-file',
+    customDensityData: z079,
+  });
+  assert(r.summary.engineUsed === 'salvat-official-fortran', `engineUsed = ${r.summary.engineUsed}`);
+  const ref = referenceSigmaElAu();
+  assert(relDiff(r.summary.sigmaElAu, ref) < 1e-5, `sigma_el ${r.summary.sigmaElAu} vs ${ref}`);
 });
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');

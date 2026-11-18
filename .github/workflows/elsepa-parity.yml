@@ -52,6 +52,9 @@ jobs:
           NATIVE_ELSCATM: ${{ github.workspace }}/native/elscatm
         run: npx --yes tsx@4.21.0 wasm/parity.test.ts
 
+      - name: Unit and feature tests for custom energy grids and user-supplied density
+        run: npx --yes tsx@4.21.0 wasm/features.test.ts
+
       - name: Server engine runs native ELSEPA, never the TypeScript model
         run: npx --yes tsx@4.21.0 wasm/server.test.ts
 

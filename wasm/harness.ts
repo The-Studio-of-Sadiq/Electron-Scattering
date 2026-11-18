@@ -34,7 +34,12 @@ export function read(rel: string): string {
 const keep = (name: string, all: boolean) => name.endsWith('.dat') && (all || name.startsWith('dcs_'));
 
 /** Runs the WebAssembly ELSEPA on a fresh module instance, as the app's worker does. */
-export async function runWasm(program: Program, input: string, allFiles = false): Promise<Files> {
+export async function runWasm(
+  program: Program,
+  input: string,
+  allFiles = false,
+  dataFiles?: Record<string, string>
+): Promise<Files> {
   const { default: createElsepa } = await import(pathToFileURL(path.join(WASM_DIR, 'elsepa.js')).href);
   let pos = 0;
   const module = await createElsepa({
@@ -43,6 +48,11 @@ export async function runWasm(program: Program, input: string, allFiles = false)
     print: () => {},
     printErr: () => {},
   });
+  if (dataFiles) {
+    for (const [name, text] of Object.entries(dataFiles)) {
+      module.FS.writeFile('/data/' + name, text);
+    }
+  }
   try {
     module.callMain([program]);
   } catch (err: any) {
@@ -56,10 +66,28 @@ export async function runWasm(program: Program, input: string, allFiles = false)
 }
 
 /** Runs a native ELSEPA binary in a temporary directory. */
-export function runNative(binary: string, input: string, allFiles = false): Files {
+export function runNative(
+  binary: string,
+  input: string,
+  allFiles = false,
+  dataFiles?: Record<string, string>
+): Files {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'elsepa-'));
+  let customDataDir: string | null = null;
+  if (dataFiles && Object.keys(dataFiles).length > 0) {
+    customDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'elsepa-data-'));
+    fs.cpSync(DATA_DIR, customDataDir, { recursive: true });
+    for (const [name, text] of Object.entries(dataFiles)) {
+      fs.writeFileSync(path.join(customDataDir, name), text, 'utf8');
+    }
+  }
   try {
-    execFileSync(binary, [], { cwd: dir, input, env: { ...process.env, ELSEPA_DATA: DATA_DIR }, stdio: ['pipe', 'ignore', 'pipe'] });
+    execFileSync(binary, [], {
+      cwd: dir,
+      input,
+      env: { ...process.env, ELSEPA_DATA: customDataDir || DATA_DIR },
+      stdio: ['pipe', 'ignore', 'pipe'],
+    });
     const files: Files = {};
     for (const name of fs.readdirSync(dir)) {
       if (keep(name, allFiles)) files[name] = fs.readFileSync(path.join(dir, name), 'utf8');
@@ -67,5 +95,10 @@ export function runNative(binary: string, input: string, allFiles = false): File
     return files;
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
+    if (customDataDir) {
+      try {
+        fs.rmSync(customDataDir, { recursive: true, force: true });
+      } catch {}
+    }
   }
 }

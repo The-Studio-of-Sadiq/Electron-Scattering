@@ -2,6 +2,7 @@
 import { runDiracPartialWaveSimulation, runEnergySweep } from '../physics/elsepaPhysicsEngine';
 import { runFallbackMolecularSimulation } from '../physics/molecularFallback';
 import { runElsepaWasmAtomic, runElsepaWasmMolecular, runElsepaWasmEnergySweep } from '../physics/elsepaWasm';
+import { validateEnergies } from '../physics/energyGrid';
 import { parseUploadedDataset } from './datasetParser';
 import { RENDER_DOCKERFILE_CONTENT, RENDER_YAML_CONTENT } from '../data/elsepaFortranSource';
 import { UploadedDataset } from '../types';
@@ -69,6 +70,9 @@ async function handleLocally(pathname: string, search: string, method: string, i
       if (!params || !params.z || !params.energyEv) {
         return jsonResponse({ error: 'Missing required simulation parameters (z, energyEv)' }, 400);
       }
+      if (params.densityModel === 'custom-file' && wantsTypeScript(params)) {
+        return jsonResponse({ error: 'User-supplied densities require the ELSEPA engine' }, 400);
+      }
       return jsonResponse(wantsTypeScript(params) ? runDiracPartialWaveSimulation(params) : await runElsepaWasmAtomic(params));
     }
 
@@ -108,7 +112,16 @@ async function handleLocally(pathname: string, search: string, method: string, i
       if (!params || !energies || !Array.isArray(energies)) {
         return jsonResponse({ error: 'Invalid parameters or energy array' }, 400);
       }
-      return jsonResponse(wantsTypeScript(params) ? runEnergySweep(params, energies) : await runElsepaWasmEnergySweep(params, energies));
+      const { energies: validEnergies, errors } = validateEnergies(energies);
+      if (errors.length > 0) {
+        return jsonResponse({ error: errors.join('; ') }, 400);
+      }
+      if (params.densityModel === 'custom-file' && wantsTypeScript(params)) {
+        return jsonResponse({ error: 'User-supplied densities require the ELSEPA engine' }, 400);
+      }
+      return jsonResponse(
+        wantsTypeScript(params) ? runEnergySweep(params, validEnergies) : await runElsepaWasmEnergySweep(params, validEnergies)
+      );
     }
 
     if (method === 'POST' && pathname === '/api/upload-dataset') {

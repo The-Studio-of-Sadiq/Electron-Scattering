@@ -21,7 +21,10 @@ export type FortranOutputFiles = Record<string, string>;
 export function buildAtomicInput(params: ElsepaInputParams): string {
   // Map input params to Salvat's Fortran keywords
   const nucModInt = { point: 1, uniform: 2, fermi: 3, helm: 4 }[params.nuclearModel] ?? 3;
-  const melecInt = { 'thomas-fermi': 1, 'thomas-fermi-dirac': 2, dhfs: 3, 'dirac-fock': 4 }[params.densityModel as string] ?? 4;
+  if (params.densityModel === 'custom-file' && (!params.customDensityData || !params.customDensityData.trim())) {
+    throw new Error('Custom electron density data is required when densityModel is "custom-file"');
+  }
+  const melecInt = { 'thomas-fermi': 1, 'thomas-fermi-dirac': 2, dhfs: 3, 'dirac-fock': 4, 'custom-file': 5 }[params.densityModel as string] ?? 4;
   const ionCharge = Math.min(params.z, Math.max(0, Math.round(params.ionCharge || 0)));
   // ELSEPA only applies the muffin-tin model to neutral atoms; RMUF 0 selects its default radius.
   const muffinInt = params.muffinTin && ionCharge === 0 ? 1 : 0;

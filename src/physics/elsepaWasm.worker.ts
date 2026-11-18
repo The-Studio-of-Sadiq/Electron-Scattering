@@ -7,6 +7,7 @@ interface RunRequest {
   id: number;
   program: 'atomic' | 'molecular';
   input: string;
+  files?: Record<string, string>;
 }
 
 const base = new URL(`${import.meta.env.BASE_URL}elsepa/`, self.location.origin).href;
@@ -38,7 +39,7 @@ function loadAssets(): Promise<Assets> {
 }
 
 self.onmessage = async (event: MessageEvent<RunRequest>) => {
-  const { id, program, input } = event.data;
+  const { id, program, input, files: inputFiles } = event.data;
   try {
     const { createElsepa, wasmBinary, dataPackage } = await loadAssets();
     const log: string[] = [];
@@ -52,6 +53,12 @@ self.onmessage = async (event: MessageEvent<RunRequest>) => {
       print: (line: string) => log.push(line),
       printErr: (line: string) => log.push(line),
     });
+
+    if (inputFiles) {
+      for (const [name, text] of Object.entries(inputFiles)) {
+        module.FS.writeFile('/data/' + name, text);
+      }
+    }
 
     try {
       module.callMain([program]);
