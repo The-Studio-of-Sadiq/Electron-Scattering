@@ -60,6 +60,10 @@ function noOutputError(log: string | undefined): Error {
   return new Error(`ELSEPA produced no DCS table${lastLines ? `: ${lastLines}` : ''}`);
 }
 
+export async function runElsepaWasmRaw(program: 'atomic' | 'molecular', input: string, files?: Record<string, string>): Promise<RunResponse> {
+  return runProgram(program, input, files);
+}
+
 export async function runElsepaWasmAtomic(params: ElsepaInputParams): Promise<SimulationResult> {
   const start = performance.now();
   const input = buildAtomicInput(params);

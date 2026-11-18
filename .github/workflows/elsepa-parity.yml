@@ -67,3 +67,6 @@ jobs:
           NATIVE_ELSCATM: ${{ github.workspace }}/native/elscatm
           BENCH_RUNS: 3
         run: npx --yes tsx@4.21.0 wasm/benchmark.ts | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Browser-only and offline operation test with real browser benchmark
+        run: npx --yes tsx@4.21.0 wasm/browser.test.ts | tee -a "$GITHUB_STEP_SUMMARY"

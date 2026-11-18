@@ -52,6 +52,7 @@ export interface ElsepaInputParams {
   minAngle: number; // degrees, e.g. 0
   maxAngle: number; // degrees, e.g. 180
   angleStep: number; // degrees, e.g. 1.0 or 0.5
+  notes?: string;
 }
 
 export interface ScatteringDataPoint {
@@ -142,6 +143,7 @@ export interface FortranServerStatus {
   hasElsepaBinary: boolean;
   versionInfo?: string;
   gfortranPath?: string;
+  sourceEditing?: boolean;
 }
 
 // Molecular scattering types for ELSCATM (Salvat, Jablonski, Powell)

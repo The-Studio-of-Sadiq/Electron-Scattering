@@ -4,7 +4,7 @@
 # Electron Scattering Simulator (ELSEPA Physics Workbench)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%5E20.19.0%20%7C%7C%20%3E%3D22.12.0-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-purple.svg)](https://web.dev/progressive-web-apps/)
@@ -189,9 +189,15 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 ## 💻 Local Setup & Installation
 
 ### Prerequisites
-* **Node.js**: v18 or higher (CI uses v22)
+* **Node.js**: `^20.19.0 || >=22.12.0` (tested on Node 22 and 24; enforced by package.json engines)
 * **npm**
+* **Browser Requirements**: Web browser supporting WebAssembly, Web Workers, ES modules in workers (`{ type: "module" }`), and Service Workers (for offline PWA operation). Supported in Chrome 87+, Edge 88+, Firefox 114+ and Safari 15+.
 * *(Optional)* **gfortran**: only for native execution on the server. The browser engine needs no compiler; the compiled WebAssembly is committed in `public/elsepa/`.
+
+### Environment Variables & Security
+* `ENABLE_SOURCE_EDITING`: defaults to disabled. When unset or not `"true"`, all server write endpoints (`/api/fortran-source/save`, `/api/fortran-source/reset`, `/api/ts-source/save`, `/api/ts-source/reset`) return HTTP 403 Forbidden. **Security notice**: Source editing recompiles and executes Fortran code on the host system; enable this (`ENABLE_SOURCE_EDITING=true`) ONLY in trusted local development environments. Never enable on a public or multi-tenant deployment.
+* `PORT`: server listen port (default `3000`).
+* `ELSEPA_DATA`: path to atomic data tables directory (default `data/`).
 
 ### 1. Clone & Install Dependencies
 ```bash

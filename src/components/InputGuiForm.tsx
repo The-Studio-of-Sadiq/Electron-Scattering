@@ -27,6 +27,7 @@ interface InputGuiFormProps {
   onRunSimulation: () => void;
   isSimulating: boolean;
   theme?: 'dark' | 'light';
+  enginePreference?: 'gfortran' | 'typescript';
 }
 
 export const InputGuiForm: React.FC<InputGuiFormProps> = ({
@@ -35,7 +36,9 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
   onRunSimulation,
   isSimulating,
   theme = 'dark',
+  enginePreference = 'gfortran',
 }) => {
+  const isElsepaEngine = enginePreference !== 'typescript';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [energyUnit, setEnergyUnit] = useState<'eV' | 'keV' | 'MeV'>('keV');
   const [densityFileError, setDensityFileError] = useState<string | null>(null);
@@ -189,12 +192,18 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
+                  disabled={isElsepaEngine}
                   value={params.massNumber}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, massNumber: parseFloat(e.target.value) || 1 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
+                {isElsepaEngine && (
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                )}
               </div>
             </div>
             <div className="mt-2 text-xs">
@@ -455,24 +464,36 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                   <input
                     type="number"
                     step="0.01"
+                    disabled={isElsepaEngine}
                     value={params.fermiC || (1.07 * Math.pow(params.massNumber, 1 / 3)).toFixed(2)}
                     onChange={(e) =>
                       setParams((prev) => ({ ...prev, fermiC: parseFloat(e.target.value) || 1.0 }))
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   />
+                  {isElsepaEngine && (
+                    <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] text-slate-400 mb-1">Skin thickness t (fm):</label>
                   <input
                     type="number"
                     step="0.01"
+                    disabled={isElsepaEngine}
                     value={params.fermiT || 0.5229}
                     onChange={(e) =>
                       setParams((prev) => ({ ...prev, fermiT: parseFloat(e.target.value) || 0.5229 }))
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   />
+                  {isElsepaEngine && (
+                    <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                  )}
                 </div>
               </div>
             )}
@@ -557,6 +578,7 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
+                  disabled={isElsepaEngine}
                   value={params.cutoffRadius}
                   onChange={(e) =>
                     setParams((prev) => ({
@@ -564,8 +586,13 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                       cutoffRadius: parseFloat(e.target.value) || 1.0,
                     }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
+                {isElsepaEngine && (
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                )}
               </div>
             </div>
           </div>
@@ -600,22 +627,28 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <label className="block text-[10px] text-slate-400 mb-1">Min θ (°):</label>
                 <input
                   type="number"
+                  disabled={isElsepaEngine}
                   value={params.minAngle}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, minAngle: parseFloat(e.target.value) || 0 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
               <div>
                 <label className="block text-[10px] text-slate-400 mb-1">Max θ (°):</label>
                 <input
                   type="number"
+                  disabled={isElsepaEngine}
                   value={params.maxAngle}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, maxAngle: parseFloat(e.target.value) || 180 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
               <div>
@@ -623,13 +656,21 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
+                  disabled={isElsepaEngine}
                   value={params.angleStep}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, angleStep: parseFloat(e.target.value) || 1.0 }))
                   }
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs"
+                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
+              {isElsepaEngine && (
+                <div className="col-span-3 text-[10px] text-slate-500 mt-0.5">
+                  Set by ELSEPA (not an input of ELSCATA)
+                </div>
+              )}
             </div>
           </div>
         </div>

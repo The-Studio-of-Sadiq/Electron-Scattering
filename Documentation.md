@@ -121,8 +121,8 @@ This software platform and research interface was developed by researchers and s
 
 #### 3.6 Fortran Source Code & Deployment Tab
 * `src/components/RenderDeploymentModal.tsx`:
-  * **Source Code Viewer**: the ELSEPA Fortran 77 sources (`elsepa.f`, `elscata.f`, `elscatm.f`, `getpath.f`) and the TS Approximation source. With the Node server running, sources can be edited and reset; saving triggers recompilation with `gfortran`. The browser-only build is read-only.
-  * **Engine Status**: reports whether `gfortran` and a compiled ELSEPA binary are available on the server, or that ELSEPA is running as WebAssembly in the browser.
+  * **Source Code Viewer**: the ELSEPA Fortran 77 sources (`elsepa.f`, `elscata.f`, `elscatm.f`, `getpath.f`) and the TS Approximation source. With the Node server running, sources can be inspected in read-only mode by default. Saving or resetting requires `ENABLE_SOURCE_EDITING=true` in the server environment (local development only; forbidden on public servers to prevent remote code execution). When editing is disabled or when running in the browser-only build, the Save and Reset buttons are disabled with an explanatory note.
+  * **Engine Status**: reports whether `gfortran` and a compiled ELSEPA binary are available on the server, whether source editing is enabled (`sourceEditing`), or that ELSEPA is running as WebAssembly in the browser.
   * **Deployment files**: the `Dockerfile` and `render.yaml` used for container deployment (Section 8).
 
 #### 3.7 Physics Guide & Dirac Theory
@@ -386,7 +386,24 @@ docker run -p 3000:3000 elsepa-simulator
 * WebAssembly bit-for-bit parity between `dirac-fock` and `custom-file` with `z_079.den` (excluding density file header labels).
 * WebAssembly energy sweep returning 3 ordered points at 150, 750, and 3000 eV.
 
-**Server test (`wasm/server.test.ts`).** Checks that the server's atomic, molecular and energy-sweep paths run native ELSEPA, that `/api/energy-sweep` rejects invalid grids with HTTP 400, that native runs with custom density tables isolate `density.usr` in a per-run folder matching reference outputs, and that the TypeScript model is used only when explicitly requested.
+**Server test (`wasm/server.test.ts`).** Checks that the server's atomic, molecular and energy-sweep paths run native ELSEPA, that `/api/energy-sweep` rejects invalid grids with HTTP 400, that native runs with custom density tables isolate `density.usr` in a per-run folder matching reference outputs, that the TypeScript model is used only when explicitly requested, and that the default server environment rejects all four source-editing endpoints (`/api/fortran-source/save`, `/api/fortran-source/reset`, `/api/ts-source/save`, `/api/ts-source/reset`) with HTTP 403 Forbidden without modifying any files.
+
+**Browser and offline test (`wasm/browser.test.ts`).** Automates a real Chromium/Edge browser over the Chrome DevTools Protocol (CDP) using Node's built-in fetch and WebSocket:
+* Tests static site serving in browser-only mode (no backend server).
+* Verifies `fetch('/api/simulate')` computes Au 1 keV total elastic cross section equal to 8.94335 $a_0^2$.
+* Verifies Service Worker caching of app assets and WebAssembly binaries.
+* Tests offline simulation after killing the static server and emulating network disconnection.
+* Runs in-browser WebAssembly benchmarks for all benchmark cases and measures median execution times.
+
+### 10. System & Browser Requirements
+* **Node.js**: `^20.19.0 || >=22.12.0` (enforced by `package.json` engines field).
+* **Browser Capabilities**:
+  * **WebAssembly**: required for running compiled Salvat ELSEPA Fortran routines.
+  * **Web Workers**: required for executing scattering calculations off the main UI thread.
+  * **ES Modules in Workers**: `{ type: "module" }` worker instantiation.
+  * **Service Workers & Cache Storage**: required for offline simulation and PWA capabilities.
+* **Supported Browsers**: Google Chrome 87+, Microsoft Edge 88+, Mozilla Firefox 114+, Apple Safari 15+ (the Vite 6 build target, plus ES-module Web Workers, which Firefox supports from 114 and Safari from 15).
+* **Security Configuration**: `ENABLE_SOURCE_EDITING=true` must only be set for trusted local development. Production deployments must keep it unset (disabled).
 
 All tests run in GitHub Actions (`.github/workflows/elsepa-parity.yml`) on changes to the Fortran, physics, data, WebAssembly, validation or server files.
 

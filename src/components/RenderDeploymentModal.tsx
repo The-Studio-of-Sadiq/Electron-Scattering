@@ -52,6 +52,8 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
     }
   }, [enginePreference]);
 
+  const isEditingEnabled = !!fortranStatus?.sourceEditing;
+
   // Deployment files
   const [dockerfile, setDockerfile] = useState('');
   const [renderYaml, setRenderYaml] = useState('');
@@ -542,9 +544,13 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
             <button
               id="btn-revert-fortran-code"
               onClick={() => handleResetToOriginal(false)}
-              disabled={isResetting || isSaving}
+              disabled={!isEditingEnabled || isResetting || isSaving}
               className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-bold rounded flex items-center gap-1.5 transition-all"
-              title={`Reset selected ${activeEditorMode === 'fortran' ? 'Fortran' : 'TypeScript'} file to original baseline code`}
+              title={
+                !isEditingEnabled
+                  ? 'Source editing is disabled. Set ENABLE_SOURCE_EDITING=true in the server environment (local development only).'
+                  : `Reset selected ${activeEditorMode === 'fortran' ? 'Fortran' : 'TypeScript'} file to original baseline code`
+              }
             >
               <RotateCcw className={`w-3.5 h-3.5 text-amber-400 ${isResetting ? 'animate-spin' : ''}`} />
               <span>Reset File</span>
@@ -553,15 +559,28 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
             <button
               id="btn-save-compile-fortran"
               onClick={handleSaveCode}
-              disabled={isSaving || isResetting}
+              disabled={!isEditingEnabled || isSaving || isResetting}
               className={`px-3 py-1 ${activeEditorMode === 'fortran' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'} disabled:opacity-50 text-white text-xs font-bold rounded shadow flex items-center gap-1.5 transition-all`}
-              title="Save code changes and apply to engine runner"
+              title={
+                !isEditingEnabled
+                  ? 'Source editing is disabled. Set ENABLE_SOURCE_EDITING=true in the server environment (local development only).'
+                  : 'Save code changes and apply to engine runner'
+              }
             >
               <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
               <span>{isSaving ? 'Saving...' : activeEditorMode === 'fortran' ? 'Save & Compile' : 'Save Engine Code'}</span>
             </button>
           </div>
         </div>
+
+        {!isEditingEnabled && (
+          <div className="bg-amber-950/40 border-b border-amber-600/30 px-4 py-2 text-amber-300 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              Source editing is disabled (read-only mode). Set <code className="font-mono bg-amber-900/50 px-1 py-0.5 rounded text-amber-200">ENABLE_SOURCE_EDITING=true</code> in the server environment (local development only) to enable saving and recompiling.
+            </span>
+          </div>
+        )}
 
         {/* Notebook Cell Input Header */}
         <div className="bg-slate-900/90 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs text-slate-400 font-mono">
@@ -639,8 +658,13 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
 
             <button
               onClick={() => handleResetToOriginal(true)}
-              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[11px] font-bold"
-              title="Reset all physics files to pristine defaults"
+              disabled={!isEditingEnabled || isResetting || isSaving}
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 rounded text-[11px] font-bold transition-all"
+              title={
+                !isEditingEnabled
+                  ? 'Source editing is disabled. Set ENABLE_SOURCE_EDITING=true in the server environment (local development only).'
+                  : 'Reset all physics files to pristine defaults'
+              }
             >
               Reset All
             </button>

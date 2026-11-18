@@ -21,11 +21,15 @@ import {
 
 interface EnergySweepViewerProps {
   baseParams: ElsepaInputParams;
+  enginePreference?: 'gfortran' | 'typescript';
 }
 
 type GridMode = 'default' | 'log' | 'custom';
 
-export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams }) => {
+export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({
+  baseParams,
+  enginePreference = 'gfortran',
+}) => {
   const [sweepPoints, setSweepPoints] = useState<EnergySweepPoint[]>([]);
   const [isSweeping, setIsSweeping] = useState(false);
   const [sweepError, setSweepError] = useState<string | null>(null);
@@ -97,7 +101,10 @@ export const EnergySweepViewer: React.FC<EnergySweepViewerProps> = ({ baseParams
       const res = await fetch('/api/energy-sweep', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ params: baseParams, energies: validationResult.energies }),
+        body: JSON.stringify({
+          params: { ...baseParams, forceEngine: enginePreference },
+          energies: validationResult.energies,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `Energy sweep failed (${res.status})`);

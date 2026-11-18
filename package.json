@@ -2,6 +2,9 @@
   "name": "electron-scattering",
   "private": true,
   "version": "1.3.0",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",

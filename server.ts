@@ -31,6 +31,18 @@ import {
 const app = express();
 const PORT = 3000;
 
+const isSourceEditingEnabled = () => process.env.ENABLE_SOURCE_EDITING === 'true';
+
+const requireSourceEditing = (_req: Request, res: Response, next: () => void) => {
+  if (!isSourceEditingEnabled()) {
+    res.status(403).json({
+      error: 'Source editing is disabled. Set ENABLE_SOURCE_EDITING=true in the server environment (local development only) to enable saving or resetting source files.',
+    });
+    return;
+  }
+  next();
+};
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -80,6 +92,7 @@ app.get('/api/fortran-status', (_req: Request, res: Response) => {
     hasElsepaBinary,
     versionInfo,
     gfortranPath,
+    sourceEditing: isSourceEditingEnabled(),
   });
 });
 
@@ -245,7 +258,7 @@ app.get('/api/fortran-source/content', (req: Request, res: Response) => {
 });
 
 // API 9: Fortran Source Notebook Editor API - Save File & Compile
-app.post('/api/fortran-source/save', (req: Request, res: Response) => {
+app.post('/api/fortran-source/save', requireSourceEditing, (req: Request, res: Response) => {
   try {
     const { filename, content } = req.body;
     if (!filename || typeof content !== 'string') {
@@ -260,7 +273,7 @@ app.post('/api/fortran-source/save', (req: Request, res: Response) => {
 });
 
 // API 10: Fortran Source Notebook Editor API - Reset to Original
-app.post('/api/fortran-source/reset', (req: Request, res: Response) => {
+app.post('/api/fortran-source/reset', requireSourceEditing, (req: Request, res: Response) => {
   try {
     const { filename } = req.body;
     const result = resetFortranFilesToOriginal(filename);
@@ -281,7 +294,7 @@ app.get('/api/ts-source/content', (_req: Request, res: Response) => {
 });
 
 // API 12: TypeScript Engine Source Editor API - Save Content
-app.post('/api/ts-source/save', (req: Request, res: Response) => {
+app.post('/api/ts-source/save', requireSourceEditing, (req: Request, res: Response) => {
   try {
     const { content } = req.body;
     if (typeof content !== 'string') {
@@ -296,7 +309,7 @@ app.post('/api/ts-source/save', (req: Request, res: Response) => {
 });
 
 // API 13: TypeScript Engine Source Editor API - Reset Content
-app.post('/api/ts-source/reset', (_req: Request, res: Response) => {
+app.post('/api/ts-source/reset', requireSourceEditing, (_req: Request, res: Response) => {
   try {
     const result = resetTsEngineContent();
     res.json(result);
@@ -329,4 +342,10 @@ async function startServer() {
   });
 }
 
-startServer();
+export { app, startServer };
+
+// Only listen when run directly, not when imported by test suites
+const isDirectRun = process.argv[1] && /server\.(ts|js|cjs|mjs)$/.test(process.argv[1]);
+if (isDirectRun) {
+  startServer();
+}

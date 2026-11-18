@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { FortranServerStatus } from '../types';
 import { ElectronScatteringLogo } from './Logo';
+import packageJson from '../../package.json';
 
 interface HeaderProps {
   activeTab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics';
@@ -93,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
                         : 'bg-indigo-950 text-indigo-300 border-indigo-800'
                     }`}
                   >
-                    v1.1.2
+                    v{packageJson.version}
                   </span>
                 </div>
                 <p

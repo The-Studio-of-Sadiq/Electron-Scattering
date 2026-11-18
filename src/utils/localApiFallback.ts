@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import { runDiracPartialWaveSimulation, runEnergySweep } from '../physics/elsepaPhysicsEngine';
 import { runFallbackMolecularSimulation } from '../physics/molecularFallback';
-import { runElsepaWasmAtomic, runElsepaWasmMolecular, runElsepaWasmEnergySweep } from '../physics/elsepaWasm';
+import { runElsepaWasmAtomic, runElsepaWasmMolecular, runElsepaWasmEnergySweep, runElsepaWasmRaw } from '../physics/elsepaWasm';
 import { validateEnergies } from '../physics/energyGrid';
 import { parseUploadedDataset } from './datasetParser';
 import { RENDER_DOCKERFILE_CONTENT, RENDER_YAML_CONTENT } from '../data/elsepaFortranSource';
@@ -58,6 +58,7 @@ async function handleLocally(pathname: string, search: string, method: string, i
         hasElsepaBinary: true,
         versionInfo: 'Official ELSEPA Fortran (Salvat, Jablonski & Powell) compiled to WebAssembly, running in this browser.',
         gfortranPath: 'WebAssembly (f2c + Emscripten)',
+        sourceEditing: false,
       });
     }
 
@@ -66,7 +67,11 @@ async function handleLocally(pathname: string, search: string, method: string, i
     }
 
     if (method === 'POST' && pathname === '/api/simulate') {
-      const params = await readJsonBody(init);
+      const body = await readJsonBody(init);
+      if (body?.rawInput) {
+        return jsonResponse(await runElsepaWasmRaw(body.program || 'atomic', body.rawInput, body.files));
+      }
+      const params = body;
       if (!params || !params.z || !params.energyEv) {
         return jsonResponse({ error: 'Missing required simulation parameters (z, energyEv)' }, 400);
       }
@@ -176,6 +181,12 @@ async function handleLocally(pathname: string, search: string, method: string, i
     }
 
     if (pathname.startsWith('/api/fortran-source/') || pathname.startsWith('/api/ts-source/')) {
+      if (method === 'POST') {
+        return jsonResponse(
+          { error: 'Source editing is disabled. Set ENABLE_SOURCE_EDITING=true in the server environment (local development only) to enable saving or resetting source files.' },
+          403
+        );
+      }
       return serverOnly();
     }
 
