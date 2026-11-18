@@ -79,11 +79,11 @@ check('energy sweep runs native ELSEPA at every energy', () => {
 check('invalid input raises an error instead of returning approximate numbers', () => {
   let threw = false;
   try {
-    runOfficialFortranSimulation({ ...base, energyEv: 5 }); // ELSCATA stops below 10 eV
+    runOfficialFortranSimulation({ ...base, energyEv: 4 }); // ELSCATA 2021 stops below 5 eV
   } catch {
     threw = true;
   }
-  assert(threw, 'a 5 eV run returned a result');
+  assert(threw, 'a 4 eV run returned a result');
 });
 
 check('molecular run uses native ELSCATM', () => {
