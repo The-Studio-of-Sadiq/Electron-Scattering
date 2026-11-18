@@ -37,6 +37,10 @@ jobs:
         with:
           node-version: 22
 
+      # The server test imports the Express app and the browser test builds the site with Vite.
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
+
       - name: Install gfortran
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gfortran
 
@@ -69,4 +73,7 @@ jobs:
         run: npx --yes tsx@4.21.0 wasm/benchmark.ts | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Browser-only and offline operation test with real browser benchmark
-        run: npx --yes tsx@4.21.0 wasm/browser.test.ts | tee -a "$GITHUB_STEP_SUMMARY"
+        # pipefail: a failing test must fail the step even though its output goes through tee.
+        run: |
+          set -o pipefail
+          npx --yes tsx@4.21.0 wasm/browser.test.ts | tee -a "$GITHUB_STEP_SUMMARY"
