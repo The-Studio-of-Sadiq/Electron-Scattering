@@ -14,12 +14,16 @@ import { Program, ROOT, base, native, read, runNative, runWasm } from './harness
 
 const REL_TOL = 1e-5; // output is printed with 6 significant digits
 
+const engineFile = path.join(ROOT, 'validations', 'ENGINE.txt');
+const isEngine2020 = fs.existsSync(engineFile) && fs.readFileSync(engineFile, 'utf8').trim() === 'elsepa-2020';
+
 interface Case {
   name: string;
   program: Program;
   input: string;
   reference?: string; // validations/ .dat to match for the first DCS file
   referenceDir?: string; // validations/ folder holding every dcs_*.dat under its ELSEPA name
+  official2021Ref?: { file: string; path: string }; // unconditional comparison against 2021 authors' reference
   dataFiles?: Record<string, string>;
 }
 
@@ -47,8 +51,15 @@ const cases: Case[] = [
   { name: 'app: Hg e- 1 keV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, z: 80, massNumber: 200.59, polarizationModel: 'buckingham', polarizability: 33.9 }), referenceDir: 'T19' },
   { name: 'app: Cu e+ 500 eV Buckingham', program: 'atomic', input: buildAtomicInput({ ...base, z: 29, massNumber: 63.546, projectile: 1, energyEv: 500, exchangeModel: 'none', polarizationModel: 'buckingham', polarizability: 42.5 }), referenceDir: 'T20' },
   { name: 'app: Au e- 1 keV absorption', program: 'atomic', input: buildAtomicInput({ ...base, absorptionModel: 'staszewska-lda' }), referenceDir: 'T21' },
-  // Example inputs shipped with the official ELSEPA distribution (CPC ADUS_v1_0).
-  { name: 'official: Hg e- 100 eV + 1 keV, LDA polarization + absorption', program: 'atomic', input: read('wasm/tests/official_hg_lda_abs.in'), referenceDir: 'T22' },
+  // Example inputs shipped with the official ELSEPA 2021 distribution (elsepa-2020 package). The Hg
+  // example is also compared with the authors' own output for it (an independent reference).
+  {
+    name: 'official: Hg e- 100 eV + 1 keV, LDA polarization + absorption',
+    program: 'atomic',
+    input: read('wasm/tests/official_hg_lda_abs.in'),
+    referenceDir: 'T22',
+    official2021Ref: { file: 'dcs_1p000e03.dat', path: path.join(ROOT, 'validations', 'official-2021', 'dcs_1p000e03.dat') },
+  },
   { name: 'official: H2O e- 100 + 200 eV (ELSCATM)', program: 'molecular', input: read('wasm/tests/official_h2o.in'), referenceDir: 'T23' },
   // Model options exposed in v1.2 (checked against native gfortran when available).
   { name: 'app: Au+ e- 1 keV (ion, q = 1)', program: 'atomic', input: buildAtomicInput({ ...base, ionCharge: 1 }) },
@@ -167,19 +178,37 @@ for (const c of cases) {
     continue;
   }
 
+  if (c.official2021Ref) {
+    const { file, path: refPath } = c.official2021Ref;
+    if (!wasmFiles[file]) {
+      failures++;
+      console.log(`FAIL  ${c.name} [wasm vs official-2021] missing ${file}`);
+    } else {
+      report(c.name, 'wasm vs official-2021', compare(wasmFiles[file], fs.readFileSync(refPath, 'utf8')));
+    }
+  }
+
   if (c.reference) {
-    report(c.name, 'wasm vs validations', compare(wasmFiles[names[0]], fs.readFileSync(c.reference, 'utf8')));
+    if (!isEngine2020) {
+      console.log(`SKIP  ${c.name} [validations/T*] (validations/ENGINE.txt is not "elsepa-2020"; reference tables will be regenerated in CI)`);
+    } else {
+      report(c.name, 'wasm vs validations', compare(wasmFiles[names[0]], fs.readFileSync(c.reference, 'utf8')));
+    }
   }
   if (c.referenceDir) {
-    const dir = path.join(ROOT, 'validations', c.referenceDir);
-    for (const f of names) {
-      const ref = path.join(dir, f);
-      if (!fs.existsSync(ref)) {
-        failures++;
-        console.log(`FAIL  ${c.name} [wasm vs validations/${c.referenceDir}] missing ${f}`);
-        continue;
+    if (!isEngine2020) {
+      console.log(`SKIP  ${c.name} [validations/${c.referenceDir}] (validations/ENGINE.txt is not "elsepa-2020"; reference tables will be regenerated in CI)`);
+    } else {
+      const dir = path.join(ROOT, 'validations', c.referenceDir);
+      for (const f of names) {
+        const ref = path.join(dir, f);
+        if (!fs.existsSync(ref)) {
+          failures++;
+          console.log(`FAIL  ${c.name} [wasm vs validations/${c.referenceDir}] missing ${f}`);
+          continue;
+        }
+        report(c.name, `wasm vs validations/${c.referenceDir}/${f}`, compare(wasmFiles[f], fs.readFileSync(ref, 'utf8')));
       }
-      report(c.name, `wasm vs validations/${c.referenceDir}/${f}`, compare(wasmFiles[f], fs.readFileSync(ref, 'utf8')));
     }
   }
 
@@ -193,6 +222,13 @@ for (const c of cases) {
       continue;
     }
     for (const f of names) report(c.name, `wasm vs gfortran ${f}`, compare(wasmFiles[f], nativeFiles[f]));
+
+    if (c.official2021Ref) {
+      const { file, path: refPath } = c.official2021Ref;
+      if (nativeFiles[file]) {
+        report(c.name, 'gfortran vs official-2021', compare(nativeFiles[file], fs.readFileSync(refPath, 'utf8')));
+      }
+    }
   }
 }
 

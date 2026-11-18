@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Builds the official ELSEPA Fortran (fortran/*.f) to WebAssembly so the
-# browser / PWA can run it without a server.
+# Builds official ELSEPA 2021 (elsepa-2020 package, CC BY-NC 3.0) to WebAssembly
+# so the browser / PWA can run it without a server.
 #
-#   Fortran 77 --(f2c)--> C --(emcc)--> public/elsepa/elsepa.{js,wasm,data}
+#   Fortran 90 --(f90to77.py)--> Fortran 77 --(f2c)--> C --(emcc)--> public/elsepa/elsepa.{js,wasm,data}
 #
 # Requirements (only needed when the Fortran changes; the output is committed):
 #   EMSDK   path to an activated emsdk checkout   (https://github.com/emscripten-core/emsdk)
@@ -15,9 +15,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 : "${EMSDK:?set EMSDK to your emsdk directory}"
 : "${F2C_DIR:?set F2C_DIR to the netlib f2c source directory}"
+if command -v cygpath >/dev/null 2>&1; then
+  EMSDK="$(cygpath -u "$EMSDK")"
+  F2C_DIR="$(cygpath -u "$F2C_DIR")"
+fi
 export PATH="$EMSDK/upstream/emscripten:$EMSDK/upstream/bin:$PATH"
 EMCC=emcc
-command -v emcc >/dev/null 2>&1 || EMCC=emcc.exe
+command -v emcc >/dev/null 2>&1 || EMCC=emcc.bat
+command -v "$EMCC" >/dev/null 2>&1 || EMCC=emcc.exe
 
 BUILD="$ROOT/wasm/build"
 OUT="$ROOT/public/elsepa"
@@ -68,38 +73,31 @@ fi
 # ---- 3. Make the Fortran pure F77 and translate it ------------------------
 echo "[build] translating Fortran"
 SRC="$BUILD/src"
+rm -rf "$SRC"
 mkdir -p "$SRC"
-# elsepa.f INCLUDEs getpath.f, which uses F90 features (get_environment_variable,
-# TRIM). In the browser the data tables always live at /data in the virtual FS.
-sed -e "1s/^      INCLUDE 'getpath.f'.*$/C     getpath: see wasm\/build.sh/" \
-    -e 's/CHARACTER (len=255) *\(::\)\? *getpath/CHARACTER*255 getpath/I' \
-    "$ROOT/fortran/elsepa.f" >"$SRC/elsepa.f"
-cat >>"$SRC/elsepa.f" <<'EOF'
-C
-      CHARACTER*255 FUNCTION getpath(F)
-      CHARACTER*(*) F
-      getpath='/data/'//F
-      RETURN
-      END
-EOF
-cp "$ROOT/fortran/elscata.f" "$ROOT/fortran/elscatm.f" "$SRC/"
+
 PYTHON=python3
 command -v python3 >/dev/null 2>&1 && python3 -c "" 2>/dev/null || PYTHON=python
+
+# f90to77.py prepares lib.f (radial.f + elsepa2020.f), elscata.f, elscatm.f
+# and constants.inc from the official 2021 Fortran sources.
+"$PYTHON" "$ROOT/wasm/f90to77.py" "$ROOT/fortran" "$SRC"
+
 pushd "$SRC" >/dev/null
-for f in elsepa elscata elscatm; do
+for f in lib elscata elscatm; do
   "$PYTHON" "$ROOT/wasm/f77fix.py" "$f.f" "$f.f.tmp" && mv "$f.f.tmp" "$f.f"
 done
 # f2c infers the types of functions passed as arguments per file; re-run it with the
 # generated prototype (.P) files until they stop changing so every call matches
 # exactly (WebAssembly traps on indirect calls with mismatched signatures).
-for f in elsepa elscata elscatm; do
+for f in lib elscata elscatm; do
   node "$F2C_JS" -a -A -P -T"$SRC" "$f.f" >/dev/null 2>"$f.f2c.log" || { cat "$f.f2c.log"; exit 1; }
 done
 for pass in 1 2 3 4 5; do
   changed=0
-  for f in elsepa elscata elscatm; do
+  for f in lib elscata elscatm; do
     status=0
-    node "$F2C_JS" -a -A -Ps -T"$SRC" elsepa.P "$f.f" >/dev/null 2>"$f.f2c.log" || status=$?
+    node "$F2C_JS" -a -A -Ps -T"$SRC" lib.P "$f.f" >/dev/null 2>"$f.f2c.log" || status=$?
     [ "$status" = 4 ] && changed=1
     [ "$status" != 0 ] && [ "$status" != 4 ] && { cat "$f.f2c.log"; exit 1; }
   done
@@ -110,7 +108,7 @@ sed -i 's/\bMAIN__\b/elscata_main__/g' elscata.c
 sed -i 's/\bMAIN__\b/elscatm_main__/g' elscatm.c
 # f2c declares these libf2c helpers as returning int, but libf2c defines them void;
 # route them through int-returning wrappers (see entry.c) so signatures match.
-sed -i -E 's/\b(s_cat|s_copy)\b/\1_i/g' elsepa.c elscata.c elscatm.c
+sed -i -E 's/\b(s_cat|s_copy)\b/\1_i/g' lib.c elscata.c elscatm.c
 popd >/dev/null
 
 # ---- 4. Link everything into one module -----------------------------------
@@ -136,13 +134,14 @@ int main(int argc, char **argv) {
 }
 EOF
 # -fcommon: f2c emits a definition of each Fortran COMMON block in every file.
+# ELSEPA 2021 reads ./database/z_NNN.* relative to the current working directory (/ in module).
 $EMCC -O3 -w -fcommon -I"$BUILD/libf2c" \
-  "$SRC/entry.c" "$SRC/elsepa.c" "$SRC/elscata.c" "$SRC/elscatm.c" "$LIBF2C" -lm \
+  "$SRC/entry.c" "$SRC/lib.c" "$SRC/elscata.c" "$SRC/elscatm.c" "$LIBF2C" -lm \
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createElsepa \
   -sENVIRONMENT=web,worker,node -sINVOKE_RUN=0 -sEXIT_RUNTIME=1 \
   -sALLOW_MEMORY_GROWTH=1 -sSTACK_SIZE=8MB -sFORCE_FILESYSTEM=1 \
   -sEXPORTED_RUNTIME_METHODS=FS,callMain \
-  --preload-file "$ROOT/data@/data" \
+  --preload-file "$ROOT/data@/database" \
   -o "$OUT/elsepa.js"
 
 ls -la "$OUT"

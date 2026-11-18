@@ -109,7 +109,7 @@ f.box(400, 150, 600, 130, "React user interface", [
 f.box(400, 310, 285, 190, "API router", [
     "Server ELSEPA if present", "Otherwise, or on a server", "  error: in-browser engine"], "blue")
 f.box(715, 310, 285, 190, "ELSEPA engine", [
-    "Official Fortran 77,", "  compiled to WebAssembly", "Runs in a Web Worker", "206 data tables bundled"], "green")
+    "Official Fortran 90 (2021),", "  compiled to WebAssembly", "Runs in a Web Worker", "206 data tables bundled"], "green")
 f.box(400, 530, 285, 170, "Browser storage", [
     "Saved runs (localStorage)", "Offline cache", "  (service worker)"], "purple")
 f.box(715, 530, 285, 170, "TS approximation", [
@@ -124,7 +124,7 @@ f.box(1110, 320, 360, 230, "Optional server", [
 f.box(1110, 610, 360, 160, "Reference and lab data", [
     "NIST SRD 64, literature,", "  measurements (.csv, .dat)"], "purple")
 f.box(370, 800, 660, 160, "GitHub repository and CI (GitHub Actions)", [
-    "Parity test: WebAssembly = native gfortran", "  in 20 cases; = reference tables in 13",
+    "Parity test: WebAssembly = native gfortran", "  in 21 cases; = reference tables in 13",
     "Server test: real ELSEPA, no silent fallback"], "red")
 f.arrow([(300, 495), (368, 495)], "uses", 334, 482, both=True)
 f.arrow([(1108, 175), (1032, 175)], "HTTPS", 1070, 162)
@@ -147,8 +147,8 @@ f.box(370, 250, 270, 270, "Input-deck builder", [
     "Fixed-column format"], "blue", size=19)
 f.arrow([(330, 255), (368, 330)])
 f.arrow([(330, 560), (368, 450)])
-f.box(680, 90, 500, 650, "ELSEPA (unmodified Fortran 77)", [], "green", fill="#f6fdf9")
-f.text(700, 152, "Salvat, Jablonski & Powell, CPC 165 (2005) 157", 18, fill=MUTED, italic=True)
+f.box(680, 90, 500, 650, "ELSEPA 2021 (unmodified Fortran 90)", [], "green", fill="#f6fdf9")
+f.text(700, 152, "Salvat, Jablonski & Powell, CPC 261 (2021) 107704", 18, fill=MUTED, italic=True)
 f.box(700, 170, 225, 110, "ELSCATA", ["atoms"], "green", center=True)
 f.box(935, 170, 225, 110, "ELSCATM", ["molecules (IAM)"], "green", center=True)
 steps = [
@@ -266,8 +266,8 @@ chip(705, 195, 330, "localStorage", "saved runs", h=78)
 chip(1055, 195, 395, "API router (fetch shim)", "server or in-browser engine", h=78)
 
 band(310, 210, "green", "Physics engine", "WebAssembly")
-chain = [("ELSEPA", "Fortran 77 (CPC)", 190), ("netlib f2c", "→ C", 160), ("libf2c", "runtime", 140),
-         ("Emscripten", "emcc -O3", 180), ("elsepa.wasm", "0.24 MB", 175), ("elsepa.data", "206 tables, 4 MB", 210)]
+chain = [("ELSEPA 2021", "Fortran 90 (CPC)", 190), ("f90to77 + f2c", "→ C", 160), ("libf2c", "runtime", 140),
+         ("Emscripten", "emcc -O3", 180), ("elsepa.wasm", "0.27 MB", 175), ("elsepa.data", "206 tables, 4 MB", 210)]
 x = 285
 for i, (t, s, w) in enumerate(chain):
     chip(x, 330, w, t, s, "green")
@@ -290,7 +290,7 @@ chip(285, 720, 560, "Docker (node:20-slim + gfortran)", "full app with native se
 chip(865, 720, 585, "Static hosting, browser only", "any static host (e.g. Vercel previews)", "purple")
 
 band(855, 120, "red", "Quality", "CI and tests")
-chip(285, 876, 560, "GitHub Actions: parity test", "20 cases: WASM = native gfortran", "red")
+chip(285, 876, 560, "GitHub Actions: parity test", "21 cases: WASM = native gfortran", "red")
 chip(865, 876, 585, "Server test", "native ELSEPA, errors instead of fallbacks", "red")
 f.save("fig4_tech_stack.svg")
 print("ok")

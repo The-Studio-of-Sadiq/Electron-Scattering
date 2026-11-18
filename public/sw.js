@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elsepa-pwa-v4';
+const CACHE_NAME = 'elsepa-pwa-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

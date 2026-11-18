@@ -47,8 +47,8 @@ jobs:
       - name: Build native ELSEPA (same flags as the Dockerfile)
         run: |
           mkdir -p native
-          gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f fortran/elsepa.f
-          gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f fortran/elsepa.f
+          gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f
+          gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f
 
       - name: Compare WebAssembly with gfortran and validations
         env:
@@ -77,3 +77,38 @@ jobs:
         run: |
           set -o pipefail
           npx --yes tsx@4.21.0 wasm/browser.test.ts | tee -a "$GITHUB_STEP_SUMMARY"
+
+  references:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install gfortran
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gfortran
+
+      - name: Build native ELSEPA
+        run: |
+          mkdir -p native
+          gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f
+          gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f
+
+      - name: Regenerate reference tables
+        env:
+          NATIVE_ELSCATA: ${{ github.workspace }}/native/elscata
+          NATIVE_ELSCATM: ${{ github.workspace }}/native/elscatm
+        run: npx --yes tsx@4.21.0 wasm/make-references.ts
+
+      - name: Upload validations artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: validations-2021
+          path: validations/

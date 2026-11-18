@@ -1,61 +1,33 @@
 /**
- * ELSEPA Standard Fortran Source Code Excerpt & Template
- * F. Salvat, A. Jablonski, F. Powell (Computer Physics Communications)
+ * ELSEPA 2021 Fortran Package (elsepa-2020)
+ * F. Salvat, A. Jablonski, C. J. Powell
+ * Comput. Phys. Commun. 261 (2021) 107704.
+ *
+ * Licensed under Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0).
+ * See fortran/ELSEPA-LICENSE.txt for terms and attribution.
  */
 
-export const OFFICIAL_ELSEPA_FORTRAN_SOURCE = `C  *********************************************************************
-C                       SUBROUTINE ELSEPA
-C  *********************************************************************
-C                              F. Salvat, A. Jablonski and C.J. Powell
-C                              September 27, 2004
-C  Computer Physics Communications (ELSEPA Package)
-C
-      INCLUDE 'getpath.f'
-C
-      SUBROUTINE ELSEPA(IELEC,EV,IZ,NELEC,MNUCL,MELEC,MUFIN,RMUF,
-     1  MEXCH,MCPOL,VPOLA,VPOLB,MABS,VABSA,VABSD,IHEF,IW)
-C
-C  Input arguments:
-C    IELEC ..... electron-positron flag;
-C                =-1 for electrons,
-C                =+1 for positrons.
-C    EV ........ projectile's kinetic energy (in eV).
-C    IZ ........ atomic number of the target atom or ion.
-C    NELEC ..... number of bound atomic electrons.
-C    MNUCL ..... nuclear charge density model:
-C                  1 --> point nucleus (P)
-C                  2 --> uniform distribution (U)
-C                  3 --> Fermi distribution (F)
-C                  4 --> Helm's uniform-uniform distribution (Uu)
-C    MELEC ..... electron density model:
-C                  1 --> TFM analytical density
-C                  2 --> TFD analytical density
-C                  3 --> DHFS analytical density
-C                  4 --> DF numerical density, read from 'z_zzz.den'
-C                  5 --> density read from file 'density.usr'
-C    MUFIN ..... Aggregation effects:
-C                  0 --> free atom
-C                  1 --> muffin-tin model
-C    MEXCH ..... exchange correction for electrons:
-C                  0 --> no exchange
-C                  1 --> Furness-McCarthy (FM)
-C                  2 --> Riley-Truhlar (RT)
-C                  3 --> Local density approximation (LDA)
-C    MCPOL ..... correlation-polarization potential:
-C                  0 --> no polarization
-C                  1 --> Buckingham potential
-C                  2 --> LDA correlation-polarization
-C    MABS ...... absorption potential:
-C                  0 --> no absorption
-C                  1 --> LDA absorption model
-C
-C  Official ELSEPA source files included in repository:
-C    - fortran/elsepa.f (6,785 lines - Dirac partial-wave analysis)
-C    - fortran/elscata.f (416 lines - Analytical atomic scattering factors)
-C    - fortran/elscatm.f (529 lines - Muffin-tin & molecule scattering)
-C    - fortran/getpath.f (11 lines - Environment path resolver)
-C    - data/z_001.den through z_103.den (Dirac-Fock electron density tables)
-C    - data/z_001.dfs through z_103.dfs (Dirac-Fock screening function tables)
+export const OFFICIAL_ELSEPA_FORTRAN_SOURCE = `ELSEPA 2021 (Package elsepa-2020)
+DIRAC PARTIAL-WAVE CALCULATION OF ELASTIC SCATTERING OF ELECTRONS AND POSITRONS
+BY ATOMS, POSITIVE IONS AND MOLECULES
+
+Authors: Francesc Salvat, Aleksander Jablonski, Cedric J. Powell
+Reference: Computer Physics Communications 261 (2021) 107704
+License: Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0)
+Attribution: See fortran/ELSEPA-LICENSE.txt
+
+Package Structure (Fortran 90):
+  - fortran/radial.f: RADIAL package for solving Dirac and Schrodinger radial equations
+    (F. Salvat and J. M. Fernandez-Varea, Comput. Phys. Commun. 240 (2019) 165-177).
+    Contains module CONSTANTS.
+  - fortran/elsepa2020.f: Core Dirac partial-wave scattering engine and potential models.
+  - fortran/elscata.f: Atomic and ionic calculation program ELSCATA.
+  - fortran/elscatm.f: Molecular calculation program ELSCATM.
+  - fortran/ELSEPA-LICENSE.txt: CC BY-NC 3.0 license and attribution terms.
+  - data/z_001.den ... z_103.den: Dirac-Fock electron density tables.
+  - data/z_001.dfs ... z_103.dfs: Dirac-Fock screening function tables.
+
+Notice: At the authors' request, the earlier (2005) version of ELSEPA is no longer distributed.
 `;
 
 export const RENDER_DOCKERFILE_CONTENT = `# Multi-stage Dockerfile for ELSEPA Physics Workbench on Render.com
@@ -78,9 +50,9 @@ RUN npm install
 # Copy application source code
 COPY . .
 
-# Compile official Salvat ELSEPA Fortran binaries (elscata for atoms, elscatm for molecules)
-RUN gfortran -O2 -I/app/fortran -o /app/elsepa_exec fortran/elscata.f fortran/elsepa.f && \
-    gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f fortran/elsepa.f
+# Compile official Salvat ELSEPA 2021 Fortran binaries (elscata for atoms, elscatm for molecules)
+RUN gfortran -O2 -I/app/fortran -o /app/elsepa_exec fortran/elscata.f && \
+    gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f
 
 # Build Vite frontend and bundle Express server
 RUN npm run build
@@ -105,7 +77,6 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV ELSEPA_DATA=/app/data
 
 CMD ["node", "dist/server.cjs"]
 `;
@@ -123,6 +94,4 @@ services:
         value: 3000
       - key: NODE_ENV
         value: production
-      - key: ELSEPA_DATA
-        value: /app/data
 `;

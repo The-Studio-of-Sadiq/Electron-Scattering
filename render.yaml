@@ -11,5 +11,3 @@ services:
         value: 3000
       - key: NODE_ENV
         value: production
-      - key: ELSEPA_DATA
-        value: /app/data

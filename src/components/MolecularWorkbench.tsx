@@ -494,12 +494,13 @@ export const MolecularWorkbench: React.FC<MolecularWorkbenchProps> = ({
                 onChange={(e) => setAbsorptionModel(e.target.value)}
                 className="w-full text-xs p-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-800"
               >
-                <option value="staszewska-lda">Staszewska LDA Absorption</option>
                 <option value="none">No Absorption</option>
+                <option value="staszewska-lda">LDA-I (e-h excitations)</option>
+                <option value="lda-2">LDA-II (with plasmons)</option>
               </select>
             </div>
 
-            {absorptionModel === 'staszewska-lda' && (
+            {absorptionModel !== 'none' && (
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="text-[11px] font-medium text-slate-500 block mb-1">Strength (VABSA)</label>

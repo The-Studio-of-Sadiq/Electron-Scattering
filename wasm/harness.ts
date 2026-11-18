@@ -50,7 +50,7 @@ export async function runWasm(
   });
   if (dataFiles) {
     for (const [name, text] of Object.entries(dataFiles)) {
-      module.FS.writeFile('/data/' + name, text);
+      module.FS.writeFile('/' + name, text);
     }
   }
   try {
@@ -73,19 +73,46 @@ export function runNative(
   dataFiles?: Record<string, string>
 ): Files {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'elsepa-'));
-  let customDataDir: string | null = null;
-  if (dataFiles && Object.keys(dataFiles).length > 0) {
-    customDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'elsepa-data-'));
-    fs.cpSync(DATA_DIR, customDataDir, { recursive: true });
-    for (const [name, text] of Object.entries(dataFiles)) {
-      fs.writeFileSync(path.join(customDataDir, name), text, 'utf8');
+  const dbDir = path.join(dir, 'database');
+  const symlinkType = process.platform === 'win32' ? 'junction' : 'dir';
+  try {
+    fs.symlinkSync(DATA_DIR, dbDir, symlinkType);
+  } catch {
+    fs.mkdirSync(dbDir, { recursive: true });
+    const zMatches = new Set<number>();
+    const izMatch = input.match(/^IZ\s+(\d+)/m);
+    if (izMatch) {
+      zMatches.add(parseInt(izMatch[1], 10));
+    } else {
+      const lines = input.trim().split('\n');
+      for (const line of lines) {
+        const m = line.trim().match(/^(\d{1,3})\s+[-+0-9.eE]/);
+        if (m) zMatches.add(parseInt(m[1], 10));
+      }
+    }
+    const zList = zMatches.size > 0 ? Array.from(zMatches) : Array.from({ length: 103 }, (_, i) => i + 1);
+    for (const z of zList) {
+      const zPad = String(z).padStart(3, '0');
+      for (const ext of ['.den', '.dfs']) {
+        const srcFile = path.join(DATA_DIR, `z_${zPad}${ext}`);
+        if (fs.existsSync(srcFile)) {
+          fs.copyFileSync(srcFile, path.join(dbDir, `z_${zPad}${ext}`));
+        }
+      }
     }
   }
+
+  if (dataFiles) {
+    for (const [name, text] of Object.entries(dataFiles)) {
+      fs.writeFileSync(path.join(dir, name), text, 'utf8');
+    }
+  }
+
   try {
     execFileSync(binary, [], {
       cwd: dir,
       input,
-      env: { ...process.env, ELSEPA_DATA: customDataDir || DATA_DIR },
+      env: process.env,
       stdio: ['pipe', 'ignore', 'pipe'],
     });
     const files: Files = {};
@@ -95,10 +122,5 @@ export function runNative(
     return files;
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
-    if (customDataDir) {
-      try {
-        fs.rmSync(customDataDir, { recursive: true, force: true });
-      } catch {}
-    }
   }
 }

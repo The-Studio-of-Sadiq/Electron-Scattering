@@ -72,19 +72,19 @@ for (const absorptionModel of ['none', 'staszewska-lda'] as const) {
 
 const options: Array<[string, Partial<ElsepaInputParams>, RegExp]> = [
   ['positive ion (Au+, q = 1)', { ionCharge: 1 }, /Number of electrons = 78\b/],
-  ['muffin-tin model (Cu in a solid)', { z: 29, massNumber: 63.546, muffinTin: true }, /Muffin-tin model: Rmt =/],
+  ['muffin-tin model (Cu in a solid)', { z: 29, massNumber: 63.546, muffinTin: true }, /Muffin-tin model:\s+Rmt =/],
   ['muffin-tin radius set by the user', { z: 29, massNumber: 63.546, muffinTin: true, muffinTinRadiusAngstrom: 1.2 }, /Rmt = 1\.20000E-08 cm/],
   ['LDA correlation-polarization', { z: 80, energyEv: 100, polarizationModel: 'lda' }, /Correlation-polarization potential \(LDA\)/],
   ['Helm nuclear model', { energyEv: 1e5, nuclearModel: 'helm' }, /Helm's Uu distribution/],
   ['Thomas-Fermi-Dirac density', { densityModel: 'thomas-fermi-dirac' }, /analytical TFD model/],
   ['Dirac-Hartree-Fock-Slater density', { densityModel: 'dhfs' }, /analytical DHFS model/],
   ['Thomas-Fermi-Moliere density', { densityModel: 'thomas-fermi' }, /analytical TFM model/],
-  ['Dirac-Fock density (default)', {}, /Read from file z_079\.den/],
+  ['Dirac-Fock density (default)', {}, /Read from file (?:\.\/database\/)?z_079\.den/],
 ];
 await check('ELSEPA warnings are passed on (ion: angular limit of the DCS)', async () => {
   const { result } = await simulate({ ...base, ionCharge: 1 });
   const w = result.elsepaWarnings || [];
-  assert(w.some((s) => /only for THETA \.gt\./.test(s)), `warnings: ${JSON.stringify(w)}`);
+  assert(w.some((s) => /only for (?:angles )?THETA \.gt\./.test(s)), `warnings: ${JSON.stringify(w)}`);
   const neutral = await simulate(base);
   assert(!(neutral.result.elsepaWarnings || []).length, `neutral atom warnings: ${JSON.stringify(neutral.result.elsepaWarnings)}`);
 });

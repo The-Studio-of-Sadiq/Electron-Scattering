@@ -436,14 +436,14 @@ export const PhysicsGuide: React.FC<PhysicsGuideProps> = ({ theme = 'dark' }) =>
             <div className={`p-4 rounded-xl border ${subCardBg}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="font-bold text-sm text-indigo-400">
-                  ELSEPA — Dirac partial-wave program for elastic scattering
+                  ELSEPA 2021 — Dirac partial-wave program for elastic scattering
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-900/60 text-indigo-200 border border-indigo-700">
-                  CPC 2005
+                  CPC 2021
                 </span>
               </div>
               <div className={`text-xs mt-1 ${textSecondary}`}>
-                F. Salvat, A. Jablonski, C. J. Powell. <em>Computer Physics Communications</em> 165, 157–190 (2005).
+                F. Salvat, A. Jablonski, C. J. Powell. <em>Computer Physics Communications</em> 261, 107704 (2021); original method: Comput. Phys. Commun. 165, 157–190 (2005).
               </div>
               <div className={`text-xs mt-2 ${textMuted}`}>
                 Primary reference for the official FORTRAN program ELSEPA for calculating elastic cross sections of electrons and positrons by atoms.

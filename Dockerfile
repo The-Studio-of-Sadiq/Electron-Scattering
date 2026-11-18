@@ -19,8 +19,8 @@ RUN npm install
 COPY . .
 
 # Compile official Salvat ELSEPA Fortran binaries (elscata for atoms, elscatm for molecules)
-RUN gfortran -O2 -I/app/fortran -o /app/elsepa_exec fortran/elscata.f fortran/elsepa.f && \
-    gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f fortran/elsepa.f
+RUN gfortran -O2 -I/app/fortran -o /app/elsepa_exec fortran/elscata.f && \
+    gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f
 
 # Build Vite frontend and bundle Express server
 RUN npm run build
@@ -45,6 +45,5 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV ELSEPA_DATA=/app/data
 
 CMD ["node", "dist/server.cjs"]

@@ -39,7 +39,7 @@
 
 The **Electron Scattering Simulator (ELSEPA Physics Workbench)** is a web application for relativistic (Dirac partial-wave) calculations of elastic electron ($e^-$) and positron ($e^+$) scattering by atoms and molecules.
 
-All physics results come from the **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms) Fortran 77 package of Francesc Salvat, Aleksander Jablonski, and Cedric J. Powell: the programs **ELSCATA** (atoms) and **ELSCATM** (molecules). The ELSEPA physics routines are used unmodified; only file I/O was adapted. The Fortran is compiled to **WebAssembly** and runs inside the user's browser, so the application can be served from any static host and used offline as an installable Progressive Web App. An optional Node/Express server runs the same Fortran natively with `gfortran`.
+All physics results come from the **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms) Fortran 90 package (2021 release, package elsepa-2020; Comput. Phys. Commun. 261 (2021) 107704) of Francesc Salvat, Aleksander Jablonski, and Cedric J. Powell: the programs **ELSCATA** (atoms) and **ELSCATM** (molecules). The ELSEPA physics routines are used unmodified; only file I/O was adapted. The Fortran is compiled to **WebAssembly** and runs inside the user's browser, so the application can be served from any static host and used offline as an installable Progressive Web App. An optional Node/Express server runs the same Fortran natively with `gfortran`.
 
 The application adds an input form, interactive plotting, energy sweeps, a molecular geometry editor, saved-run comparison, and overlay of experimental datasets.
 
@@ -59,11 +59,12 @@ This software platform and research interface was developed by researchers and s
   * **HSTU Research Society**, Dinajpur 5200, Bangladesh.
 
 #### Core Physics Engine Attribution
-* **Original Fortran 77 Code (ELSEPA / ELSCATA / ELSCATM)**:
+* **ELSEPA 2021 Fortran 90 Code (ELSEPA / ELSCATA / ELSCATM)**:
   * **Francesc Salvat** (Facultat de Física, Universitat de Barcelona, Spain)
   * **Aleksander Jablonski** (Institute of Physical Chemistry, Polish Academy of Sciences, Warsaw, Poland)
   * **Cedric J. Powell** (National Institute of Standards and Technology - NIST, Gaithersburg, MD, USA)
-  * Published in: *Computer Physics Communications* 165, 157–190 (2005).
+  * Published in: *Computer Physics Communications* 261, 107704 (2021). Original method description: *Computer Physics Communications* 165, 157–190 (2005).
+  * Licensed under Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0). See `fortran/ELSEPA-LICENSE.txt`. Per authors' request, the 2005 version is no longer distributed.
 
 ---
 
@@ -121,7 +122,7 @@ This software platform and research interface was developed by researchers and s
 
 #### 3.6 Fortran Source Code & Deployment Tab
 * `src/components/RenderDeploymentModal.tsx`:
-  * **Source Code Viewer**: the ELSEPA Fortran 77 sources (`elsepa.f`, `elscata.f`, `elscatm.f`, `getpath.f`) and the TS Approximation source. With the Node server running, sources can be inspected in read-only mode by default. Saving or resetting requires `ENABLE_SOURCE_EDITING=true` in the server environment (local development only; forbidden on public servers to prevent remote code execution). When editing is disabled or when running in the browser-only build, the Save and Reset buttons are disabled with an explanatory note.
+  * **Source Code Viewer**: the ELSEPA Fortran 90 sources (`elsepa2020.f`, `radial.f`, `elscata.f`, `elscatm.f`) and the TS Approximation source. With the Node server running, sources can be inspected in read-only mode by default. Saving or resetting requires `ENABLE_SOURCE_EDITING=true` in the server environment (local development only; forbidden on public servers to prevent remote code execution). When editing is disabled or when running in the browser-only build, the Save and Reset buttons are disabled with an explanatory note.
   * **Engine Status**: reports whether `gfortran` and a compiled ELSEPA binary are available on the server, whether source editing is enabled (`sourceEditing`), or that ELSEPA is running as WebAssembly in the browser.
   * **Deployment files**: the `Dockerfile` and `render.yaml` used for container deployment (Section 8).
 
@@ -132,7 +133,7 @@ This software platform and research interface was developed by researchers and s
 
 ### 4. Relativistic Dirac Scattering Theory & Mathematical Physics
 
-This section summarizes the theory implemented by ELSEPA (Salvat, Jablonski & Powell, 2005). The application itself does not re-implement it; it prepares ELSEPA input and displays ELSEPA output.
+This section summarizes the theory implemented by ELSEPA (Salvat, Jablonski & Powell, 2005, 2021). The application itself does not re-implement it; it prepares ELSEPA input and displays ELSEPA output.
 
 #### 4.1 Coupled Radial Dirac System
 The interaction of a projectile of rest mass $m_e$ and kinetic energy $E$ with a central potential $V(r)$ is governed by the Dirac equation:
@@ -182,7 +183,7 @@ $$V(r) = V_{\text{st}}(r) + V_{\text{ex}}(r) + V_{\text{cp}}(r) - i W_{\text{abs
 4. **Absorption Potential $W_{\text{abs}}(r)$**: ELSEPA's LDA absorption potential, describing loss of flux to inelastic channels, scaled by the user-set strength parameter.
 
 #### 4.3.1 User-Supplied Electron Densities (MELEC 5)
-ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa.f` to read external radial electron densities from `density.usr` (`$ELSEPA_DATA/density.usr` natively or `/data/density.usr` in WebAssembly).
+ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa2020.f` to read an external radial electron density from the file `density.usr` in the current working directory.
 * **Format & Header**: ELSEPA skips exactly 3 header lines, then reads list-directed pairs of $(r, \rho(r))$ until EOF. The workbench normalizes uploaded text to start with 3 header lines prefixed by ` #` followed by scientific pairs formatted as ` R RHO`.
 * **Grid Constraints**:
   * Point count: $5 \le N \le 996$ (ELSEPA stops if $N < 5$ because cubic spline interpolation requires more than 4 points; $N_{\max} = 996$ points in Fortran array limits).
@@ -192,8 +193,8 @@ ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa.f` to read e
   $$4\pi \int_0^\infty \rho(r) r^2 \, dr = \text{NELEC} = Z - q$$
   The workbench computes the trapezoidal integral and warns the user if the integrated electron count deviates from $\text{NELEC}$ by more than $1\%$.
 * **Execution & Concurrency Isolation**:
-  * **WebAssembly**: custom files are written to Emscripten's virtual filesystem at `/data/density.usr` on a fresh module instance per worker.
-  * **Native Node Server**: each simulation runs inside an isolated execution directory (`tmp_run_*`). When a custom density is requested, an isolated `tmp_run_*/data/` directory is created containing `density.usr` alongside copies of any atom data tables read by ELSCATA (`z_NNN.den`, `z_NNN.dfs`), with `ELSEPA_DATA` pointing to it. The entire temporary folder is automatically deleted upon simulation completion.
+  * **WebAssembly**: the file is written to `/density.usr` (the working directory) in Emscripten's virtual file system, on a fresh module instance per run.
+  * **Native Node Server**: each simulation runs inside its own temporary directory (`tmp_run_*`), which holds the input deck, `density.usr` when requested, and a `database` link to `data/` (ELSEPA 2021 reads `./database/z_NNN.*`). The directory is deleted when the run ends.
 
 #### 4.4 Physical Observables & Cross Sections
 * **Differential Cross Section (DCS)**:
@@ -244,15 +245,15 @@ The frontend always calls the same `/api/*` routes. `src/utils/localApiFallback.
 ```
 
 #### 5.1 ELSEPA Compiled to WebAssembly (Primary Engine)
-* **Build** (`wasm/build.sh`, only needed when the Fortran changes; the output is committed): the Fortran 77 sources are translated to C with netlib `f2c` and compiled with Emscripten to `public/elsepa/elsepa.js`, `elsepa.wasm`, and `elsepa.data` (the packaged atomic data files from `data/`). `wasm/f77fix.py` moves DATA statements that precede specification statements, which `f2c` (strict Fortran 77) requires; this reorders non-executable statements only.
+* **Build** (`wasm/build.sh`, only needed when the Fortran changes; the output is committed): `wasm/f90to77.py` writes a Fortran 77 copy of the ELSEPA 2021 sources (the module `CONSTANTS`, six PARAMETER constants, becomes an INCLUDE of the same constants; nothing else changes), which is translated to C with netlib `f2c` and compiled with Emscripten to `public/elsepa/elsepa.js`, `elsepa.wasm`, and `elsepa.data` (the atomic data files from `data/`, mounted at `/database`). `wasm/f77fix.py` moves DATA statements that precede specification statements, which `f2c` (strict Fortran 77) requires; this reorders non-executable statements only.
 * **Execution** (`src/physics/elsepaWasm.ts`, `src/physics/elsepaWasm.worker.ts`): ELSEPA runs in a module Web Worker. Each run uses a fresh module instance: the input deck from `src/physics/elsepaFortranIO.ts` is supplied as standard input, and the output files ELSEPA writes (`dcs_*.dat`, `scatamp.dat`, `scfield.dat`, `dpwa.dat`) are parsed back into `SimulationResult` / `MolecularSimulationResult` objects.
 * **Routing** (`src/utils/localApiFallback.ts`): compute routes run in the browser when there is no backend (static hosting), when the backend reports no compiled ELSEPA binary, or when the backend's native run returns HTTP 5xx.
 * **Offline**: the service worker (`public/sw.js`) precaches the app shell and the three ELSEPA WebAssembly files.
 
 #### 5.2 Optional Native gfortran Server
 * `server.ts` (Express, port 3000) and `server/fortranRunner.ts`.
-* If `gfortran` is installed, compiles `fortran/elscata.f` + `fortran/elsepa.f` into `elsepa_exec` and `fortran/elscatm.f` + `fortran/elsepa.f` into `elscatm_exec` on first use.
-* Runs the binary with Node's `child_process.execSync`, writing the input deck to a temporary run directory and setting `ELSEPA_DATA` to `data/`; the output files are parsed with the same code as the WebAssembly engine.
+* If `gfortran` is installed, compiles `fortran/elscata.f` into `elsepa_exec` and `fortran/elscatm.f` into `elscatm_exec` on first use (both `INCLUDE` `radial.f` and `elsepa2020.f`).
+* Runs the binary with Node's `child_process.execSync`, writing the input deck to a temporary run directory that links `database` to `data/`; the output files are parsed with the same code as the WebAssembly engine.
 * `/api/energy-sweep` runs native ELSEPA once per energy (`runOfficialEnergySweep`).
 * The server never substitutes the TypeScript model for ELSEPA: if the binary is missing or a run fails, it returns HTTP 500 with an error message, and the browser then uses the WebAssembly engine.
 
@@ -360,11 +361,11 @@ The website features a custom vector logo design depicting an incoming electron 
 **Container with native ELSEPA:** the multi-stage `Dockerfile` (base image `node:20-slim`):
 1. Builder stage: installs `gfortran`, `gcc`, `g++` and `make`; runs `npm install`; compiles the ELSEPA executables
    ```bash
-   gfortran -O2 -I/app/fortran -o /app/elsepa_exec  fortran/elscata.f fortran/elsepa.f
-   gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f fortran/elsepa.f
+   gfortran -O2 -I/app/fortran -o /app/elsepa_exec  fortran/elscata.f
+   gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f
    ```
    and runs `npm run build`.
-2. Runtime stage: installs `gfortran`, copies `dist/`, `node_modules/`, `fortran/`, `data/` and the compiled binaries, sets `ELSEPA_DATA=/app/data`, exposes port 3000 and runs `node dist/server.cjs`.
+2. Runtime stage: installs `gfortran`, copies `dist/`, `node_modules/`, `fortran/`, `data/` and the compiled binaries, exposes port 3000 and runs `node dist/server.cjs`.
 
 `render.yaml` is a Render.com blueprint that builds this Dockerfile.
 
@@ -420,8 +421,8 @@ npx tsx wasm/parity.test.ts
 
 # Including the native gfortran comparison
 mkdir -p native
-gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f fortran/elsepa.f
-gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f fortran/elsepa.f
+gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f
+gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f
 NATIVE_ELSCATA=$PWD/native/elscata NATIVE_ELSCATM=$PWD/native/elscatm npx tsx wasm/parity.test.ts
 
 # Server engine test (needs gfortran on PATH)
@@ -448,14 +449,17 @@ npx tsx wasm/server.test.ts
 │
 ├── data/                               # ELSEPA atomic data (z_NNN.den, z_NNN.dfs)
 │
-├── fortran/                            # Official ELSEPA Fortran 77 sources
-│   ├── elsepa.f                        # ELSEPA physics subroutines
+├── fortran/                            # Official ELSEPA 2021 sources (CC BY-NC 3.0)
+│   ├── elsepa2020.f                    # ELSEPA physics subroutines
+│   ├── radial.f                        # RADIAL package (Dirac radial equation)
 │   ├── elscata.f                       # ELSCATA main program (atoms)
 │   ├── elscatm.f                       # ELSCATM main program (molecules)
-│   └── getpath.f                       # Data-path helper (ELSEPA_DATA env var)
+│   ├── readme.txt                      # The authors' readme
+│   └── ELSEPA-LICENSE.txt              # Attribution and CC BY-NC 3.0 licence
 │
 ├── wasm/                               # WebAssembly build & tests
 │   ├── build.sh                        # Fortran → f2c → Emscripten build script
+│   ├── f90to77.py                      # Module CONSTANTS → INCLUDE, for f2c
 │   ├── f77fix.py                       # DATA-statement reordering for f2c
 │   ├── features.test.ts                # Unit and feature tests (grids, densities)
 │   ├── outputs.test.ts                 # Output quantity verification
