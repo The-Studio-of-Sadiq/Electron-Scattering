@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Assemble site (project website in site/, plus logos and figures)
         run: |
           mkdir -p _site/assets _site/figures
