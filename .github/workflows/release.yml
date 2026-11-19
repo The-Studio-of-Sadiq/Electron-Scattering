@@ -73,7 +73,7 @@ jobs:
             type=raw,value=latest
           labels: |
             org.opencontainers.image.licenses=MIT AND CC-BY-NC-3.0
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
