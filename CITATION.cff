@@ -6,7 +6,7 @@ version: 2.0.0
 date-released: 2026-11-19
 license: MIT
 repository-code: "https://github.com/The-Studio-of-Sadiq/Electron-Scattering"
-url: "https://the-studio-of-sadiq.github.io/Electron-Scattering/"
+url: "https://thestudioofsadiq.tech/Electron-Scattering/"
 abstract: >-
   An installable Progressive Web App that runs the official ELSEPA 2021 Fortran
   programs (ELSCATA and ELSCATM) compiled to WebAssembly, for Dirac partial-wave

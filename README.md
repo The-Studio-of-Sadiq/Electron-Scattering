@@ -14,7 +14,7 @@
 
 A browser-based graphical workbench (v2.0.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official ELSEPA 2021 Fortran 90 programs (package "elsepa-2020") **ELSCATA** (atoms) and **ELSCATM** (molecules), whose source files are kept unmodified and extended only by a small documented build-time patch, are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
 
-**Website:** <https://the-studio-of-sadiq.github.io/Electron-Scattering/> · **Live app:** <https://electron-scattering.onrender.com/> · **Docs:** [docs/Documentation.md](docs/Documentation.md) · **Changelog:** [CHANGELOG.md](CHANGELOG.md) · **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
+**Website:** <https://thestudioofsadiq.tech/Electron-Scattering/> · **Live app:** <https://electron-scattering.onrender.com/> · **Docs:** [docs/Documentation.md](docs/Documentation.md) · **Changelog:** [CHANGELOG.md](CHANGELOG.md) · **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
