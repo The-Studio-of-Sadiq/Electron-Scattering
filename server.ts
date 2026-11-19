@@ -46,6 +46,11 @@ const requireSourceEditing = (_req: Request, res: Response, next: () => void) =>
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Express 5 leaves req.body undefined when no parser ran; keep the Express 4 behaviour ({}).
+app.use((req, _res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
 
 // Configure Multer for secure in-memory file uploads with limits
 const upload = multer({
@@ -332,7 +337,8 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
+    // Express 5 (path-to-regexp v8) needs a named wildcard; '/{*splat}' also matches '/'.
+    app.get('/{*splat}', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
