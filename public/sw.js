@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elsepa-pwa-v6';
+const CACHE_NAME = 'elsepa-pwa-v7';
 // Paths are relative to this worker's location, so the same file works at the
 // site root (Render, Docker) and under /<repo>/ on GitHub Pages.
 const ASSETS_TO_CACHE = [
@@ -32,7 +32,7 @@ self.addEventListener('install', (event) => {
             const jsRes = await fetch(mainJs);
             if (jsRes && jsRes.ok) {
               const jsText = await jsRes.text();
-              const workerMatch = jsText.match(/["']((?:\/[^"']*)?\/assets\/[^"']*worker[^"']*\.js)["']/);
+              const workerMatch = jsText.match(/["'`]((?:\/[^"'`]*)?\/assets\/[^"'`]*worker[^"'`]*\.js)["'`]/);
               if (workerMatch && workerMatch[1]) {
                 await cache.add(workerMatch[1]);
               }
