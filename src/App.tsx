@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ElsepaInputParams, SimulationResult, UploadedDataset, FortranServerStatus, SavedSimulationRun } from './types';
+import { cancelElsepaRuns } from './physics/elsepaWasm';
 import { Header } from './components/Header';
 import { InputGuiForm } from './components/InputGuiForm';
 import { ResultsDashboard } from './components/ResultsDashboard';
@@ -9,11 +10,12 @@ import { RenderDeploymentModal } from './components/RenderDeploymentModal';
 import { MolecularWorkbench } from './components/MolecularWorkbench';
 import { SavedRunsManager } from './components/SavedRunsManager';
 import { PhysicsGuide } from './components/PhysicsGuide';
+import { DensityEditor, DensityEditorState } from './components/DensityEditor';
 import { getElementByZ } from './data/elements';
 import { saveAtomicSimulationRun } from './utils/localStorage';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics'>('workbench');
+  const [activeTab, setActiveTab] = useState<'workbench' | 'density' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics'>('workbench');
 
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('elsepa_theme');
@@ -26,6 +28,24 @@ export default function App() {
       localStorage.setItem('elsepa_theme', next);
       return next;
     });
+  };
+
+  const [densityEditorState, setDensityEditorState] = useState<DensityEditorState | null>(() => {
+    try {
+      const saved = localStorage.getItem('elsepa_density_editor');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleSaveDensityState = (state: DensityEditorState) => {
+    setDensityEditorState(state);
+    try {
+      localStorage.setItem('elsepa_density_editor', JSON.stringify(state));
+    } catch (err) {
+      console.warn('Failed to save density editor state to localStorage:', err);
+    }
   };
 
 
@@ -71,8 +91,34 @@ export default function App() {
       .catch((err) => console.warn('Fetch datasets failed:', err));
   }, []);
 
+  const [simulationStatusMessage, setSimulationStatusMessage] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<any>(null);
+
+  const handleCancelSimulation = () => {
+    cancelElsepaRuns();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setSimulationStatusMessage('Calculation cancelled');
+    setIsSimulating(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
   const runSimulation = async (inputParams: ElsepaInputParams) => {
     setIsSimulating(true);
+    setSimulationStatusMessage(null);
+    setElapsedSeconds(0);
+    const startTime = performance.now();
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds((performance.now() - startTime) / 1000);
+    }, 100);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const payload = {
         ...inputParams,
@@ -83,6 +129,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: abortController.signal,
       });
 
       if (res.ok) {
@@ -90,12 +137,23 @@ export default function App() {
         setSimulationResult(result);
         saveAtomicSimulationRun(result);
       } else {
-        console.error('Simulation server error');
+        const errJson = await res.json().catch(() => null);
+        if (errJson?.error === 'Cancelled by user') {
+          setSimulationStatusMessage('Calculation cancelled');
+        } else {
+          console.error('Simulation server error:', errJson?.error);
+        }
       }
-    } catch (err) {
-      console.error('Simulation request failed:', err);
+    } catch (err: any) {
+      if (err.name === 'AbortError' || err.message?.includes('Cancelled by user') || abortController.signal.aborted) {
+        setSimulationStatusMessage('Calculation cancelled');
+      } else {
+        console.error('Simulation request failed:', err);
+      }
     } finally {
       setIsSimulating(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      abortControllerRef.current = null;
     }
   };
 
@@ -223,6 +281,18 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 flex flex-col gap-5 sm:gap-6">
         {activeTab === 'workbench' && (
           <div className="flex flex-col gap-6">
+            {simulationStatusMessage && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-center justify-between">
+                <span>{simulationStatusMessage}</span>
+                <button
+                  onClick={() => setSimulationStatusMessage(null)}
+                  className="text-amber-400 hover:text-amber-200 text-xs px-1"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             <InputGuiForm
               params={params}
               setParams={setParams}
@@ -230,6 +300,8 @@ export default function App() {
               isSimulating={isSimulating}
               theme={theme}
               enginePreference={enginePreference}
+              onCancelSimulation={handleCancelSimulation}
+              elapsedSeconds={elapsedSeconds}
             />
 
             <ResultsDashboard
@@ -239,6 +311,17 @@ export default function App() {
               setSelectedOverlayId={setSelectedOverlayId}
             />
           </div>
+        )}
+
+        {activeTab === 'density' && (
+          <DensityEditor
+            params={params}
+            setParams={setParams}
+            onNavigateToWorkbench={() => setActiveTab('workbench')}
+            theme={theme}
+            savedState={densityEditorState}
+            onSaveState={handleSaveDensityState}
+          />
         )}
 
         {activeTab === 'molecular' && <MolecularWorkbench enginePreference={enginePreference} />}

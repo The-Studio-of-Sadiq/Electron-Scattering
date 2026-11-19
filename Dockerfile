@@ -18,9 +18,11 @@ RUN npm install
 # Copy application source code
 COPY . .
 
-# Compile official Salvat ELSEPA Fortran binaries (elscata for atoms, elscatm for molecules)
-RUN gfortran -O2 -I/app/fortran -o /app/elsepa_exec fortran/elscata.f && \
-    gfortran -O2 -I/app/fortran -o /app/elscatm_exec fortran/elscatm.f
+# Apply build-time patch and compile ELSEPA Fortran binaries (elscata for atoms, elscatm for molecules)
+RUN node wasm/patch-elsepa.mjs fortran /tmp/patched-fortran && \
+    gfortran -O2 -I/tmp/patched-fortran -o /app/elsepa_exec /tmp/patched-fortran/elscata.f && \
+    gfortran -O2 -I/tmp/patched-fortran -o /app/elscatm_exec /tmp/patched-fortran/elscatm.f && \
+    rm -rf /tmp/patched-fortran
 
 # Build Vite frontend and bundle Express server
 RUN npm run build

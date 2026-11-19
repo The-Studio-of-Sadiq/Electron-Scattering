@@ -5,9 +5,10 @@
 
 interface RunRequest {
   id: number;
-  program: 'atomic' | 'molecular';
-  input: string;
+  program?: 'atomic' | 'molecular';
+  input?: string;
   files?: Record<string, string>;
+  readFile?: string;
 }
 
 const base = new URL(`${import.meta.env.BASE_URL}elsepa/`, self.location.origin).href;
@@ -39,9 +40,23 @@ function loadAssets(): Promise<Assets> {
 }
 
 self.onmessage = async (event: MessageEvent<RunRequest>) => {
-  const { id, program, input, files: inputFiles } = event.data;
+  const { id, program, input, files: inputFiles, readFile } = event.data;
   try {
     const { createElsepa, wasmBinary, dataPackage } = await loadAssets();
+
+    if (readFile) {
+      const module = await createElsepa({
+        wasmBinary,
+        getPreloadedPackage: () => dataPackage,
+        locateFile: (name: string) => base + name,
+        print: () => {},
+        printErr: () => {},
+      });
+      const content = module.FS.readFile(readFile, { encoding: 'utf8' });
+      self.postMessage({ id, files: { [readFile]: content } });
+      return;
+    }
+
     const log: string[] = [];
     let pos = 0;
 

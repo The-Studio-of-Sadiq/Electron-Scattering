@@ -72,10 +72,10 @@ This software platform and research interface was developed by researchers and s
 
 #### 3.1 Atomic Physics Workbench
 * **Interactive Parameter Configuration** (`src/components/InputGuiForm.tsx`; mapped to ELSCATA keywords by `buildAtomicInput` in `src/physics/elsepaFortranIO.ts`):
-  * **Target Element Selector**: $Z = 1$ to $Z = 103$, chosen from a periodic table. An **ion charge** $q$ gives a positive ion (`NELEC = Z - q`); for neutral atoms the **muffin-tin model** (`MUFFIN 1`, optional radius `RMUF`) describes an atom in a solid.
+  * **Target Element Selector**: $Z = 1$ to $Z = 103$, chosen from a periodic table. An **ion charge** $q$ specifies the net charge (`NELEC = Z - q`), supporting neutral atoms ($q = 0$), positive ions ($q > 0$), and negative ions ($q < 0$, $\text{NELEC} > Z$); for neutral atoms the **muffin-tin model** (`MUFFIN 1`, optional radius `RMUF`) describes an atom in a solid.
   * **Projectile Selection**: Electron ($e^-$) or Positron ($e^+$).
   * **Kinetic Energy**: direct input in eV, keV or MeV, with presets from 10 eV to 1 MeV. ELSEPA rejects energies below 10 eV.
-  * **Nuclear Charge Models**: Point Charge, Uniform Sphere, Fermi, or Helm uniform-uniform distribution (`MNUCL` 1/2/3/4). ELSEPA uses its own built-in nuclear parameters.
+  * **Nuclear Charge Models**: Point Charge, Uniform Sphere, Fermi, or Helm uniform-uniform distribution (`MNUCL` 1/2/3/4). ELSEPA uses its own built-in nuclear parameters; build-time extensions allow explicit overrides of the atomic weight used for nuclear radii (`ATWGHT`, g/mol), radius parameter $R_1$ (`NUCRAD`, fm), and skin parameter $R_2$ (`NUCSKN`, fm).
   * **Electron Density**: Thomas–Fermi–Molière, Thomas–Fermi–Dirac, Dirac–Hartree–Fock–Slater, numerical Dirac–Fock, or User-supplied density file (`MELEC` 1/2/3/4/5; default 4). When `custom-file` is chosen, users can upload external radial density tables in `.den`, `.dat`, `.txt`, or `.csv` format.
   * **Exchange Potentials ($e^-$)**: None, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi (`MEXCH` 0/1/3/2).
   * **Correlation–Polarization**: None, Buckingham, or LDA (`MCPOL` 0/1/2), with a user-set dipole polarizability (or ELSEPA's tabulated value when none is given); the cutoff parameter is left to ELSEPA's default.
@@ -186,7 +186,7 @@ $$V(r) = V_{\text{st}}(r) + V_{\text{ex}}(r) + V_{\text{cp}}(r) - i W_{\text{abs
 ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa2020.f` to read an external radial electron density from the file `density.usr` in the current working directory.
 * **Format & Header**: ELSEPA skips exactly 3 header lines, then reads list-directed pairs of $(r, \rho(r))$ until EOF. The workbench normalizes uploaded text to start with 3 header lines prefixed by ` #` followed by scientific pairs formatted as ` R RHO`.
 * **Grid Constraints**:
-  * Point count: $5 \le N \le 996$ (ELSEPA stops if $N < 5$ because cubic spline interpolation requires more than 4 points; $N_{\max} = 996$ points in Fortran array limits).
+  * Point count: $5 \le N \le 999$ (ELSEPA stops if $N < 5$ because its cubic spline needs more than 4 points; its read loop (`NDIN = 1000`) stops with "File is too large" when it reads 1000 lines without reaching the end of the file, so at most 999 points are accepted).
   * Radius: $r > 0$, strictly increasing ($r_{i+1} > r_i$). Units: **bohr** ($a_0$).
   * Density: $\rho(r) > 0$, strictly positive because ELSEPA fits a natural cubic spline to $\ln \rho(r)$. Units: **electrons/bohr$^3$** ($e/a_0^3$).
 * **Charge Conservation & Normalization**:
@@ -245,14 +245,14 @@ The frontend always calls the same `/api/*` routes. `src/utils/localApiFallback.
 ```
 
 #### 5.1 ELSEPA Compiled to WebAssembly (Primary Engine)
-* **Build** (`wasm/build.sh`, only needed when the Fortran changes; the output is committed): `wasm/f90to77.py` writes a Fortran 77 copy of the ELSEPA 2021 sources (the module `CONSTANTS`, six PARAMETER constants, becomes an INCLUDE of the same constants; nothing else changes), which is translated to C with netlib `f2c` and compiled with Emscripten to `public/elsepa/elsepa.js`, `elsepa.wasm`, and `elsepa.data` (the atomic data files from `data/`, mounted at `/database`). `wasm/f77fix.py` moves DATA statements that precede specification statements, which `f2c` (strict Fortran 77) requires; this reorders non-executable statements only.
+* **Build** (`wasm/build.sh`, only needed when the Fortran changes; the output is committed): `wasm/patch-elsepa.mjs` applies build-time extensions into a build directory, then `wasm/f90to77.py` writes a Fortran 77 copy of the patched sources (the module `CONSTANTS`, six PARAMETER constants, becomes an INCLUDE of the same constants; nothing else changes), which is translated to C with netlib `f2c` and compiled with Emscripten to `public/elsepa/elsepa.js`, `elsepa.wasm`, and `elsepa.data` (the atomic data files from `data/`, mounted at `/database`). `wasm/f77fix.py` moves DATA statements that precede specification statements, which `f2c` (strict Fortran 77) requires; this reorders non-executable statements only.
 * **Execution** (`src/physics/elsepaWasm.ts`, `src/physics/elsepaWasm.worker.ts`): ELSEPA runs in a module Web Worker. Each run uses a fresh module instance: the input deck from `src/physics/elsepaFortranIO.ts` is supplied as standard input, and the output files ELSEPA writes (`dcs_*.dat`, `scatamp.dat`, `scfield.dat`, `dpwa.dat`) are parsed back into `SimulationResult` / `MolecularSimulationResult` objects.
 * **Routing** (`src/utils/localApiFallback.ts`): compute routes run in the browser when there is no backend (static hosting), when the backend reports no compiled ELSEPA binary, or when the backend's native run returns HTTP 5xx.
 * **Offline**: the service worker (`public/sw.js`) precaches the app shell and the three ELSEPA WebAssembly files.
 
 #### 5.2 Optional Native gfortran Server
 * `server.ts` (Express, port 3000) and `server/fortranRunner.ts`.
-* If `gfortran` is installed, compiles `fortran/elscata.f` into `elsepa_exec` and `fortran/elscatm.f` into `elscatm_exec` on first use (both `INCLUDE` `radial.f` and `elsepa2020.f`).
+* If `gfortran` is installed, applies `wasm/patch-elsepa.mjs` to prepare a patched copy and compiles `elscata.f` into `elsepa_exec` and `elscatm.f` into `elscatm_exec` on first use (both `INCLUDE` `radial.f` and `elsepa2020.f`).
 * Runs the binary with Node's `child_process.execSync`, writing the input deck to a temporary run directory that links `database` to `data/`; the output files are parsed with the same code as the WebAssembly engine.
 * `/api/energy-sweep` runs native ELSEPA once per energy (`runOfficialEnergySweep`).
 * The server never substitutes the TypeScript model for ELSEPA: if the binary is missing or a run fails, it returns HTTP 500 with an error message, and the browser then uses the WebAssembly engine.

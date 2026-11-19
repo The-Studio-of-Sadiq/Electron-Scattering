@@ -115,6 +115,10 @@ await check('ELSEPA input deck builder audits all editable and ignored fields', 
     ['exchangeModel', { exchangeModel: 'none' }],
     ['polarizationModel', { polarizationModel: 'lda' }],
     ['polarizability', { polarizationModel: 'buckingham', polarizability: 42 }],
+    ['polarizationCutoffA0', { polarizationModel: 'buckingham', polarizationCutoffA0: 2.5 }],
+    ['atomicWeightOverride', { atomicWeightOverride: 205 }],
+    ['nuclearRadiusFm', { nuclearRadiusFm: 7.2 }],
+    ['nuclearSkinFm', { nuclearSkinFm: 0.65 }],
     ['absorptionModel', { absorptionModel: 'staszewska-lda' }],
     ['absorptionStrength', { absorptionModel: 'staszewska-lda', absorptionStrength: 3.5 }],
   ];
@@ -135,6 +139,7 @@ await check('ELSEPA input deck builder audits all editable and ignored fields', 
     ['minAngle', { minAngle: 15 }],
     ['maxAngle', { maxAngle: 165 }],
     ['angleStep', { angleStep: 2.5 }],
+    ['customAngularGrid', { customAngularGrid: true }],
   ];
 
   for (const [field, change] of notElsepaInputs) {

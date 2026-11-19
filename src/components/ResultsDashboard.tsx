@@ -72,7 +72,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     );
   }
 
-  const { summary, scatteringData, potentialProfile, phaseShifts, elsepaInputFileText, element } = result;
+  const { summary, scatteringData, potentialProfile, phaseShifts, elsepaInputFileText, element, params } = result;
 
   // Selected Overlay dataset
   const overlayDataset = uploadedDatasets.find((d) => d.id === activeOverlayId);
@@ -198,6 +198,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           {summary.sigmaAbsAu > 0 && (
             <div id="absorption-cross-section" className="text-xs text-indigo-700 font-mono mt-0.5">
               σ_abs = {summary.sigmaAbsAu.toFixed(3)} a₀² (absorption)
+            </div>
+          )}
+          {summary.sigmaElRangeAu !== undefined && (
+            <div id="range-cross-section" className="text-xs text-indigo-700 font-mono mt-0.5 font-medium">
+              σ_range = {summary.sigmaElRangeAu.toFixed(3)} a₀² ({params.minAngle}°–{params.maxAngle}°)
             </div>
           )}
         </div>
@@ -665,7 +670,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         {activeView === 'table' && (
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-400">Showing {scatteringData.length} angular scattering points (0° to 180°)</span>
+              <span className="text-xs text-slate-400">Showing {scatteringData.length} angular scattering points
+                {scatteringData.length > 0 &&
+                  ` (${scatteringData[0].angleDeg}° to ${scatteringData[scatteringData.length - 1].angleDeg}°)`}</span>
               <button
                 id="btn-download-csv"
                 onClick={handleDownloadCsv}

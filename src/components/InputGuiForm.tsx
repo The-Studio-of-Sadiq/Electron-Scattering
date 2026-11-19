@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { ElsepaInputParams, ElementData } from '../types';
 import { getElementByZ } from '../data/elements';
+import { ELAW, elsepaDefaultNuclear, elsepaDefaultCutoffA0 } from '../data/elsepaTables';
+import { validateAngularGrid } from '../physics/angularGrid';
 import { PeriodicTableModal } from './PeriodicTableModal';
 import { LaTeXText, MathTex } from './LaTeX';
 import { parseDensityFile, checkElectronCountWarning } from '../physics/densityFile';
@@ -28,6 +30,8 @@ interface InputGuiFormProps {
   isSimulating: boolean;
   theme?: 'dark' | 'light';
   enginePreference?: 'gfortran' | 'typescript';
+  onCancelSimulation?: () => void;
+  elapsedSeconds?: number;
 }
 
 export const InputGuiForm: React.FC<InputGuiFormProps> = ({
@@ -37,6 +41,8 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
   isSimulating,
   theme = 'dark',
   enginePreference = 'gfortran',
+  onCancelSimulation,
+  elapsedSeconds,
 }) => {
   const isElsepaEngine = enginePreference !== 'typescript';
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +51,22 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
   // Only the most recent file selection may update the density (file reads can finish out of order).
   const densityReadId = useRef(0);
 
-  const nelec = params.z - Math.min(params.z, Math.max(0, Math.round(params.ionCharge || 0)));
+  const nelec = params.z - Math.round(params.ionCharge || 0);
+
+  const currentElement: ElementData = getElementByZ(params.z);
+  const defaultAw = ELAW[params.z - 1] ?? currentElement.atomicMass;
+  const defaultNuclear = useMemo(
+    () => elsepaDefaultNuclear(params.z, params.nuclearModel, params.atomicWeightOverride),
+    [params.z, params.nuclearModel, params.atomicWeightOverride]
+  );
+  const defaultCutoff = useMemo(
+    () => elsepaDefaultCutoffA0(params.z, params.energyEv, params.polarizability),
+    [params.z, params.energyEv, params.polarizability]
+  );
+  const angularGridError = useMemo(() => {
+    if (!params.customAngularGrid) return null;
+    return validateAngularGrid(params.minAngle, params.maxAngle, params.angleStep);
+  }, [params.customAngularGrid, params.minAngle, params.maxAngle, params.angleStep]);
 
   const densityParseResult = useMemo(() => {
     if (params.densityModel !== 'custom-file' || !params.customDensityData) return null;
@@ -82,8 +103,6 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
       setParams((prev) => ({ ...prev, customDensityName: file.name, customDensityData: undefined }));
     }
   };
-
-  const currentElement: ElementData = getElementByZ(params.z);
 
   // Convert raw energy in eV to user display value in selected unit
   const displayEnergy =
@@ -188,37 +207,72 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-slate-400 mb-1">Mass Number A:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] text-slate-400">Mass Number A:</label>
+                  {params.atomicWeightOverride !== undefined && (
+                    <button
+                      type="button"
+                      title="Reset to ELSEPA default"
+                      onClick={() =>
+                        setParams((prev) => ({
+                          ...prev,
+                          atomicWeightOverride: undefined,
+                          massNumber: defaultAw,
+                        }))
+                      }
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      <span>↺</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="number"
-                  step="0.1"
-                  disabled={isElsepaEngine}
-                  value={params.massNumber}
-                  onChange={(e) =>
-                    setParams((prev) => ({ ...prev, massNumber: parseFloat(e.target.value) || 1 }))
+                  step="0.0001"
+                  value={
+                    params.atomicWeightOverride !== undefined
+                      ? params.atomicWeightOverride
+                      : isElsepaEngine
+                      ? Number(defaultAw.toFixed(4))
+                      : params.massNumber
                   }
-                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
-                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) {
+                      setParams((prev) => ({
+                        ...prev,
+                        atomicWeightOverride: val,
+                        massNumber: val,
+                      }));
+                    }
+                  }}
+                  className={`w-full bg-slate-900 border rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${
+                    params.atomicWeightOverride === undefined
+                      ? 'border-indigo-500/40 text-indigo-200'
+                      : 'border-slate-700'
                   }`}
                 />
-                {isElsepaEngine && (
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                {params.atomicWeightOverride === undefined && isElsepaEngine && (
+                  <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
                 )}
               </div>
             </div>
             <div className="mt-2 text-xs">
-              <label className="block text-[11px] text-slate-400 mb-1">Ion charge q (positive ion, 0 = neutral atom):</label>
+              <label className="block text-[11px] text-slate-400 mb-1">
+                Ion charge q (+ cation, − anion, 0 neutral):
+              </label>
               <input
                 id="input-ion-charge"
                 type="number"
-                min="0"
+                min={-params.z}
                 max={params.z}
                 step="1"
                 value={params.ionCharge ?? 0}
                 onChange={(e) =>
                   setParams((prev) => ({
                     ...prev,
-                    ionCharge: Math.min(prev.z, Math.max(0, parseInt(e.target.value) || 0)),
+                    ionCharge: Math.min(prev.z, Math.max(-prev.z, parseInt(e.target.value) || 0)),
                   }))
                 }
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -376,7 +430,7 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                   </div>
 
                   <p className="text-[10px] text-slate-400 leading-relaxed">
-                    Format: pairs of <span className="font-mono text-slate-300">r</span> (bohr, a₀) and <span className="font-mono text-slate-300">ρ</span> (electrons/a₀³), 5 to 996 points, strictly increasing in r. Normalized so that <span className="font-mono text-slate-300">4π∫ρr²dr = NELEC</span> (same format as ELSEPA's <span className="font-mono text-slate-300">z_NNN.den</span> files).
+                    Format: pairs of <span className="font-mono text-slate-300">r</span> (bohr, a₀) and <span className="font-mono text-slate-300">ρ</span> (electrons/a₀³), 5 to 999 points, strictly increasing in r. Normalized so that <span className="font-mono text-slate-300">4π∫ρr²dr = NELEC</span> (same format as ELSEPA's <span className="font-mono text-slate-300">z_NNN.den</span> files).
                   </p>
 
                   {params.customDensityName && (
@@ -429,15 +483,15 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
               <label className="block text-[11px] text-slate-400 mb-1">Target Environment:</label>
               <select
                 id="select-target-environment"
-                disabled={(params.ionCharge ?? 0) > 0}
-                value={params.muffinTin && !(params.ionCharge ?? 0) ? 'solid' : 'free'}
+                disabled={(params.ionCharge ?? 0) !== 0}
+                value={params.muffinTin && (params.ionCharge ?? 0) === 0 ? 'solid' : 'free'}
                 onChange={(e) => setParams((prev) => ({ ...prev, muffinTin: e.target.value === 'solid' }))}
                 className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50"
               >
                 <option value="free">Free atom</option>
                 <option value="solid">Atom in a solid (muffin-tin model)</option>
               </select>
-              {params.muffinTin && !(params.ionCharge ?? 0) && (
+              {params.muffinTin && (params.ionCharge ?? 0) === 0 && (
                 <div className="mt-2">
                   <label className="block text-[10px] text-slate-400 mb-1">
                     Muffin-tin radius (Å, 0 = half the nearest-neighbour distance):
@@ -457,42 +511,231 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
               )}
             </div>
 
+            {params.nuclearModel === 'point' && (
+              <div className="text-[11px] text-slate-500 italic mt-2">
+                Point charge nucleus: no nuclear size parameters.
+              </div>
+            )}
+
+            {params.nuclearModel === 'uniform' && (
+              <div className="mt-2 text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] text-slate-400">Nuclear radius R (fm):</label>
+                  {params.nuclearRadiusFm !== undefined && (
+                    <button
+                      type="button"
+                      title="Reset to ELSEPA default"
+                      onClick={() => setParams((prev) => ({ ...prev, nuclearRadiusFm: undefined }))}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      <span>↺</span>
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={
+                    params.nuclearRadiusFm !== undefined
+                      ? params.nuclearRadiusFm
+                      : defaultNuclear.radiusFm !== null
+                      ? Number(defaultNuclear.radiusFm.toFixed(4))
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) setParams((prev) => ({ ...prev, nuclearRadiusFm: val }));
+                  }}
+                  className={`w-full bg-slate-900 border rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                    params.nuclearRadiusFm === undefined
+                      ? 'border-indigo-500/40 text-indigo-200'
+                      : 'border-slate-700'
+                  }`}
+                />
+                {params.nuclearRadiusFm === undefined && isElsepaEngine && (
+                  <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
+                )}
+              </div>
+            )}
+
             {params.nuclearModel === 'fermi' && (
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Half-density c (fm):</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-slate-400">Average radius c (fm):</label>
+                    {params.nuclearRadiusFm !== undefined && (
+                      <button
+                        type="button"
+                        title="Reset to ELSEPA default"
+                        onClick={() =>
+                          setParams((prev) => ({
+                            ...prev,
+                            nuclearRadiusFm: undefined,
+                            fermiC: undefined,
+                          }))
+                        }
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>↺</span>
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="number"
-                    step="0.01"
-                    disabled={isElsepaEngine}
-                    value={params.fermiC || (1.07 * Math.pow(params.massNumber, 1 / 3)).toFixed(2)}
-                    onChange={(e) =>
-                      setParams((prev) => ({ ...prev, fermiC: parseFloat(e.target.value) || 1.0 }))
+                    step="0.001"
+                    value={
+                      params.nuclearRadiusFm !== undefined
+                        ? params.nuclearRadiusFm
+                        : defaultNuclear.radiusFm !== null
+                        ? Number(defaultNuclear.radiusFm.toFixed(4))
+                        : params.fermiC || (1.07 * Math.pow(params.massNumber, 1 / 3)).toFixed(2)
                     }
-                    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
-                      isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        setParams((prev) => ({ ...prev, nuclearRadiusFm: val, fermiC: val }));
+                      }
+                    }}
+                    className={`w-full bg-slate-900 border rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      params.nuclearRadiusFm === undefined
+                        ? 'border-indigo-500/40 text-indigo-200'
+                        : 'border-slate-700'
                     }`}
                   />
-                  {isElsepaEngine && (
-                    <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                  {params.nuclearRadiusFm === undefined && isElsepaEngine && (
+                    <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
                   )}
                 </div>
                 <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Skin thickness t (fm):</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-slate-400">Skin thickness / diffuseness t (fm):</label>
+                    {params.nuclearSkinFm !== undefined && (
+                      <button
+                        type="button"
+                        title="Reset to ELSEPA default"
+                        onClick={() =>
+                          setParams((prev) => ({
+                            ...prev,
+                            nuclearSkinFm: undefined,
+                            fermiT: undefined,
+                          }))
+                        }
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>↺</span>
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="number"
-                    step="0.01"
-                    disabled={isElsepaEngine}
-                    value={params.fermiT || 0.5229}
-                    onChange={(e) =>
-                      setParams((prev) => ({ ...prev, fermiT: parseFloat(e.target.value) || 0.5229 }))
+                    step="0.001"
+                    value={
+                      params.nuclearSkinFm !== undefined
+                        ? params.nuclearSkinFm
+                        : defaultNuclear.skinFm !== null
+                        ? Number(defaultNuclear.skinFm.toFixed(4))
+                        : params.fermiT || 0.5229
                     }
-                    className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
-                      isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        setParams((prev) => ({ ...prev, nuclearSkinFm: val, fermiT: val }));
+                      }
+                    }}
+                    className={`w-full bg-slate-900 border rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      params.nuclearSkinFm === undefined
+                        ? 'border-indigo-500/40 text-indigo-200'
+                        : 'border-slate-700'
                     }`}
                   />
-                  {isElsepaEngine && (
-                    <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                  {params.nuclearSkinFm === undefined && isElsepaEngine && (
+                    <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {params.nuclearModel === 'helm' && (
+              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-slate-400">Inner radius R₁ (fm):</label>
+                    {params.nuclearRadiusFm !== undefined && (
+                      <button
+                        type="button"
+                        title="Reset to ELSEPA default"
+                        onClick={() => setParams((prev) => ({ ...prev, nuclearRadiusFm: undefined }))}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>↺</span>
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={
+                      params.nuclearRadiusFm !== undefined
+                        ? params.nuclearRadiusFm
+                        : defaultNuclear.radiusFm !== null
+                        ? Number(defaultNuclear.radiusFm.toFixed(4))
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) setParams((prev) => ({ ...prev, nuclearRadiusFm: val }));
+                    }}
+                    className={`w-full bg-slate-900 border rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      params.nuclearRadiusFm === undefined
+                        ? 'border-indigo-500/40 text-indigo-200'
+                        : 'border-slate-700'
+                    }`}
+                  />
+                  {params.nuclearRadiusFm === undefined && isElsepaEngine && (
+                    <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-slate-400">Skin thickness R₂ (fm):</label>
+                    {params.nuclearSkinFm !== undefined && (
+                      <button
+                        type="button"
+                        title="Reset to ELSEPA default"
+                        onClick={() => setParams((prev) => ({ ...prev, nuclearSkinFm: undefined }))}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>↺</span>
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={
+                      params.nuclearSkinFm !== undefined
+                        ? params.nuclearSkinFm
+                        : defaultNuclear.skinFm !== null
+                        ? Number(defaultNuclear.skinFm.toFixed(4))
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) setParams((prev) => ({ ...prev, nuclearSkinFm: val }));
+                    }}
+                    className={`w-full bg-slate-900 border rounded-lg px-2 py-1 text-white font-mono text-xs ${
+                      params.nuclearSkinFm === undefined
+                        ? 'border-indigo-500/40 text-indigo-200'
+                        : 'border-slate-700'
+                    }`}
+                  />
+                  {params.nuclearSkinFm === undefined && isElsepaEngine && (
+                    <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
                   )}
                 </div>
               </div>
@@ -568,33 +811,72 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  <span>Cutoff Radius </span>
-                  <MathTex math="r_c" />
-                  <span> (</span>
-                  <MathTex math="a_0" />
-                  <span>):</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-300">
+                    <span>Cutoff Radius </span>
+                    <MathTex math="r_c" />
+                    <span> (</span>
+                    <MathTex math="a_0" />
+                    <span>):</span>
+                  </label>
+                  {params.polarizationCutoffA0 !== undefined && (
+                    <button
+                      type="button"
+                      title="Reset to ELSEPA default"
+                      onClick={() =>
+                        setParams((prev) => ({
+                          ...prev,
+                          polarizationCutoffA0: undefined,
+                          cutoffRadius: defaultCutoff,
+                        }))
+                      }
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" />
+                      <span>↺</span>
+                    </button>
+                  )}
+                </div>
                 <input
                   type="number"
-                  step="0.1"
-                  disabled={isElsepaEngine}
-                  value={params.cutoffRadius}
-                  onChange={(e) =>
-                    setParams((prev) => ({
-                      ...prev,
-                      cutoffRadius: parseFloat(e.target.value) || 1.0,
-                    }))
+                  step="0.01"
+                  value={
+                    params.polarizationCutoffA0 !== undefined
+                      ? params.polarizationCutoffA0
+                      : isElsepaEngine
+                      ? Number(defaultCutoff.toFixed(4))
+                      : params.cutoffRadius
                   }
-                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 ${
-                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) {
+                      setParams((prev) => ({
+                        ...prev,
+                        polarizationCutoffA0: val,
+                        cutoffRadius: val,
+                      }));
+                    }
+                  }}
+                  className={`w-full bg-slate-900 border rounded-lg px-2.5 py-1.5 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 ${
+                    params.polarizationCutoffA0 === undefined
+                      ? 'border-indigo-500/40 text-indigo-200'
+                      : 'border-slate-700'
                   }`}
                 />
-                {isElsepaEngine && (
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Set by ELSEPA (not an input of ELSCATA)</span>
+                {params.polarizationCutoffA0 === undefined && isElsepaEngine && (
+                  <span className="text-[10px] text-indigo-400/80 block mt-0.5">ELSEPA default</span>
                 )}
               </div>
             </div>
+
+            {(params.ionCharge ?? 0) !== 0 && params.polarizationModel !== 'none' && (
+              <div className="mt-3 p-2 bg-amber-950/40 border border-amber-600/40 rounded-lg text-amber-300 text-[11px] flex items-start gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  Notice: Non-zero ion charge with correlation-polarization converges very slowly in ELSEPA 2021 (&gt;15 minutes in tests).
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -623,33 +905,59 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
               </select>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="mb-3">
+              <label className="block text-[11px] text-slate-400 mb-1.5">Angular Grid Selection:</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  id="btn-grid-elsepa"
+                  type="button"
+                  onClick={() => setParams((prev) => ({ ...prev, customAngularGrid: false }))}
+                  className={`py-1.5 px-2 rounded-lg border text-xs font-medium transition-all ${
+                    !params.customAngularGrid
+                      ? 'bg-indigo-600 border-indigo-400 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  ELSEPA grid (all angles)
+                </button>
+                <button
+                  id="btn-grid-custom"
+                  type="button"
+                  onClick={() => setParams((prev) => ({ ...prev, customAngularGrid: true }))}
+                  className={`py-1.5 px-2 rounded-lg border text-xs font-medium transition-all ${
+                    params.customAngularGrid
+                      ? 'bg-indigo-600 border-indigo-400 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Custom grid
+                </button>
+              </div>
+            </div>
+
+            <div className={`grid grid-cols-3 gap-2 text-xs transition-opacity ${!params.customAngularGrid && isElsepaEngine ? 'opacity-40' : ''}`}>
               <div>
                 <label className="block text-[10px] text-slate-400 mb-1">Min θ (°):</label>
                 <input
                   type="number"
-                  disabled={isElsepaEngine}
+                  disabled={!params.customAngularGrid && isElsepaEngine}
                   value={params.minAngle}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, minAngle: parseFloat(e.target.value) || 0 }))
                   }
-                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
-                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
                 <label className="block text-[10px] text-slate-400 mb-1">Max θ (°):</label>
                 <input
                   type="number"
-                  disabled={isElsepaEngine}
+                  disabled={!params.customAngularGrid && isElsepaEngine}
                   value={params.maxAngle}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, maxAngle: parseFloat(e.target.value) || 180 }))
                   }
-                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
-                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -657,22 +965,21 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 <input
                   type="number"
                   step="0.1"
-                  disabled={isElsepaEngine}
+                  disabled={!params.customAngularGrid && isElsepaEngine}
                   value={params.angleStep}
                   onChange={(e) =>
                     setParams((prev) => ({ ...prev, angleStep: parseFloat(e.target.value) || 1.0 }))
                   }
-                  className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs ${
-                    isElsepaEngine ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-              {isElsepaEngine && (
-                <div className="col-span-3 text-[10px] text-slate-500 mt-0.5">
-                  Set by ELSEPA (not an input of ELSCATA)
-                </div>
-              )}
             </div>
+
+            {angularGridError && (
+              <div className="mt-2 p-2 bg-rose-950/40 border border-rose-600/40 rounded-lg text-rose-300 text-[10px]">
+                {angularGridError}
+              </div>
+            )}
           </div>
         </div>
 
@@ -711,15 +1018,31 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <button
-              id="btn-run-simulation"
-              onClick={onRunSimulation}
-              disabled={isSimulating || isDensityInvalid}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>{isSimulating ? 'Calculating Dirac Waves...' : 'Run ELSEPA Simulation'}</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                id="btn-run-simulation"
+                onClick={onRunSimulation}
+                disabled={isSimulating || isDensityInvalid || !!angularGridError}
+                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>{isSimulating ? 'Calculating Dirac Waves...' : 'Run ELSEPA Simulation'}</span>
+              </button>
+
+              {isSimulating && onCancelSimulation && (
+                <button
+                  id="btn-cancel-simulation"
+                  type="button"
+                  onClick={onCancelSimulation}
+                  className="py-3 px-4 bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-1.5 transition-all"
+                >
+                  <span>Cancel</span>
+                  {elapsedSeconds !== undefined && (
+                    <span className="font-mono text-[11px] opacity-90">({elapsedSeconds.toFixed(1)}s)</span>
+                  )}
+                </button>
+              )}
+            </div>
 
             <button
               id="btn-reset-params"
