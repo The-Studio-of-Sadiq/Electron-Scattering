@@ -435,15 +435,18 @@ npx tsx wasm/server.test.ts
 
 ```
 ├── .env.example                       # Environment variable template
-├── .github/workflows/elsepa-parity.yml # CI: WASM / native / reference parity + server test
-├── Documentation.md                    # This document
+├── .github/                           # CI/CD workflows, issue/PR templates, FUNDING.yml, dependabot
+├── CHANGELOG.md                        # Release history
+├── CITATION.cff                        # How to cite this software
+├── CONTRIBUTING.md                     # Contribution guide
+├── SECURITY.md                         # Security policy
+├── docs/Documentation.md               # This document
 ├── Dockerfile                          # Multi-stage Docker build (node:20-slim + gfortran)
-├── LICENSE                             # MIT license
+├── LICENSE                             # MIT licence (app code) + ELSEPA CC BY-NC 3.0 notice
 ├── README.md                           # Quickstart README
 ├── render.yaml                         # Render.com blueprint
 ├── index.html                          # Entry HTML with PWA tags & SW registration
-├── metadata.json                       # Applet metadata
-├── package.json                        # Dependencies and scripts (version 1.3.0)
+├── package.json                        # Dependencies and scripts (version 2.0.0)
 ├── server.ts                           # Optional Express server & API routes
 ├── vite.config.ts                      # Vite build configuration
 │

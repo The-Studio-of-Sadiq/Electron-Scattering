@@ -1,0 +1,65 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, and cite ELSEPA (references below)."
+title: "Electron Scattering Simulator: a complete PWA of ELSEPA software with GUI"
+type: software
+version: 2.0.0
+date-released: 2026-11-19
+license: MIT
+repository-code: "https://github.com/The-Studio-of-Sadiq/Electron-Scattering"
+url: "https://the-studio-of-sadiq.github.io/Electron-Scattering/"
+abstract: >-
+  An installable Progressive Web App that runs the official ELSEPA 2021 Fortran
+  programs (ELSCATA and ELSCATM) compiled to WebAssembly, for Dirac partial-wave
+  calculations of elastic electron and positron scattering by atoms, ions and
+  molecules. The bundled ELSEPA sources and data are licensed separately under
+  CC BY-NC 3.0 by their authors.
+keywords:
+  - elastic electron scattering
+  - Dirac partial-wave analysis
+  - ELSEPA
+  - positron scattering
+  - WebAssembly
+  - Progressive Web App
+authors:
+  - family-names: Prince
+    given-names: Golam Kuadir Khan
+    affiliation: "Department of Electrical and Electronic Engineering, Hajee Mohammad Danesh Science and Technology University, Dinajpur, Bangladesh"
+    orcid: "https://orcid.org/0009-0009-6843-1775"
+  - family-names: Hossain
+    given-names: Md. Mahabub
+    affiliation: "Department of Electronics and Communication Engineering, Hajee Mohammad Danesh Science and Technology University, Dinajpur, Bangladesh"
+    orcid: "https://orcid.org/0000-0003-2840-5352"
+  - family-names: Bhowmik
+    given-names: Pankaj
+    affiliation: "Department of Computer Science and Engineering, Hajee Mohammad Danesh Science and Technology University, Dinajpur, Bangladesh"
+    orcid: "https://orcid.org/0000-0003-2296-5308"
+references:
+  - type: article
+    title: "ELSEPA - Dirac partial-wave calculation of elastic scattering of electrons and positrons by atoms, positive ions and molecules (New Version Announcement)"
+    authors:
+      - family-names: Salvat
+        given-names: Francesc
+      - family-names: Jablonski
+        given-names: Aleksander
+      - family-names: Powell
+        given-names: Cedric J.
+    journal: "Computer Physics Communications"
+    volume: 261
+    start: 107704
+    year: 2021
+    doi: "10.1016/j.cpc.2020.107704"
+  - type: article
+    title: "ELSEPA - Dirac partial-wave calculation of elastic scattering of electrons and positrons by atoms, positive ions and molecules"
+    authors:
+      - family-names: Salvat
+        given-names: Francesc
+      - family-names: Jablonski
+        given-names: Aleksander
+      - family-names: Powell
+        given-names: Cedric J.
+    journal: "Computer Physics Communications"
+    volume: 165
+    start: 157
+    end: 190
+    year: 2005
+    doi: "10.1016/j.cpc.2004.09.006"

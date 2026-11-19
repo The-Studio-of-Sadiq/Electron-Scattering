@@ -1,0 +1,82 @@
+name: Release
+
+# When a GitHub release is published: check the tag matches package.json,
+# attach a ready-to-serve static build, and publish the Docker image to GHCR.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to (re)build assets for
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+
+jobs:
+  assets:
+    name: Static build asset
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Tag must match package.json version
+        run: |
+          v=$(node -p "require('./package.json').version")
+          [ "${TAG#v}" = "$v" ] || { echo "Tag $TAG does not match package.json version $v"; exit 1; }
+      - run: npm ci --no-audit --no-fund
+      - name: Build browser-only site (serve from a web server root)
+        env:
+          VITE_STATIC: 'true'
+        run: npx vite build
+      - name: Package
+        run: |
+          cp LICENSE fortran/ELSEPA-LICENSE.txt dist/
+          (cd dist && zip -qr "../electron-scattering-${TAG#v}-web.zip" .)
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "electron-scattering-${TAG#v}-web.zip" --clobber
+
+  docker:
+    name: Docker image (GHCR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.licenses=MIT AND CC-BY-NC-3.0
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha

@@ -1,0 +1,45 @@
+name: Deploy GitHub Pages
+
+# Publishes the project website (site/) to the orphan gh-pages branch,
+# served at https://<owner>.github.io/<repo>/. The app itself is hosted elsewhere.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/figures/**'
+      - 'public/favicon.svg'
+      - 'public/og-image.svg'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site (project website in site/, plus logos and figures)
+        run: |
+          mkdir -p _site/assets _site/figures
+          cp -r site/. _site/
+          cp public/favicon.svg public/og-image.svg _site/assets/
+          cp docs/figures/*.svg _site/figures/
+          touch _site/.nojekyll
+      - name: Publish to the orphan gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: Deploy ${{ github.sha }}

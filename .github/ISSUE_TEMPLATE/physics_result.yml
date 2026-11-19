@@ -1,0 +1,74 @@
+name: Physics result question / discrepancy
+description: Report a numerical discrepancy or question a physical observable
+labels: ["physics"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to report a question or discrepancy regarding differential cross sections, Sherman spin functions, or integrated cross sections produced by the simulator.
+
+  - type: input
+    id: target
+    attributes:
+      label: Target Element or Molecule
+      description: Specify the atomic number Z (and ion charge q if applicable), or the molecular chemical formula and geometry.
+      placeholder: "e.g., Au (Z = 79, q = 0), Cu (Z = 29, q = +1), or H2O"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: projectile
+    attributes:
+      label: Projectile
+      options:
+        - "Electron (e-)"
+        - "Positron (e+)"
+    validations:
+      required: true
+
+  - type: input
+    id: kinetic_energy
+    attributes:
+      label: Kinetic Energy
+      description: Specify the kinetic energy of the projectile with units (eV, keV, or MeV).
+      placeholder: "e.g., 1000 eV, 50 keV"
+    validations:
+      required: true
+
+  - type: textarea
+    id: models_used
+    attributes:
+      label: Selected Physical Models
+      description: List the nuclear charge model, electron density model, exchange potential, correlation-polarization model, and absorption potential.
+      placeholder: |
+        - Nuclear model: Fermi (MNUCL 3)
+        - Electron density: Dirac-Fock numerical (MELEC 4)
+        - Exchange potential: Furness-McCarthy (MEXCH 1)
+        - Correlation-polarization: Buckingham (MCPOL 1)
+        - Absorption: None
+    validations:
+      required: true
+
+  - type: input
+    id: comparison_source
+    attributes:
+      label: Comparison Source
+      description: What source are you comparing the simulator output against (e.g., native ELSEPA 2021, NIST SRD 64, or published experimental literature)?
+      placeholder: "e.g., Native ELSEPA 2021, NIST SRD 64 database, Salvat et al. (2005) Fig. 4"
+    validations:
+      required: true
+
+  - type: textarea
+    id: discrepancy_description
+    attributes:
+      label: Discrepancy Description and Observed Results
+      description: Describe the observed numerical values vs. the benchmark data (e.g., difference in differential cross section at specific angles, Sherman function sign or magnitude, total cross sections).
+    validations:
+      required: true
+
+  - type: textarea
+    id: attached_data
+    attributes:
+      label: Attached Data or Input Deck
+      description: Paste the exported ELSCATA or ELSCATM input deck, comparison data tables, or reference values.
+      render: text

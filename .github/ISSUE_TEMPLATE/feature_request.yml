@@ -1,0 +1,36 @@
+name: Feature Request
+description: Propose a new feature, model option, or UI capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement or new feature for the Electron Scattering Simulator.
+
+  - type: textarea
+    id: problem_statement
+    attributes:
+      label: Problem Statement / Use Case
+      description: What problem are you trying to solve, or what physical scenario is currently missing or difficult to model?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature, user interface control, or computational workflow you would like added.
+    validations:
+      required: true
+
+  - type: textarea
+    id: physics_context
+    attributes:
+      label: Scientific / Theoretical Background
+      description: If this involves ELSEPA keywords or relativistic Dirac scattering physics, provide literature citations or references (e.g., Computer Physics Communications).
+
+  - type: textarea
+    id: alternatives_considered
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative implementations or workarounds?

@@ -205,7 +205,9 @@ export function installLocalApiFallback(): void {
   const nativeFetch = window.fetch.bind(window);
 
   // Probed once: is there an Express backend, and can it run the real Fortran?
-  let backendState: Promise<BackendState> | null = null;
+  // A static build (GitHub Pages, VITE_STATIC=true) has no backend, so skip the probe.
+  let backendState: Promise<BackendState> | null =
+    import.meta.env.VITE_STATIC === 'true' ? Promise.resolve<BackendState>('none') : null;
   const probeBackend = () =>
     (backendState ??= nativeFetch('/api/fortran-status')
       .then(async (res): Promise<BackendState> => {

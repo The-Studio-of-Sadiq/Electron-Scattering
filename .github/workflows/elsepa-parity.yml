@@ -1,30 +1,16 @@
-name: ELSEPA WebAssembly parity
+name: ELSEPA engine tests
 
 # Checks that the in-browser WebAssembly ELSEPA (public/elsepa) reproduces
 # native gfortran ELSEPA, including correlation-polarization and absorption
 # cases, and that both match the reference tables in validations/.
+# Called by ci.yml when engine-related files change; can also be run by hand.
+# The "references" job (manual runs only) regenerates validations/.
 on:
-  push:
-    paths:
-      - 'fortran/**'
-      - 'server/**'
-      - 'src/physics/**'
-      - 'data/**'
-      - 'public/elsepa/**'
-      - 'validations/**'
-      - 'wasm/**'
-      - '.github/workflows/elsepa-parity.yml'
-  pull_request:
-    paths:
-      - 'fortran/**'
-      - 'server/**'
-      - 'src/physics/**'
-      - 'data/**'
-      - 'public/elsepa/**'
-      - 'validations/**'
-      - 'wasm/**'
-      - '.github/workflows/elsepa-parity.yml'
+  workflow_call:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   parity:
@@ -39,7 +25,7 @@ jobs:
 
       # The server test imports the Express app and the browser test builds the site with Vite.
       - name: Install npm dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Install gfortran
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gfortran
@@ -86,7 +72,8 @@ jobs:
           npx --yes tsx@4.21.0 wasm/browser.test.ts | tee -a "$GITHUB_STEP_SUMMARY"
 
   references:
-    if: github.event_name == 'workflow_dispatch'
+    # Manual runs of this workflow only (github.workflow is the caller's name when called from ci.yml).
+    if: github.event_name == 'workflow_dispatch' && github.workflow == 'ELSEPA engine tests'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -97,7 +84,7 @@ jobs:
           node-version: 22
 
       - name: Install npm dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Install gfortran
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gfortran

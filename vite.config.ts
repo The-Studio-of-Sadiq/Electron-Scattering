@@ -5,6 +5,8 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    // GitHub Pages serves the app under /<repo>/; set VITE_BASE for that build.
+    base: process.env.VITE_BASE || '/',
     plugins: [react(), tailwindcss()],
     // The ELSEPA WebAssembly worker loads public/elsepa/elsepa.js via dynamic import().
     worker: { format: 'es' as const },
@@ -12,13 +14,6 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
-    },
-    server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
 });
