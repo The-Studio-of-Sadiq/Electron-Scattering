@@ -211,7 +211,10 @@
     if (!lightboxModal || !lightboxImage) return;
     lastActiveElement = triggerElement || document.activeElement;
 
-    lightboxImage.src = src;
+    // Only show the site's own figures (figures/<name>.svg|png), never an arbitrary URL.
+    const safeSrc = /^figures\/[\w-]+\.(svg|png)$/.test(String(src)) ? String(src) : '';
+    if (!safeSrc) return;
+    lightboxImage.src = safeSrc;
     lightboxImage.alt = title || 'Architecture Figure';
     if (lightboxTitle) lightboxTitle.textContent = title || 'Figure View';
     if (lightboxDesc) lightboxDesc.textContent = desc || '';
