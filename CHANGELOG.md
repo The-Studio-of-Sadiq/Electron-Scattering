@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 * Server-side source code editing endpoints locked behind `requireSourceEditing` middleware and disabled by default (`ENABLE_SOURCE_EDITING=true` required).
+* API and static routes are rate-limited per client IP (`express-rate-limit`).
+* The project website's figure viewer only opens the site's own figures.
+
+### Dependencies
+* Express 5, Vite 8 (with esbuild 0.28, @vitejs/plugin-react 6), TypeScript 7 (previous compiler defaults kept in `tsconfig.json`), plus minor and patch updates.
+* GitHub Actions: actions/setup-node 7, actions/upload-artifact 7, docker/build-push-action 7, docker/metadata-action 6, dorny/paths-filter 4.
 
 ## [1.2.0] - 2026-10-29
 
