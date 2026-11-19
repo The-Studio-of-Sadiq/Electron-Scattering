@@ -34,19 +34,29 @@ The MIT License above covers the code written for this project (the web
 application, the optional server, the WebAssembly build scripts, the tests and
 the documentation). It does NOT cover ELSEPA.
 
-ELSEPA (programs ELSCATA and ELSCATM, their subroutines and atomic data tables)
-is the work of F. Salvat, A. Jablonski and C. J. Powell:
+ELSEPA 2021 (package "elsepa-2020": programs ELSCATA and ELSCATM, subroutine
+package RADIAL, their subroutines and atomic data tables) is the work of
+F. Salvat, A. Jablonski and C. J. Powell:
 
-  F. Salvat, A. Jablonski, C.J. Powell, Comput. Phys. Commun. 165 (2005) 157-190,
-  https://doi.org/10.1016/j.cpc.2004.09.006
+  F. Salvat, A. Jablonski, C. J. Powell, Comput. Phys. Commun. 261 (2021) 107704,
+  https://doi.org/10.1016/j.cpc.2020.107704
 
-This repository contains the 2005 (Fortran 77) version of ELSEPA in fortran/ and
-wasm/, its atomic data tables in data/, and a WebAssembly build of both in
+  (Original method description: Comput. Phys. Commun. 165 (2005) 157-190,
+  https://doi.org/10.1016/j.cpc.2004.09.006)
+
+  RADIAL subroutine package:
+  F. Salvat and J. M. Fernandez-Varea, Comput. Phys. Commun. 240 (2019) 165-177,
+  https://doi.org/10.1016/j.cpc.2019.02.011
+
+This repository contains the 2021 (Fortran 90) version of ELSEPA in fortran/,
+its atomic data tables in data/, and a WebAssembly build of both in
 public/elsepa/.
-These files remain the property of their authors and are subject to the licence
-under which the authors distribute ELSEPA through the Computer Physics
-Communications Program Library, not to the MIT License. The CPC licence permits
-academic and non-profit use and requires that publications using the program
-cite the article above; it does not permit commercial use. The 2021 version of
-ELSEPA (Comput. Phys. Commun. 261 (2021) 107704) is distributed under
-CC BY-NC 3.0.
+
+These files are licensed under the Creative Commons Attribution-NonCommercial
+3.0 Unported License (CC BY-NC 3.0). See fortran/ELSEPA-LICENSE.txt for full
+attribution and licence details. In accordance with the licence, use of ELSEPA
+is permitted for non-commercial purposes with appropriate attribution to the
+authors.
+
+Notice: At the request of the ELSEPA authors, the earlier (2005) version of
+ELSEPA is no longer distributed with this software.

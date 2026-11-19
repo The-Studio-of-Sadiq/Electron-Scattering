@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-purple.svg)](https://web.dev/progressive-web-apps/)
 
-A browser-based graphical workbench (v1.3.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official, unmodified ELSEPA Fortran 77 programs **ELSCATA** (atoms) and **ELSCATM** (molecules) are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
+A browser-based graphical workbench (v2.0.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official, unmodified ELSEPA 2021 Fortran 90 programs (package "elsepa-2020") **ELSCATA** (atoms) and **ELSCATM** (molecules) are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
 
 ---
 
@@ -26,9 +26,10 @@ All physics results come from the **ELSEPA** Fortran code developed by:
 * **A. Jablonski** (Institute of Physical Chemistry, Polish Academy of Sciences)
 * **C. J. Powell** (National Institute of Standards and Technology - NIST)
 
-F. Salvat, A. Jablonski, C. J. Powell, *Computer Physics Communications* 165 (2005) 157–190.
+F. Salvat, A. Jablonski, C. J. Powell, *Computer Physics Communications* 261 (2021) 107704.
+(Original method description: *Computer Physics Communications* 165 (2005) 157–190.)
 
-The physics routines in `fortran/` are used unchanged; only file I/O was adapted (`fortran/getpath.f` resolves the atomic data directory from the `ELSEPA_DATA` environment variable).
+The physics routines in `fortran/` are the official, unmodified 2021 Fortran 90 package (elsepa-2020 with the RADIAL library, Comput. Phys. Commun. 240 (2019) 165-177). Atomic data tables live in `data/`.
 
 ---
 
@@ -69,7 +70,7 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
     * Column 2: electron density $\rho(r)$ in **electrons/bohr$^3$** ($e/a_0^3$). Must be strictly positive ($\rho > 0$).
   * Grid limits: between 5 and 996 points ($5 \le N \le 996$, satisfying ELSEPA's cubic spline interpolation requirements and table limits).
   * Normalization condition: $4\pi \int_0^\infty \rho(r) r^2 \, dr = \text{NELEC} = Z - q$. The workbench calculates the trapezoidal integral and warns if it differs from the expected bound electron count by more than 1%.
-* **Execution isolation**: on the native server, concurrent runs receive an isolated, temporary data folder containing `density.usr` and the required atomic scattering tables, ensuring zero interference across simultaneous simulations. WebAssembly runs write `density.usr` directly to the in-memory virtual filesystem `/data/`.
+* **Execution isolation**: on the native server, each run gets its own temporary working directory holding `density.usr` and a `database` link to the atomic tables (ELSEPA 2021 reads both relative to its working directory), so simultaneous runs never share the file. WebAssembly runs write `density.usr` to the working directory `/` of a fresh in-memory file system.
 
 ### 4. 📊 Saved Runs & Comparative Analysis
 * Save runs with full parameters and results to browser `localStorage`; import/export them as JSON.
@@ -121,7 +122,7 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 | **Frontend Framework** | React 19 with TypeScript ~5.8 & Vite 6 |
 | **Styling** | Tailwind CSS v4, Lucide React Icons |
 | **Data Visualization** | Recharts 3, KaTeX for equations |
-| **Physics Engine** | ELSEPA (Fortran 77), compiled to WebAssembly (f2c + Emscripten); optionally native via `gfortran` |
+| **Physics Engine** | ELSEPA 2021 (Fortran 90), compiled to WebAssembly (f2c + Emscripten); optionally native via `gfortran` |
 | **Backend Server (optional)** | Express 4 on Node.js (bundled with esbuild) |
 | **Persistence** | Browser `localStorage` for saved runs |
 | **PWA Services** | Service Worker (`sw.js`), Web App Manifest (`manifest.json`) |
@@ -136,11 +137,13 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 ├── Dockerfile                # Multi-stage build (node:20-slim + gfortran)
 ├── render.yaml               # Render.com blueprint
 ├── data/                     # ELSEPA atomic data files (z_NNN.den / .dfs)
-├── fortran/                  # Official ELSEPA Fortran 77 sources
-│   ├── elsepa.f              #   physics subroutines
+├── fortran/                  # Official ELSEPA 2021 Fortran 90 sources (CC BY-NC 3.0)
+│   ├── elsepa2020.f          #   core Dirac partial-wave scattering engine
+│   ├── radial.f              #   RADIAL radial wave equation package
 │   ├── elscata.f             #   ELSCATA main program (atoms)
 │   ├── elscatm.f             #   ELSCATM main program (molecules)
-│   └── getpath.f             #   data-path helper (ELSEPA_DATA)
+│   ├── readme.txt            #   upstream ELSEPA readme
+│   └── ELSEPA-LICENSE.txt    #   licence and attribution details
 ├── wasm/
 │   ├── build.sh              # Fortran → f2c → Emscripten build
 │   ├── f77fix.py             # Moves misplaced DATA statements so f2c accepts the source
@@ -197,7 +200,6 @@ The physics routines in `fortran/` are used unchanged; only file I/O was adapted
 ### Environment Variables & Security
 * `ENABLE_SOURCE_EDITING`: defaults to disabled. When unset or not `"true"`, all server write endpoints (`/api/fortran-source/save`, `/api/fortran-source/reset`, `/api/ts-source/save`, `/api/ts-source/reset`) return HTTP 403 Forbidden. **Security notice**: Source editing recompiles and executes Fortran code on the host system; enable this (`ENABLE_SOURCE_EDITING=true`) ONLY in trusted local development environments. Never enable on a public or multi-tenant deployment.
 * `PORT`: server listen port (default `3000`).
-* `ELSEPA_DATA`: path to atomic data tables directory (default `data/`).
 
 ### 1. Clone & Install Dependencies
 ```bash
@@ -255,8 +257,8 @@ npx tsx wasm/parity.test.ts
 
 # Add the native gfortran comparison
 mkdir -p native
-gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f fortran/elsepa.f
-gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f fortran/elsepa.f
+gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f
+gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f
 NATIVE_ELSCATA=$PWD/native/elscata NATIVE_ELSCATM=$PWD/native/elscatm npx tsx wasm/parity.test.ts
 
 # Server engine test (needs gfortran)
@@ -302,7 +304,7 @@ The response is a `SimulationResult` (DCS, Sherman function, amplitudes, cross s
 
 The code written for this project is open-source under the **MIT License** (see `LICENSE` and `Licence.txt`).
 
-**ELSEPA is not covered by the MIT License.** The ELSEPA Fortran source (2005 version) in `fortran/` and `wasm/`, its atomic data tables in `data/`, and the WebAssembly build in `public/elsepa/` are the work of F. Salvat, A. Jablonski and C. J. Powell ([Comput. Phys. Commun. 165 (2005) 157](https://doi.org/10.1016/j.cpc.2004.09.006)) and remain subject to their authors' Computer Physics Communications Program Library licence: academic and non-profit use only, and publications that use ELSEPA must cite that article. See `Licence.txt` for details.
+**ELSEPA is not covered by the MIT License.** The ELSEPA Fortran source in `fortran/` and its atomic data tables in `data/` are the work of F. Salvat, A. Jablonski and C. J. Powell ([Comput. Phys. Commun. 261 (2021) 107704](https://doi.org/10.1016/j.cpc.2020.107704); RADIAL package: [Comput. Phys. Commun. 240 (2019) 165](https://doi.org/10.1016/j.cpc.2019.02.011)) and are licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License (CC BY-NC 3.0). See `fortran/ELSEPA-LICENSE.txt` and `Licence.txt` for details. The earlier (2005) version of ELSEPA is no longer distributed at its authors' request.
 
 ---
 

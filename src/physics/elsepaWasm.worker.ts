@@ -56,7 +56,7 @@ self.onmessage = async (event: MessageEvent<RunRequest>) => {
 
     if (inputFiles) {
       for (const [name, text] of Object.entries(inputFiles)) {
-        module.FS.writeFile('/data/' + name, text);
+        module.FS.writeFile('/' + name, text);
       }
     }
 

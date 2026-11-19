@@ -1,4 +1,5 @@
-C      INCLUDE 'elsepa.f'
+      INCLUDE 'radial.f'
+      INCLUDE 'elsepa2020.f'
 
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
@@ -8,8 +9,16 @@ C    +++    PROGRAM ELSCATM    +++
 C    +++++++++++++++++++++++++++++
 C
 C
-C                              F. Salvat, A. Jablonski and C.J. Powell
-C                              November 30, 2003
+C                               F. Salvat, A. Jablonski and C.J. Powell
+C                               November 30, 2003
+C
+C  Updated in February 2020 by F. Salvat, to work with the subroutine
+C  package RADIAL.
+C
+C  Ref.: F. Salvat and J. M. Fernandez-Varea,
+C        'RADIAL: a Fortran subroutine package for the solution of
+C        radial Schrodinger and Dirac wave equations',
+C        Comput. Phys. Commun. 240 (2019) 165-177.
 C
 C
 C  ELastic SCATtering of electrons and positrons by Molecules
@@ -32,14 +41,14 @@ C  molecule.
 C
 C
 C ----+----1----+----2----+----3----+----4----+----5----+----6----+----7
-C Water (vapour)                        name of the molecule
+C Water (vapour)                        name of the molecule (35 chars)
 C 3                                     number of atoms in a molecule
-C 8     0.0E+0     0.0E+0     0.0E+0    oxygen, coord. (cm)
-C 1  9.5720E-9     0.0E+0     0.0E+0    hydrogen, coord. (cm)
-C 1 -2.3999E-9  9.2663E-9     0.0E+0    hydrogen, coord. (cm)
+C 8     0.0E+0     0.0E+0     0.0E+0    oxygen, coordinates (cm)
+C 1  9.5720E-9     0.0E+0     0.0E+0    hydrogen, coordinates (cm)
+C 1 -2.3999E-9  9.2663E-9     0.0E+0    hydrogen, coordinates (cm)
 C 1                                     MEXCH
-C 2  1.457E-24                          MCPOL, mol. polarizab. (cm**3)
-C 1  2.00  6.20                         MABS, Aabs, Delta (eV)
+C 2  1.457E-24                          MCPOL, mol. polarizab. (cm^3)
+C 2  2.00  6.20                         MABS, Aabs, Delta (eV)
 C -1                                    electron (-1) / positron (+1)
 C 100                                   kinetic energy (eV)
 C 200                                   optionally more energies ...
@@ -53,24 +62,23 @@ C  extension '.dat'. The output file 'dcs_xpyyyezz.dat' contains the
 C  calculated DCS for the energy x.yyyEzz (E format, in eV) in a format
 C  ready for visualization with a plotting program.
 C
-C     This program uses the subroutine package 'elsepa.f', which has
-C  been inserted into this source file by using an INCLUDE statement
-C  (see above).
+C     This program uses the subroutine packages 'elsepa2020.f' and
+C  'radial.f', which are inserted into this source file by means of
+C  INCLUDE statements (see above).
 C
+C
+      USE CONSTANTS
 C
       IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z), COMPLEX*16 (C),
      1   INTEGER*4 (I-N)
       CHARACTER*35 MNAME
       CHARACTER*12 BUFFER,OFILE
       PARAMETER (PI=3.1415926535897932D0)
-C
-      PARAMETER (A0B=5.291772083D-9)  ! Bohr radius (cm)
-      PARAMETER (HREV=27.2113834D0)  ! Hartree energy (eV)
-      PARAMETER (SL=137.03599976D0)  ! Speed of light (1/alpha)
       PARAMETER (A0B2=A0B*A0B)
 C
       PARAMETER (NATM=64)
       DIMENSION IZA(NATM),XA(NATM),YA(NATM),ZA(NATM)
+      DIMENSION IAMUF(NATM),ARMUF(NATM)
 C  ****  Results from the partial wave calculation (molecules).
       PARAMETER (NGT=650)
       COMMON/DCSMOL/ECSM,TCS1M,TCS2M,ECSI,TCS1I,TCS2I,THM(NGT),XTM(NGT),
@@ -88,6 +96,12 @@ C  ****  Atomic numbers and position coordinates (cm).
       DO I=1,NA
         READ(5,*) IZA(I),XA(I),YA(I),ZA(I)
         WRITE(6,*) IZA(I),XA(I),YA(I),ZA(I)
+C  ----  The values of IAMUF(I) and ARMUF(I) are the muffin-tin flag
+C        and the muffin-tin radius of each atom. These values can be
+C  re-defined to modify the free-atom potential. This option allows
+C  fitting low-energy DCSs, when available.
+        IAMUF(I)=0
+        ARMUF(I)=200.0D-8
       ENDDO
 C  ****  Electron exchange potential.
       READ(5,*) MEXCH
@@ -101,7 +115,7 @@ C  ****  Correlation-polarization potential, molecular polarizability.
       IF(AMPOL.LT.-1.0D-35) STOP
 C  ****  Absorption potential, first excitation energy.
       READ(5,*) MABS,VABSA,FEXCE
-      IF(MABS.NE.1) MABS=0
+      IF(MABS.LT.0.OR.MABS.GT.2) MABS=0
       IF(VABSA.LT.-1.0D-35) VABSA=0.0D0
       IF(FEXCE.LT.-1.0D-35) FEXCE=0.0D0
       WRITE(6,*) MABS,VABSA,FEXCE
@@ -121,36 +135,43 @@ C
       DO I=1,NA
         WRITE(25,1002) IZA(I),XA(I),YA(I),ZA(I)
  1002   FORMAT(1X,'#  IZ =',I3,',    X,Y,Z = ',1P,3E12.5,' cm')
+        IF(IAMUF(I).EQ.1) THEN
+          WRITE(25,1003) ARMUF(I)
+ 1003     FORMAT(1X,'#',13X,'Muffin-tin radius = ',1P,3E12.5,'cm')
+        ENDIF
       ENDDO
       IF(IELEC.EQ.-1) THEN
-        WRITE(25,1003)
- 1003   FORMAT(1X,'#  Projectile: electron')
-      ELSE
         WRITE(25,1004)
- 1004   FORMAT(1X,'#  Projectile: positron')
+ 1004   FORMAT(1X,'#  Projectile: electron')
+      ELSE
+        WRITE(25,1005)
+ 1005   FORMAT(1X,'#  Projectile: positron')
       ENDIF
-      WRITE(25,1005)
- 1005 FORMAT(1X,'#',/1X,'#   Energy',9X,'ECS',9X,'TCS1',9X,
+      WRITE(25,1006)
+ 1006 FORMAT(1X,'#',/1X,'#   Energy',9X,'ECS',9X,'TCS1',9X,
      1  'TCS2',/1X,'#',4X,'(eV)',8X,'(cm**2)',6X,'(cm**2)',
      2  6X,'(cm**2)',/1X,'#',51('-'),
      3  2X,'<------  incoherent addition  ------>')
 C
 C
-    1 CONTINUE
-      READ(5,*,END=9999,ERR=9999) EV
+ 1    CONTINUE
+      READ(5,*,END=9999,ERR=1) EV
       WRITE(6,*) '   '
       WRITE(6,*) 'E (eV)=',EV
-      IF(EV.LT.10.0D0) STOP 'The kinetic energy is too small'
+C  ****  You may wish to comment off the next condition to run the
+C  program for kinetic energies less that 5 eV. However, the results
+C  for these energies may be highly inaccurate.
+      IF(EV.LT.4.999D0) STOP 'The kinetic energy is too small'
 C  ****  DCS output file.
       WRITE(BUFFER,'(1P,E12.5)') EV
       OFILE=BUFFER(2:2)//'p'//BUFFER(4:6)//'e'//BUFFER(11:12)
       OPEN(8,FILE='dcs_'//OFILE(1:8)//'.dat')
 C
-      CALL ELSEPM(MNAME,IELEC,EV,IZA,XA,YA,ZA,NA,MEXCH,MCPOL,
-     1            AMPOL,MABS,VABSA,FEXCE,8)
+      CALL ELSEPM(MNAME,IELEC,EV,IZA,XA,YA,ZA,IAMUF,ARMUF,NA,
+     1            MEXCH,MCPOL,AMPOL,MABS,VABSA,FEXCE,8)
 C
-      WRITE(25,1006) EV,ECSM,TCS1M,TCS2M,ECSI,TCS1I,TCS2I
- 1006 FORMAT(1X,1P,7E13.5)
+      WRITE(25,1007) EV,ECSM,TCS1M,TCS2M,ECSI,TCS1I,TCS2I
+ 1007 FORMAT(1X,1P,7E13.5)
       CLOSE(8)
       GO TO 1
 C
@@ -160,13 +181,13 @@ C
 C  *********************************************************************
 C                       SUBROUTINE ELSEPM
 C  *********************************************************************
-      SUBROUTINE ELSEPM(MNAME,IELEC,EV,IZA,XA,YA,ZA,NA,MEXCH,MCPOL,
-     1                  AMPOL,MABS,VABSA,FEXCE,IW)
+      SUBROUTINE ELSEPM(MNAME,IELEC,EV,IZA,XA,YA,ZA,IAMUF,ARMUF,NA,
+     1                  MEXCH,MCPOL,AMPOL,MABS,VABSA,FEXCE,IW)
 C
 C     This subroutine computes elastic scattering of electrons and
 C  positrons by molecules. It uses a single-scattering independent-atom
 C  approximation, with scattering amplitudes calculated by using the
-C  subroutine package 'elsepa'.
+C  subroutine package 'elsepa2020'.
 C
 C  Input arguments:
 C    MNAME ..... name of the molecule (character*35)
@@ -176,6 +197,10 @@ C                =+1 for positrons.
 C    EV ........ projectile's kinetic energy (in eV).
 C    IZA(I) .... atomic number of the I-th atom in the molecule.
 C    XA(I), YA(I), ZA(I) ... coordinates (cm) of the I-th atom.
+C    IAMUF ..... agregation effects...
+C                  0 --> free atom,
+C                  1 --> muffin-tin model.
+C      ARMUF ... Muffin-tin radius (in cm).
 C    NA ........ number of atoms in the molecule (.le.64)
 C    MEXCH ..... exchange correction for electrons.
 C                  0 --> no exchange correction,
@@ -213,19 +238,19 @@ C                  values. Estimated from the convergence of the
 C                  series.
 C     NTABM ...... number of angles in the table.
 C
+      USE CONSTANTS
+C
       IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z), COMPLEX*16 (C),
      1   INTEGER*4 (I-N)
       CHARACTER*35 MNAME
       CHARACTER*12 BUFFER
-      PARAMETER (PI=3.1415926535897932D0)
+      PARAMETER (PI=3.1415926535897932D0, FOURPI=4.0D0*PI)
 C
-      PARAMETER (A0B=5.291772083D-9)  ! Bohr radius (cm)
-      PARAMETER (HREV=27.2113834D0)  ! Hartree energy (eV)
-      PARAMETER (SL=137.03599976D0)  ! Speed of light (1/alpha)
       PARAMETER (A0B2=A0B*A0B)
 C  ****  Molecular structure.
       PARAMETER (NATM=64)
       DIMENSION IZA(NATM),XA(NATM),YA(NATM),ZA(NATM),D(NATM,NATM)
+      DIMENSION IAMUF(NATM),ARMUF(NATM)
 C  ****  Results from the partial wave calculation (atoms).
       PARAMETER (NGT=650)
       COMMON/DCSTAB/ECS,TCS1,TCS2,TH(NGT),XT(NGT),DCST(NGT),SPOL(NGT),
@@ -319,8 +344,6 @@ C
       ENDIF
       MNUCL=3           ! Fermi nuclear charge distributions
       MELEC=4           ! DF atomic electron densities
-      MUFFIN=0          ! free atoms
-      RMUF=200.0D0      !
       IHEF=0            ! no high-energy factorization
 C
       E=EV/HREV
@@ -345,6 +368,8 @@ C
         ENDIF
 C
         NELEC=IZ
+        MUFFIN=IAMUF(I)
+        RMUF=ARMUF(I)
 C  ****  Correlation-polarization potential.
         IF(EV.GT.10.0D3.OR.MCPOL.EQ.0) THEN
           MCPOL0=0
@@ -353,7 +378,7 @@ C  ****  Correlation-polarization potential.
         ELSE
           MCPOL0=MCPOL
           VPOLA=FPOL*ATPOL(IZ)
-          VPOLB=0.25D0*SQRT(MAX(EV-50.0D0,0.0D0))
+          VPOLB=SQRT(MAX((EV-50.0D0)/16.0D0,1.0D0))
         ENDIF
 C  ****  Absorption potential,
         IF(EV.GT.1.0D6.OR.MABS.EQ.0) THEN
@@ -361,11 +386,19 @@ C  ****  Absorption potential,
           AABSA=0.0D0
           VABSD=0.0D0
         ELSE
-          MABS0=1
-          IF(VABSA.GT.-1.0D-15) THEN
-            AABSA=VABSA
-          ELSE
-            AABSA=2.0D0
+          MABS0=MABS
+          IF(MABS.EQ.1) THEN
+            IF(VABSA.GT.-1.0D-15) THEN
+              AABSA=VABSA
+            ELSE
+              AABSA=2.0D0
+            ENDIF
+          ELSE IF(MABS.EQ.2) THEN
+            IF(VABSA.GT.-1.0D-15) THEN
+              AABSA=VABSA
+            ELSE
+              AABSA=0.725D0
+            ENDIF
           ENDIF
           IF(IELEC.EQ.-1) THEN
             VABSD=FEXCE
@@ -379,7 +412,8 @@ C
         FIW=1000+IZ
         WRITE(BUFFER,'(1P,E12.5)') FIW
         OPEN(IW1,FILE='dcs_'//BUFFER(4:6)//'.dat')
-        CALL ELSEPA(IELEC,EV,IZ,NELEC,MNUCL,MELEC,MUFFIN,RMUF,
+        VMOL=1.0D0/(2.0D0*RMUF)**3
+        CALL ELSEPA(IELEC,EV,IZ,NELEC,MNUCL,MELEC,MUFFIN,RMUF,VMOL,
      1    MEXCH0,MCPOL0,VPOLA,VPOLB,MABS0,AABSA,VABSD,IHEF,IW1)
         CLOSE(IW1)
         ECSA(I)=ECS
@@ -392,7 +426,7 @@ C
           CGA(I,K)=CCG
           DCSA(I,K)=DCS
         ENDDO
-    2 CONTINUE
+ 2    CONTINUE
 C
 C  ****  Molecular DCS and integrated cross sections.
 C
@@ -429,9 +463,9 @@ C  ----  Momentum transfer in atomic units.
         ENDIF
       ENDDO
 C  ****  Total cross sections (coherent sum).
-      ECS0=4.0D0*PI*RMOM(XT,DCSC,NTAB,0)
-      ECS1=4.0D0*PI*RMOM(XT,DCSC,NTAB,1)
-      ECS2=4.0D0*PI*RMOM(XT,DCSC,NTAB,2)
+      ECS0=FOURPI*SMOMLL(XT,DCSC,XT(1),XT(NTAB),NTAB,0,0)
+      ECS1=FOURPI*SMOMLL(XT,DCSC,XT(1),XT(NTAB),NTAB,1,0)
+      ECS2=FOURPI*SMOMLL(XT,DCSC,XT(1),XT(NTAB),NTAB,2,0)
       ECSM=ECS0
       TCS1M=2.0D0*ECS1
       TCS2M=6.0D0*(ECS1-ECS2)
@@ -454,6 +488,10 @@ C
       DO I=1,NA
         WRITE(IW,2001) IZA(I),XA(I),YA(I),ZA(I)
  2001   FORMAT(1X,'# IZ =',I3,',    X,Y,Z = ',1P,3E13.5,' cm')
+        IF(IAMUF(I).EQ.1) THEN
+          WRITE(IW,2101) ARMUF(I)
+ 2101     FORMAT(1X,'#',13X,'Muffin-tin radius = ',1P,3E12.5,'cm')
+        ENDIF
       ENDDO
 C
       WRITE(IW,'(1X,''#'')')
@@ -478,6 +516,9 @@ C
       ELSE IF(MEXCH0.EQ.3) THEN
         WRITE(IW,2007)
  2007   FORMAT(1X,'#',/1X,'# Riley-Truhlar exchange potential')
+      ELSE
+        IF(IELEC.EQ.-1) WRITE(IW,2107)
+ 2107   FORMAT(1X,'#',/1X,'# No exchange potential')
       ENDIF
 C
       IF(MCPOL0.EQ.1) THEN
@@ -490,16 +531,28 @@ C  ****  LDA correlation-polarization potential.
         WRITE(IW,2009) AMPOL
  2009   FORMAT(1X,'#',/1X,'# Correlation-polarization potential (LDA',
      1    '):',/1X,'#    molecular polarizability =',1P,E12.5,' cm**3')
+      ELSE
+        WRITE(IW,2109)
+ 2109   FORMAT(1X,'#',/1X,'# No correlation-polarization potential')
       ENDIF
 C
-      IF(MABS0.NE.0) THEN
+      IF(MABS0.EQ.1) THEN
         WRITE(IW,2010) VABSD,VABSA
- 2010   FORMAT(1X,'#',/1X,'# LDA absorption potential: Delta =',
-     1         1P,E12.5,' eV',/1X,'#',28X,'Aabs =',E12.5)
+ 2010   FORMAT(1X,'#',/1X,'# LDA-I absorption potential (only electr',
+     1    'on-hole excitations):',/1X,'#',
+     2    27X,'Delta =',1P,E12.5,' eV',/1X,'#',28X,'Aabs =',E12.5)
+      ELSE IF(MABS0.EQ.2) THEN
+        WRITE(IW,2110) VABSD,VABSA
+ 2110   FORMAT(1X,'#',/1X,'# LDA-II absorption potential (plasmon and',
+     1    ' e-h excitations):',/1X,'#',
+     2    27X,'Delta =',1P,E12.5,' eV',/1X,'#',28X,'Aabs =',E12.5)
+      ELSE
+        WRITE(IW,2210)
+ 2210   FORMAT(1X,'#',/1X,'# No absorption potential')
       ENDIF
 C
       WRITE(IW,2011)
- 2011 FORMAT(1X,'#',/1X,'# Integrated cross sections (cm**2):',/1X,
+ 2011 FORMAT(1X,'#',/1X,'# Integrated cross sections:',/1X,
      1  '#',21X,'coherent',6X,'incoherent')
       WRITE(IW,2012) ECSM,ECSI
  2012 FORMAT(1X,'#         total cs:',1P,E14.7,1X,E14.7)
@@ -508,9 +561,17 @@ C
       WRITE(IW,2014) TCS2M,TCS2I
  2014 FORMAT(1X,'# 2nd transport cs:',1P,E14.7,1X,E14.7)
 C
+      IW1=33
+      OPEN(IW1,FILE='dcsm.dat')
       WRITE(IW,'(1X,''#'',/1X,''# Differential cross section:'',
      1  21X,''MU=(1-COS(THETA))/2'')')
       WRITE(IW,'(1X,''#'',/1X,''#   THETA'',11X,''MU'',9X,
+     1  ''DCS coh'',6X,''DCS incoh'',6X,''Sherman'',/1X,
+     2  ''#   (deg)'',21X,''(cm**2/sr)'',4X,''(cm**2/sr)'',
+     3  5X,''function'',/1X,''#'',68(''-''))')
+      WRITE(IW1,'(1X,''#'',/1X,''# Differential cross section:'',
+     1  21X,''MU=(1-COS(THETA))/2'')')
+      WRITE(IW1,'(1X,''#'',/1X,''#   THETA'',11X,''MU'',9X,
      1  ''DCS coh'',6X,''DCS incoh'',6X,''Sherman'',/1X,
      2  ''#   (deg)'',21X,''(cm**2/sr)'',4X,''(cm**2/sr)'',
      3  5X,''function'',/1X,''#'',68(''-''))')
@@ -523,7 +584,10 @@ C
       DO K=1,NTAB
         WRITE(IW,'(1P,5E14.6)')
      1    THM(K),XTM(K),DCSC(K),DCSI(K),SPOLC(K)
+        WRITE(IW1,'(1P,5E14.6)')
+     1    THM(K),XTM(K),DCSC(K),DCSI(K),SPOLC(K)
       ENDDO
+      CLOSE(IW1)
 C
       RETURN
       END

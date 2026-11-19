@@ -61,7 +61,7 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
 
   // Fortran Notebook Editor state
   const [fortranFiles, setFortranFiles] = useState<FortranFileInfo[]>([]);
-  const [selectedFortranFilename, setSelectedFortranFilename] = useState<string>('elsepa.f');
+  const [selectedFortranFilename, setSelectedFortranFilename] = useState<string>('elsepa2020.f');
   const [activeFortranCode, setActiveFortranCode] = useState<string>('');
   const [savedFortranBaselineCode, setSavedFortranBaselineCode] = useState<string>('');
 
@@ -410,7 +410,7 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
             Physics Engine Source Notebook & Render.com Deployment
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Interactive source code cells for both Fortran 77 (`elsepa.f`, `elscata.f`) and TypeScript Dirac physics engines (`elsepaPhysicsEngine.ts`). Edits update simulation calculations instantly.
+            Interactive source code cells for both Fortran 90 (`elsepa2020.f`, `elscata.f`) and TypeScript Dirac physics engines (`elsepaPhysicsEngine.ts`). Edits update simulation calculations instantly.
           </p>
         </div>
 
@@ -458,7 +458,7 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
             }`}
           >
             <FileCode className="w-3.5 h-3.5" />
-            <span>Fortran 77 Editor</span>
+            <span>Fortran 90 Editor</span>
           </button>
 
           <button
@@ -509,7 +509,7 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
                   </button>
                 ))
               ) : (
-                ['elsepa.f', 'elscata.f', 'elscatm.f', 'getpath.f'].map((fn) => (
+                ['radial.f', 'elsepa2020.f', 'elscata.f', 'elscatm.f'].map((fn) => (
                   <button
                     key={fn}
                     onClick={() => setSelectedFortranFilename(fn)}
@@ -588,7 +588,7 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
             <span className={`${activeEditorMode === 'fortran' ? 'text-emerald-400' : 'text-indigo-400'} font-bold`}>[In 1]:</span>
             <span className="font-semibold text-slate-200">{currentFilename}</span>
             <span className="text-slate-500">|</span>
-            <span>{activeEditorMode === 'fortran' ? 'FORTRAN 77 / 90 Source' : 'TypeScript Dirac Partial-Wave Engine'}</span>
+            <span>{activeEditorMode === 'fortran' ? 'FORTRAN 90 Source' : 'TypeScript Dirac Partial-Wave Engine'}</span>
           </div>
 
           <div className="flex items-center space-x-3 text-[11px]">
@@ -695,7 +695,7 @@ export const RenderDeploymentModal: React.FC<RenderDeploymentModalProps> = ({
             Set the start command to <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">npm start</code>.
           </li>
           <li>
-            Render will automatically provision <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">gfortran</code> and Node 20, compile <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">elsepa.f</code> into a native Linux binary (<code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">elsepa_exec</code>), and serve the web app.
+            Render will automatically provision <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">gfortran</code> and Node 20, compile <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">elscata.f</code> and <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">elscatm.f</code> into native Linux binaries (<code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">elsepa_exec</code>, <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">elscatm_exec</code>), and serve the web app.
           </li>
         </ol>
       </div>

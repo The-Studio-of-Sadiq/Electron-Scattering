@@ -1,0 +1,25 @@
+ELSEPA (version 2020, published 2021): the files elsepa2020.f, radial.f, elscata.f, elscatm.f and
+readme.txt in this folder, and the atomic data tables in ../data (z_NNN.den, z_NNN.dfs), are the work of
+
+  Francesc Salvat, Aleksander Jablonski and Cedric J. Powell,
+  "ELSEPA - Dirac partial-wave calculation of elastic scattering of electrons and positrons by
+  atoms, positive ions and molecules (New Version Announcement)",
+  Comput. Phys. Commun. 261 (2021) 107704, https://doi.org/10.1016/j.cpc.2020.107704
+  Original description: Comput. Phys. Commun. 165 (2005) 157-190, https://doi.org/10.1016/j.cpc.2004.09.006
+  RADIAL: F. Salvat, J.M. Fernandez-Varea, Comput. Phys. Commun. 240 (2019) 165-177,
+  https://doi.org/10.1016/j.cpc.2019.02.011
+
+Source: CPC Program Library on Mendeley Data, https://doi.org/10.17632/w4hm5vymym.1 (elsepa-2020.zip)
+
+Licence: Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0),
+https://creativecommons.org/licenses/by-nc/3.0/
+These files are NOT covered by the MIT License of the rest of this repository. They may be used,
+copied and redistributed for non-commercial purposes only, with attribution to the authors.
+
+The files in this folder are unmodified copies of the distributed files. For the WebAssembly build,
+wasm/f90to77.py generates, at build time, a Fortran 77 copy in which the module CONSTANTS (six
+PARAMETER constants in radial.f) is written as an INCLUDE of the same constants, because the f2c
+translator does not accept Fortran 90 modules. No other change is made.
+
+The earlier (2005) version of ELSEPA is no longer distributed with this software, at the request of
+its authors.

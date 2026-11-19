@@ -618,7 +618,8 @@ export const InputGuiForm: React.FC<InputGuiFormProps> = ({
                 className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               >
                 <option value="none">None (Pure Elastic)</option>
-                <option value="staszewska-lda">Staszewska LDA Model (Inelastic Channels)</option>
+                <option value="staszewska-lda">LDA-I (e-h excitations)</option>
+                <option value="lda-2">LDA-II (with plasmons)</option>
               </select>
             </div>
 

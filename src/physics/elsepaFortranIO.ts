@@ -32,7 +32,14 @@ export function buildAtomicInput(params: ElsepaInputParams): string {
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;
   // ELSCATA codes: MCPOL 0=none, 1=Buckingham, 2=LDA
   const mcpolInt = params.polarizationModel === 'buckingham' ? 1 : params.polarizationModel === 'lda' ? 2 : 0;
-  const mabsInt = params.absorptionModel === 'staszewska-lda' ? 1 : 0;
+  // ELSCATA codes: MABS 0=none, 1=LDA-I, 2=LDA-II
+  const mabsInt =
+    params.absorptionModel === 'staszewska-lda'
+      ? 1
+      : params.absorptionModel === 'lda-2'
+      ? 2
+      : 0;
+  const vabsA = params.absorptionStrength && params.absorptionStrength > 0 ? params.absorptionStrength : -1;
 
   // Convert polarizability from a0^3 to cm^3 (1 a0^3 = 1.481847e-25 cm^3). With no value
   // given, VPOLA -1 makes ELSEPA use its tabulated (measured) polarizability.
@@ -51,7 +58,7 @@ export function buildAtomicInput(params: ElsepaInputParams): string {
     keywordLine('VPOLA', polarCm3),
     keywordLine('VPOLB', -1),
     keywordLine('MABS', mabsInt),
-    keywordLine('VABSA', params.absorptionStrength || 2.0),
+    keywordLine('VABSA', vabsA),
     keywordLine('VABSD', '-1.0'),
     keywordLine('IHEF', 2),
     keywordLine('EV', params.energyEv.toExponential(5)),
@@ -95,11 +102,12 @@ export function parseAtomicOutputs(
       if (line.includes('Absorption cross section =')) sigmaAbsAu = parseFloat(csMatch[2]);
     }
     // ELSEPA's warnings (e.g. for ions: DCS and cross sections only above a minimum angle)
-    // span a "# WARNING:" line and indented continuation lines.
+    // span a "# WARNING:" or "#  ***  WARNING:" line and indented continuation lines.
     const isComment = line.trim().startsWith('#');
     const comment = line.trim().replace(/^#/, '').trim();
-    if (isComment && comment.startsWith('WARNING:')) {
-      warnings.push(comment.slice('WARNING:'.length).trim());
+    const warnMatch = isComment && comment.match(/^(?:\*\*\*\s+)?WARNING:\s*(.*)$/);
+    if (warnMatch) {
+      warnings.push(warnMatch[1]);
       inWarning = true;
     } else if (inWarning && isComment && comment) {
       warnings[warnings.length - 1] += ' ' + comment;
@@ -267,8 +275,20 @@ export function buildMolecularInput(params: MolecularInputParams): string {
   const mexchInt = params.exchangeModel === 'none' ? 0 : params.exchangeModel === 'furness-mccarthy' ? 1 : params.exchangeModel === 'riley-truhlar' ? 3 : 2;
   // ELSCATM codes: MCPOL 0=none, 1=Buckingham, 2=LDA
   const mcpolInt = params.polarizationModel === 'buckingham' ? 1 : 0;
-  const mabsInt = params.absorptionModel === 'staszewska-lda' ? 1 : 0;
-  const vabsA = params.absorptionStrength ?? 2.0;
+  const mabsInt =
+    params.absorptionModel === 'staszewska-lda'
+      ? 1
+      : params.absorptionModel === 'lda-2'
+      ? 2
+      : 0;
+  // ELSCATM turns a negative Aabs into 0 when reading its input, so its defaults (2.0 for LDA-I,
+  // 0.725 for LDA-II, from elscatm.f) must be sent explicitly instead of -1.
+  const vabsA =
+    params.absorptionStrength && params.absorptionStrength > 0
+      ? params.absorptionStrength
+      : mabsInt === 2
+      ? 0.725
+      : 2.0;
   const fExce = params.excitationEnergy ?? 6.20;
 
   const atomsLines = params.atoms

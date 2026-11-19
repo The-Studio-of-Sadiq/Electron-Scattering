@@ -79,11 +79,11 @@ check('energy sweep runs native ELSEPA at every energy', () => {
 check('invalid input raises an error instead of returning approximate numbers', () => {
   let threw = false;
   try {
-    runOfficialFortranSimulation({ ...base, energyEv: 5 }); // ELSCATA stops below 10 eV
+    runOfficialFortranSimulation({ ...base, energyEv: 4 }); // ELSCATA 2021 stops below 5 eV
   } catch {
     threw = true;
   }
-  assert(threw, 'a 5 eV run returned a result');
+  assert(threw, 'a 4 eV run returned a result');
 });
 
 check('molecular run uses native ELSCATM', () => {
@@ -120,7 +120,7 @@ check('custom-density simulation uses native ELSEPA with isolated density.usr an
 });
 
 await check('with default environment, the four source write endpoints return 403 and make no file changes', async () => {
-  const originalFortran = fs.readFileSync(path.join(ROOT, 'fortran', 'elsepa.f'), 'utf8');
+  const originalFortran = fs.readFileSync(path.join(ROOT, 'fortran', 'elsepa2020.f'), 'utf8');
   const originalTs = fs.readFileSync(path.join(ROOT, 'src', 'physics', 'elsepaPhysicsEngine.ts'), 'utf8');
 
   const server = app.listen(0);
@@ -132,7 +132,7 @@ await check('with default environment, the four source write endpoints return 40
     const r1 = await fetch(`${baseUrl}/api/fortran-source/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: 'elsepa.f', content: 'MALICIOUS_FORTRAN_CODE' }),
+      body: JSON.stringify({ filename: 'elsepa2020.f', content: 'MALICIOUS_FORTRAN_CODE' }),
     });
     assert(r1.status === 403, `POST /api/fortran-source/save returned status ${r1.status}, expected 403`);
 
@@ -140,7 +140,7 @@ await check('with default environment, the four source write endpoints return 40
     const r2 = await fetch(`${baseUrl}/api/fortran-source/reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename: 'elsepa.f' }),
+      body: JSON.stringify({ filename: 'elsepa2020.f' }),
     });
     assert(r2.status === 403, `POST /api/fortran-source/reset returned status ${r2.status}, expected 403`);
 
@@ -161,9 +161,9 @@ await check('with default environment, the four source write endpoints return 40
     assert(r4.status === 403, `POST /api/ts-source/reset returned status ${r4.status}, expected 403`);
 
     // Assert no file changes occurred
-    const currentFortran = fs.readFileSync(path.join(ROOT, 'fortran', 'elsepa.f'), 'utf8');
+    const currentFortran = fs.readFileSync(path.join(ROOT, 'fortran', 'elsepa2020.f'), 'utf8');
     const currentTs = fs.readFileSync(path.join(ROOT, 'src', 'physics', 'elsepaPhysicsEngine.ts'), 'utf8');
-    assert(currentFortran === originalFortran, 'fortran/elsepa.f was modified despite 403 response');
+    assert(currentFortran === originalFortran, 'fortran/elsepa2020.f was modified despite 403 response');
     assert(currentTs === originalTs, 'src/physics/elsepaPhysicsEngine.ts was modified despite 403 response');
   } finally {
     server.close();

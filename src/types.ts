@@ -13,7 +13,8 @@ export type ExchangeModel = 'none' | 'furness-mccarthy' | 'riley-truhlar' | 'fre
 
 export type PolarizationModel = 'none' | 'buckingham' | 'lda';
 
-export type AbsorptionModel = 'none' | 'staszewska-lda';
+// ELSEPA 2021 MABS: 1 LDA-I ('staszewska-lda', electron-hole excitations), 2 LDA-II ('lda-2', full Lindhard function).
+export type AbsorptionModel = 'none' | 'staszewska-lda' | 'lda-2';
 
 export interface ElementData {
   z: number;

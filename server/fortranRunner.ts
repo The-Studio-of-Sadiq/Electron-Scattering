@@ -108,16 +108,15 @@ export function ensureFortranBinaryCompiled(): string | null {
   try {
     const fortranDir = path.join(rootDir, 'fortran');
     const elscataFile = path.join(fortranDir, 'elscata.f');
-    const elsepaFile = path.join(fortranDir, 'elsepa.f');
 
-    if (!fs.existsSync(elscataFile) || !fs.existsSync(elsepaFile)) {
+    if (!fs.existsSync(elscataFile)) {
       return null;
     }
 
     console.log('Compiling official Salvat ELSEPA Fortran source code with gfortran...');
-    execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscataFile}" "${elsepaFile}"`, {
+    execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscataFile}"`, {
       encoding: 'utf-8',
-      timeout: 30000,
+      timeout: 180000,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -166,26 +165,31 @@ export function runOfficialFortranSimulation(params: ElsepaInputParams): Simulat
     fs.mkdirSync(tempDir, { recursive: true });
     fs.writeFileSync(inputFilePath, inputContent, 'utf-8');
 
-    // ELSEPA reads $ELSEPA_DATA/density.usr. Custom-density runs get their own data directory
-    // (density.usr plus copies of the atom's z_NNN.den / z_NNN.dfs) so concurrent runs never share it.
-    let elsepaDataDir = path.join(rootDir, 'data');
-    if (density.data) {
-      const runDataDir = path.join(tempDir, 'data');
-      fs.mkdirSync(runDataDir, { recursive: true });
-      fs.writeFileSync(path.join(runDataDir, 'density.usr'), density.data, 'utf-8');
+    // ELSEPA 2021 reads atomic tables from ./database/z_NNN.den and .dfs relative
+    // to current working directory, and density.usr (for MELEC 5) directly in cwd.
+    const dataDir = path.join(rootDir, 'data');
+    const dbDir = path.join(tempDir, 'database');
+    const symlinkType = process.platform === 'win32' ? 'junction' : 'dir';
+    try {
+      fs.symlinkSync(dataDir, dbDir, symlinkType);
+    } catch {
+      fs.mkdirSync(dbDir, { recursive: true });
       const zPad = String(params.z).padStart(3, '0');
       for (const ext of ['.den', '.dfs']) {
-        const srcFile = path.join(elsepaDataDir, `z_${zPad}${ext}`);
-        if (fs.existsSync(srcFile)) fs.copyFileSync(srcFile, path.join(runDataDir, `z_${zPad}${ext}`));
+        const srcFile = path.join(dataDir, `z_${zPad}${ext}`);
+        if (fs.existsSync(srcFile)) fs.copyFileSync(srcFile, path.join(dbDir, `z_${zPad}${ext}`));
       }
-      elsepaDataDir = runDataDir;
     }
-    const env = { ...process.env, ELSEPA_DATA: elsepaDataDir };
+
+    if (density.data) {
+      fs.writeFileSync(path.join(tempDir, 'density.usr'), density.data, 'utf-8');
+    }
 
     execSync(`"${binaryPath}" < "${inputFilePath}"`, {
       cwd: tempDir,
-      env,
-      timeout: 15000,
+      env: process.env,
+      // ELSEPA 2021 is several times slower than the 2005 version; heavy cases take tens of seconds.
+      timeout: 120000,
       encoding: 'utf-8',
     });
     result = parseAtomicOutputs(params, readOutputFiles(tempDir), inputContent, performance.now() - startTime);
@@ -231,16 +235,15 @@ export function ensureElscatmBinaryCompiled(): string | null {
   try {
     const fortranDir = path.join(rootDir, 'fortran');
     const elscatmFile = path.join(fortranDir, 'elscatm.f');
-    const elsepaFile = path.join(fortranDir, 'elsepa.f');
 
-    if (!fs.existsSync(elscatmFile) || !fs.existsSync(elsepaFile)) {
+    if (!fs.existsSync(elscatmFile)) {
       return null;
     }
 
     console.log('Compiling official Salvat ELSCATM Fortran source code with gfortran...');
-    execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscatmFile}" "${elsepaFile}"`, {
+    execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscatmFile}"`, {
       encoding: 'utf-8',
-      timeout: 30000,
+      timeout: 180000,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -278,10 +281,20 @@ export function runOfficialMolecularFortranSimulation(params: MolecularInputPara
   fs.writeFileSync(inputFilePath, inputContent, 'utf-8');
 
   const dataDir = path.join(rootDir, 'data');
-  const env = {
-    ...process.env,
-    ELSEPA_DATA: fs.existsSync(dataDir) ? dataDir : rootDir,
-  };
+  const dbDir = path.join(tempDir, 'database');
+  const symlinkType = process.platform === 'win32' ? 'junction' : 'dir';
+  try {
+    fs.symlinkSync(dataDir, dbDir, symlinkType);
+  } catch {
+    fs.mkdirSync(dbDir, { recursive: true });
+    for (const a of params.atoms) {
+      const zPad = String(a.z).padStart(3, '0');
+      for (const ext of ['.den', '.dfs']) {
+        const srcFile = path.join(dataDir, `z_${zPad}${ext}`);
+        if (fs.existsSync(srcFile)) fs.copyFileSync(srcFile, path.join(dbDir, `z_${zPad}${ext}`));
+      }
+    }
+  }
 
   try {
     fs.chmodSync(binaryPath, 0o755);
@@ -292,8 +305,8 @@ export function runOfficialMolecularFortranSimulation(params: MolecularInputPara
   try {
     execSync(`"${binaryPath}" < "${inputFilePath}"`, {
       cwd: tempDir,
-      env,
-      timeout: 30000,
+      env: process.env,
+      timeout: 180000,
       encoding: 'utf-8',
     });
     result = parseMolecularOutputs(params, readOutputFiles(tempDir), inputContent, performance.now() - startTime);
@@ -466,8 +479,8 @@ export function triggerFortranCompilation() {
   try {
     logs += `[gfortran] Compiling Atomic ELSEPA executable (elsepa_exec)...\n`;
     const atomicOutput = execSync(
-      `gfortran -O2 -I"${fortranDir}" -o "${atomicTarget}" "${path.join(fortranDir, 'elscata.f')}" "${path.join(fortranDir, 'elsepa.f')}"`,
-      { encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
+      `gfortran -O2 -I"${fortranDir}" -o "${atomicTarget}" "${path.join(fortranDir, 'elscata.f')}"`,
+      { encoding: 'utf-8', timeout: 180000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     if (atomicOutput) logs += atomicOutput + '\n';
     if (checkAndCleanBinary(atomicTarget)) {
@@ -483,8 +496,8 @@ export function triggerFortranCompilation() {
   try {
     logs += `[gfortran] Compiling Molecular ELSCATM executable (elscatm_exec)...\n`;
     const molOutput = execSync(
-      `gfortran -O2 -I"${fortranDir}" -o "${molTarget}" "${path.join(fortranDir, 'elscatm.f')}" "${path.join(fortranDir, 'elsepa.f')}"`,
-      { encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
+      `gfortran -O2 -I"${fortranDir}" -o "${molTarget}" "${path.join(fortranDir, 'elscatm.f')}"`,
+      { encoding: 'utf-8', timeout: 180000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     if (molOutput) logs += molOutput + '\n';
     if (checkAndCleanBinary(molTarget)) {

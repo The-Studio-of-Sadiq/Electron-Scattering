@@ -1,4 +1,5 @@
-C      INCLUDE 'elsepa.f'
+      INCLUDE 'radial.f'
+      INCLUDE 'elsepa2020.f'
 
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 C
@@ -8,8 +9,16 @@ C    +++    PROGRAM ELSCATA    +++
 C    +++++++++++++++++++++++++++++
 C
 C
-C                              F. Salvat, A. Jablonski and C.J. Powell
-C                              September 27, 2004
+C                               F. Salvat, A. Jablonski and C.J. Powell
+C                               November 30, 2003
+C
+C  Updated in February 2020 by F. Salvat, to work with the subroutine
+C  package RADIAL.
+C
+C  Ref.: F. Salvat and J. M. Fernandez-Varea,
+C        'RADIAL: a Fortran subroutine package for the solution of
+C        radial Schrodinger and Dirac wave equations',
+C        Comput. Phys. Commun. 240 (2019) 165-177.
 C
 C
 C  ELastic SCATtering of electrons and positrons by Atoms (and ions)
@@ -55,20 +64,25 @@ C MNUCL   3          rho_n (1=P, 2=U, 3=F, 4=Uu)                  [  3]
 C NELEC   80         number of bound electrons                    [ IZ]
 C MELEC   4          rho_e (1=TFM, 2=TFD, 3=DHFS, 4=DF, 5=file)   [  4]
 C MUFFIN  0          0=free atom, 1=muffin-tin model              [  0]
-C RMUF    0          muffin-tin radius (cm)                  [measured]
+C RMUF   -1.0        muffin-tin radius (cm)                  [measured]
 C IELEC  -1          -1=electron, +1=positron                     [ -1]
 C MEXCH   1          V_ex (0=none, 1=FM, 2=TF, 3=RT)              [  1]
 C MCPOL   2          V_cp (0=none, 1=B, 2=LDA)                    [  0]
-C VPOLA  -1          atomic polarizability (cm**3)           [measured]
-C VPOLB  -1          b_pol parameter                          [default]
-C MABS    1          W_abs (0=none, 1=LDA)                        [  0]
-C VABSA   2.00       absorption-potential strength, Aabs          [2.0]
+C VPOLA  -1.0        atomic polarizability (cm^3)            [measured]
+C VPOLB  -1.0        b_pol parameter                          [default]
+C MABS    2          W_abs (0=none, 1=LDA-I, 2=LDA-II)            [  0]
+C VABSA  -1.0        absorption-potential strength, Aabs      [default]
 C VABSD  -1.0        energy gap DELTA (eV)                    [default]
 C IHEF    2          high-E factorization (0=no, 1=yes, 2=Born)   [  1]
 C EV      1.000E2    kinetic energy (eV)                         [none]
-C EV      1.000E3    optionally, more energies
+C EV      1.000E3    optionally, more energies...
 C ----+----1----+----2----+----3----+----4----+----5----+----6----+----7
 C
+C  NOTE: The absorption potential W_abs is obtained from the local-
+C  density approximation (LDA) by using the Lindhard dielectric function
+C  of the free-electron gas. The LDA-I option only accounts for
+C  electron-hole excitations, while the LDA-II option uses the full
+C  dielectric function, i.e., it includes plasmon-like excitations.
 C
 C     The computed information is delivered in various files with the
 C  extension '.dat'. The output file 'dcs_xpyyyezz.dat' contains the
@@ -78,17 +92,18 @@ C  'scfield.dat' and 'scatamp.dat' contain tables of the scattering
 C  potential and the scattering amplitudes of the last calculated case;
 C  they are overwritten (i.e. lost) when a new case is calculated.
 C
-C     This program uses the subroutine package 'elsepa.f', which has
-C  been inserted into this source file by using an INCLUDE statement
-C  (see above).
+C     This program uses the subroutine packages 'elsepa2020.f' and
+C  'radial.f', which are inserted into this source file by means of
+C  two INCLUDE statements (see above).
 C
+C
+      USE CONSTANTS
 C
       IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z), COMPLEX*16 (C),
      1   INTEGER*4 (I-N)
       CHARACTER*6 KWORD
       CHARACTER*12 BUFFER,OFILE
 C
-      PARAMETER (A0B=5.291772083D-9)  ! Bohr radius (cm)
       PARAMETER (A0B2=A0B*A0B)
       PARAMETER (PI=3.1415926535897932D0)
 C  ****  Results from the partial wave calculation.
@@ -206,6 +221,32 @@ C  the element was not available.
      9      3.600D-8, 3.210D-8, 2.750D-8, 2.620D-8, 3.100D-8,
      A      3.610D-8,-1.000D-8,-1.000D-8,-1.000D-8,-1.000D-8,
      1     -1.000D-8,-1.000D-8,-1.000D-8,-1.000D-8/
+C
+C  ****  Atomic densities (number of atoms per cm**3) of the
+C    elements in their natural state (from the PENELOPE database).
+      DIMENSION VMOLE(103)
+      DATA VMOLE/    5.0039E+19, 2.5024E+19, 4.6331E+22, 1.2349E+23,
+     A   1.3202E+23, 1.0028E+23, 5.0100E+19, 5.0119E+19, 5.0093E+19,
+     1   2.5024E+19, 2.5435E+22, 4.3113E+22, 6.0237E+22, 4.9959E+22,
+     A   4.2774E+22, 3.7561E+22, 5.0869E+19, 2.5055E+19, 1.3277E+22,
+     2   2.3290E+22, 4.0040E+22, 5.7102E+22, 7.2230E+22, 8.3158E+22,
+     A   8.1555E+22, 8.4908E+22, 9.0946E+22, 9.1343E+22, 8.4912E+22,
+     3   6.5692E+22, 5.0994E+22, 4.4148E+22, 4.6057E+22, 3.4321E+22,
+     A   5.3301E+19, 2.4996E+19, 1.0795E+22, 1.7457E+22, 3.0271E+22,
+     4   4.2949E+22, 5.5551E+22, 6.4151E+22, 7.0735E+22, 7.3944E+22,
+     A   7.2621E+22, 6.8019E+22, 5.8619E+22, 4.6341E+22, 3.8340E+22,
+     5   3.7084E+22, 3.3096E+22, 2.9450E+22, 2.3396E+22, 2.5161E+19,
+     A   8.4865E+21, 1.5348E+22, 2.6679E+22, 2.8611E+22, 2.8677E+22,
+     6   2.8808E+22, 3.0005E+22, 2.9878E+22, 2.0778E+22, 3.0256E+22,
+     A   3.1181E+22, 3.1686E+22, 3.2113E+22, 3.2642E+22, 3.3228E+22,
+     7   2.3422E+22, 3.3867E+22, 4.4907E+22, 5.5426E+22, 6.3219E+22,
+     A   6.7980E+22, 7.1461E+22, 7.0241E+22, 6.6216E+22, 5.9069E+22,
+     8   4.0668E+22, 3.4533E+22, 3.2988E+22, 2.8088E+22, 2.6857E+22,
+     A   2.6728E+22, 2.4591E+19, 2.7003E+21, 1.3322E+22, 2.6711E+22,
+     9   3.0417E+22, 4.0062E+22, 4.7943E+22, 5.1444E+22, 4.9981E+22,
+     A   3.3869E+22, 3.2930E+22, 3.4124E+22, 3.3579E+22, 3.3446E+22,
+     1  -1.0000D+00,-1.0000D+00,-1.0000D+00,-1.0000D+00/
+C
 C  ****  Phase shifts.
       PARAMETER (NDM=25000)
       COMMON/PHASES/DP(NDM),DM(NDM),NPH,ISUMP
@@ -220,24 +261,24 @@ C  ****  Default model.
       MNUCL = 3        ! Fermi nuclear charge distribution
       MELEC = 4        ! DF electron density
       MUFFIN= 0        ! free atom
-      RMUF  =-200.0D0  ! free atom
+      RMUF  =-1.0D0    ! free atom
+      VMOL  =-1.0D0  ! free atom
       MEXCH = 1        ! FM exchange potential
       MCPOL = 0        ! no correlation-polarization
       VPOLA =-1.0D0    ! atomic polarizability
       VPOLB =-1.0D0    ! polariz. cutoff parameter
       MABS  = 0        ! no absorption
-      VABSA = 2.0D0    ! absorption potential strength
+      VABSA =-1.0D0    ! absorption potential strength
       VABSD =-1.0D0    ! energy gap
       IHEF  = 1        ! high-energy factorization on
 C
   100 CONTINUE
       READ(5,'(A6,1X,A12)') KWORD,BUFFER
-  101 CONTINUE
       IF(KWORD.EQ.'IZ    ') THEN
         READ(BUFFER,*) IZ
         IF(IZ.LT.1.OR.IZ.GT.103) THEN
           WRITE(6,*) 'IZ =',IZ
-          STOP 'Wrong atomic number'
+          STOP 'Wrong atomic number.'
         ENDIF
       ELSE IF(KWORD.EQ.'MNUCL ') THEN
         READ(BUFFER,*) MNUCL
@@ -247,7 +288,7 @@ C
         IF(NELEC.LT.0) NELEC=IZ
         IF(NELEC.GT.IZ) THEN
           WRITE(6,*) 'NELEC =',NELEC
-          STOP 'Negative ion'
+          STOP 'Negative ion.'
         ENDIF
       ELSE IF(KWORD.EQ.'MELEC ') THEN
         READ(BUFFER,*) MELEC
@@ -274,10 +315,10 @@ C
         IF(VPOLB.LT.1.0D-10) VPOLB=-10.0D0
       ELSE IF(KWORD.EQ.'MABS  ') THEN
         READ(BUFFER,*) MABS
-        IF(MABS.NE.1) MABS=0
+        IF(MABS.LT.0.OR.MABS.GT.2) MABS=0
       ELSE IF(KWORD.EQ.'VABSA ') THEN
         READ(BUFFER,*) VABSAI
-        IF(VABSAI.GE.0.0D0) VABSA=VABSAI
+        IF(VABSAI.GT.0.0D0) VABSA=VABSAI
       ELSE IF(KWORD.EQ.'VABSD ') THEN
         READ(BUFFER,*) VABSD
         IF(VABSD.LT.-1.0D-35) VABSD=-1.0D0
@@ -285,9 +326,11 @@ C
         READ(BUFFER,*) IHEF
         IF(IHEF.NE.0.AND.IHEF.NE.2) IHEF=1
       ELSE IF(KWORD.EQ.'EV    ') THEN
+        IF(VMOL.LT.-1.0D-35) VMOL=VMOLE(IZ)
         GO TO 200
       ELSE
-        STOP 'Unrecognized keyword'
+        WRITE(6,*) 'Unrecognized keyword.'
+        GO TO 100
       ENDIF
       GO TO 100
 C
@@ -299,7 +342,19 @@ C
       IF(NELEC.NE.IZ) MUFFIN=0
       IF(MUFFIN.EQ.1) THEN
         IF(RMUF.LT.1.0D-9) RMUF=0.5D0*DNNEL(IZ)
-        IF(RMUF.LT.1.0D-9) STOP 'RMUF is too small'
+        IF(RMUF.LT.1.0D-9) THEN
+          WRITE(6,*) 'RMUF = ',RMUF
+          STOP 'RMUF is too small.'
+        ENDIF
+        VMOL=VMOLE(IZ)
+        IF(VMOL.LT.1.0D0) VMOL=1.0D0/(2.0D0*RMUF)**3
+C  ****  If the volume of the muffin-tin sphere is larger than that of
+C  the Wigner-Seitz cell (= 1/VMOL), a cubic lattice is assumed.
+        RWS=(0.75D0/(PI*VMOL))**(1.0D0/3.0D0)
+        IF(RMUF.GT.RWS) THEN
+          VMOL=1.0D0/(2.0D0*RMUF)**3
+        ENDIF
+        IHEF=0
       ELSE
         MUFFIN=0
         RMUF=200.0D-8
@@ -309,11 +364,17 @@ C
 C
       IF(MCPOL.EQ.1) THEN
         IF(VPOLA.LT.-1.0D-35) VPOLA=ATPOL(IZ)  ! Default value.
-        IF(VPOLA.LT.-1.0D-35) STOP 'VPOLA must be positive'
+        IF(VPOLA.LT.-1.0D-35) THEN
+          WRITE(6,*) 'VPOLA = ',VPOLA
+          STOP 'VPOLA must be positive.'
+        ENDIF
         IF(VPOLB.LT.1.0D-10) VPOLB=-10.0D0
       ELSE IF(MCPOL.EQ.2) THEN
         IF(VPOLA.LT.-1.0D-35) VPOLA=ATPOL(IZ)
-        IF(VPOLA.LT.-1.0D-35) STOP 'VPOLA must be positive'
+        IF(VPOLA.LT.-1.0D-35) THEN
+          WRITE(6,*) 'VPOLA = ',VPOLA
+          STOP 'VPOLA must be positive.'
+        ENDIF
         IF(VPOLB.LT.1.0D-10) VPOLB=-10.0D0
       ELSE
         MCPOL=0
@@ -321,8 +382,14 @@ C
         VPOLB=0.0D0
       ENDIF
 C
-      IF(MABS.EQ.1) THEN
-        IF(VABSA.LT.-1.0D-35) STOP 'VABSA must be positive'
+      IF(MABS.EQ.1.OR.MABS.EQ.2) THEN
+        IF(VABSA.LT.-1.0D-35) THEN
+          IF(MABS.EQ.1) THEN
+            VABSA=2.0D0
+          ELSE
+            VABSA=0.75D0
+          ENDIF
+        ENDIF
         IF(VABSD.LT.-1.0D-35) THEN
           IF(IELEC.EQ.-1) THEN  ! Default (experimental) value.
             VABSD=EEX1Z(IZ)
@@ -336,7 +403,6 @@ C
         VABSA=0.0D0
         VABSD=1.0D0
       ENDIF
-      ECUT=MIN(20.0D3*IZ,2.0D6)
 C
       OPEN(25,FILE='tcstable.dat')
       WRITE(25,1001)
@@ -349,22 +415,29 @@ C
         WRITE(25,1003) IZ
  1003   FORMAT(1X,'#  Z =',I4,',   projectile: positron')
       ENDIF
-      WRITE(25,1004)
- 1004 FORMAT(1X,'#',/1X,'#   Energy',9X,'ECS',9X,'TCS1',9X,'TCS2',
-     1  9X,'ABSCS',6X,'error',/1X,'#',4X,'(eV)',8X,'(cm**2)',6X,
-     2  '(cm**2)',6X,'(cm**2)',6X,'(cm**2)',/1X,'#',74('-'))
+      IF((MUFFIN.EQ.1).AND.(MABS.EQ.1.OR.MABS.EQ.2)) THEN
+        WRITE(25,1004)
+ 1004   FORMAT(1X,'#',/1X,'#   Energy',9X,'ECS',9X,'TCS1',9X,'TCS2',
+     1    9X,'ABSCS',6X,'inel-MFP',5X,'error',/1X,'#',4X,'(eV)',
+     2    8X,'(cm**2)',6X,'(cm**2)',6X,'(cm**2)',6X,'(cm**2)',
+     3    7X,'(cm)',/1X,'#',87('-'))
+      ELSE
+        WRITE(25,1005)
+ 1005   FORMAT(1X,'#',/1X,'#   Energy',9X,'ECS',9X,'TCS1',9X,'TCS2',
+     1    9X,'ABSCS',6X,'error',/1X,'#',4X,'(eV)',8X,'(cm**2)',6X,
+     2    '(cm**2)',6X,'(cm**2)',6X,'(cm**2)',/1X,'#',74('-'))
+      ENDIF
 C
 C  ************  Partial-wave analysis.
 C
   300 CONTINUE
       READ(BUFFER,*) EV
       WRITE(6,*) '   '
-      WRITE(6,*) 'E (eV)=',EV
-      IF(EV.LT.10.0D0) STOP 'The kinetic energy is too small'
-C
-      WRITE(BUFFER,'(1P,E12.5)') EV
-      OFILE=BUFFER(2:2)//'p'//BUFFER(4:6)//'e'//BUFFER(11:12)
-      OPEN(8,FILE='dcs_'//OFILE(1:8)//'.dat')
+      WRITE(6,'(A,1P,E15.7)') 'E (eV)=',EV
+C  ****  You may wish to comment off the next condition to run the
+C  program for kinetic energies less that 5 eV. However, the results
+C  for these energies may be highly inaccurate.
+      IF(EV.LT.4.999D0) STOP 'The kinetic energy is too small.'
 C
       IF(MCPOL.NE.0) THEN
         IF(EV.GT.1.0D4) THEN
@@ -376,7 +449,7 @@ C
         ELSE
           MCPOLC=MCPOL
           IF(VPOLB.LT.0.0D0) THEN
-            VPOLBC=0.25D0*SQRT(MAX(EV-50.0D0,16.0D0))
+            VPOLBC=SQRT(MAX((EV-50.0D0)/16.0D0,1.0D0))
           ELSE
             VPOLBC=VPOLB
           ENDIF
@@ -397,19 +470,48 @@ C
         MABSC=0
       ENDIF
 C
-      CALL ELSEPA(IELEC,EV,IZ,NELEC,MNUCL,MELEC,MUFFIN,RMUF,
+      WRITE(BUFFER,'(1P,E12.5)') EV
+      OFILE=BUFFER(2:2)//'p'//BUFFER(4:6)//'e'//BUFFER(11:12)
+      OPEN(8,FILE='dcs_'//OFILE(1:8)//'.dat')
+      CALL ELSEPA(IELEC,EV,IZ,NELEC,MNUCL,MELEC,MUFFIN,RMUF,VMOL,
      1  MEXCH,MCPOLC,VPOLA,VPOLBC,MABSC,VABSA,VABSD,IHEF,8)
-C
-      ERRM=0.0D0
-      DO I=1,NTAB
-        ERRM=MAX(ERRM,ERROR(I))
-      ENDDO
-      WRITE(25,1005) EV,ECS,TCS1,TCS2,ABCS,ERRM
- 1005 FORMAT(1X,1P,5E13.5,E9.1)
       CLOSE(8)
 C
+      ERRM=0.0D0
+      OPEN(8,FILE='dcs.dat')
+      WRITE(8,'(1X,''#'')')
+      WRITE(8,'(1X,''# Differential cross section:'',15X,
+     1  ''MU=(1-COS(THETA))/2'')')
+      WRITE(8,'(1X,''#'',/1X,''#  THETA'',8X,''MU'',10X,''DCS'',
+     1  10X,''DCS'',8X,''Sherman''/1X,''#  (deg)'',
+     2  17X,''(cm**2/sr)'',3X,''(a0**2/sr)'',4X,''function'',
+     3  /1X,''#'',62(''-''))')
+      DO I=1,NTAB
+        ERRM=MAX(ERRM,ERROR(I))
+        WRITE(8,1006) TH(I),XT(I),DCST(I),DCST(I)/A0B2,SPOL(I)
+ 1006   FORMAT(1X,1P,E10.3,E13.5,3E13.5,E9.1)
+      ENDDO
+      CLOSE(8)
+C
+      IF((MUFFIN.EQ.1).AND.(MABS.EQ.1.OR.MABS.EQ.2)) THEN
+        AMFP=1.0D0/(VMOL*ABCS)
+        WRITE(25,1007) EV,ECS,TCS1,TCS2,ABCS,AMFP,ERRM
+ 1007   FORMAT(1X,1P,6E13.5,E9.1)
+      ELSE
+        WRITE(25,1008) EV,ECS,TCS1,TCS2,ABCS,ERRM
+ 1008   FORMAT(1X,1P,5E13.5,E9.1)
+      ENDIF
+C
+      IF(MUFFIN.EQ.0.AND.MCPOL.EQ.0.AND.MABSC.EQ.0) THEN
+        OPEN(8,FILE='dcsMott.dat')
+        CALL MOTTSC(IELEC,IZ,EV,8)
+        CLOSE(8)
+      ENDIF
+C
+ 400  CONTINUE
       READ(5,'(A6,1X,A12)',END=9999) KWORD,BUFFER
       IF(KWORD.EQ.'EV    ') GO TO 300
+      GO TO 400
 C
  9999 CONTINUE
       CLOSE(25)
