@@ -1,7 +1,7 @@
 {
   "upload_type": "software",
   "title": "Electron Scattering: A complete PWA of ELSEPA software with GUI",
-  "description": "Electron Scattering Simulator: an installable Progressive Web App that runs the official ELSEPA Fortran programs (ELSCATA and ELSCATM; F. Salvat, A. Jablonski and C. J. Powell) compiled to WebAssembly, for Dirac partial-wave calculations of elastic electron and positron scattering by atoms, positive ions and molecules. It adds a graphical workbench, energy sweeps, run comparison and experimental-data overlay, and is verified against native ELSEPA by automated parity tests. ELSEPA itself remains under its authors' license.",
+  "description": "Electron Scattering Simulator: an installable Progressive Web App that runs the official ELSEPA 2021 Fortran programs (ELSCATA and ELSCATM, with the RADIAL package; F. Salvat, A. Jablonski and C. J. Powell, Comput. Phys. Commun. 261 (2021) 107704) compiled to WebAssembly, for Dirac partial-wave calculations of elastic electron and positron scattering by atoms, positive ions and molecules. It adds a graphical workbench, user-defined energy grids and electron densities, run comparison and experimental-data overlay, and is verified against native ELSEPA by automated parity tests. The application code is released under the MIT License. The bundled ELSEPA 2021 source code and atomic data tables (folders fortran/ and data/, and the WebAssembly build in public/elsepa/) are the work of Salvat, Jablonski and Powell and are licensed under CC BY-NC 3.0 (non-commercial use, with attribution); see fortran/ELSEPA-LICENSE.txt.",
   "creators": [
     {
       "name": "Prince, Golam Kuadir Khan",
@@ -38,6 +38,17 @@
       "identifier": "10.1016/j.cpc.2020.107704",
       "relation": "references",
       "scheme": "doi"
+    },
+    {
+      "identifier": "10.17632/w4hm5vymym.1",
+      "relation": "requires",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.1016/j.cpc.2019.02.011",
+      "relation": "references",
+      "scheme": "doi"
     }
-  ]
+  ],
+  "notes": "Version 2.0.0 replaces the earlier (2005) version of ELSEPA with the 2021 version, at the request of the ELSEPA authors. ELSEPA 2021 source: https://doi.org/10.17632/w4hm5vymym.1"
 }
