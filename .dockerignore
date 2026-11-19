@@ -1,0 +1,9 @@
+.git
+.github
+node_modules
+dist
+native
+wasm/build
+*.log
+.env*
+!.env.example

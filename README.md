@@ -3,13 +3,18 @@
 
 # Electron Scattering Simulator (ELSEPA Physics Workbench)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/The-Studio-of-Sadiq/Electron-Scattering/actions/workflows/ci.yml/badge.svg)](https://github.com/The-Studio-of-Sadiq/Electron-Scattering/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/The-Studio-of-Sadiq/Electron-Scattering)](https://github.com/The-Studio-of-Sadiq/Electron-Scattering/releases/latest)
+[![License: MIT (app) / CC BY-NC 3.0 (ELSEPA)](https://img.shields.io/badge/License-MIT%20%2F%20ELSEPA%20CC%20BY--NC%203.0-blue.svg)](LICENSE)
+[![Patreon](https://img.shields.io/badge/Support-Patreon-f96854.svg)](https://www.patreon.com/TheStudioofSadiq)
 [![Node.js](https://img.shields.io/badge/Node.js-%5E20.19.0%20%7C%7C%20%3E%3D22.12.0-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-purple.svg)](https://web.dev/progressive-web-apps/)
 
-A browser-based graphical workbench (v2.0.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official, unmodified ELSEPA 2021 Fortran 90 programs (package "elsepa-2020") **ELSCATA** (atoms) and **ELSCATM** (molecules) are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
+A browser-based graphical workbench (v2.0.0) for **ELSEPA** (Elastic Scattering of Electrons and Positrons by Atoms), the Dirac partial-wave code of Salvat, Jablonski and Powell. The official ELSEPA 2021 Fortran 90 programs (package "elsepa-2020") **ELSCATA** (atoms) and **ELSCATM** (molecules), whose source files are kept unmodified and extended only by a small documented build-time patch, are compiled to **WebAssembly** and run directly in the browser, so the app works on any static host and offline as an installable PWA. An optional Node/Express server can run the same Fortran natively with `gfortran`.
+
+**Website:** <https://the-studio-of-sadiq.github.io/Electron-Scattering/> · **Live app:** <https://electron-scattering.onrender.com/> · **Docs:** [docs/Documentation.md](docs/Documentation.md) · **Changelog:** [CHANGELOG.md](CHANGELOG.md) · **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
 
@@ -245,7 +250,7 @@ docker run -p 3000:3000 elsepa-simulator
 
 ## 🧪 Validation / Testing
 
-`wasm/parity.test.ts` runs 20 cases (H, Cu, Au, Hg and H₂O; electrons and positrons; 100 eV–100 keV; Furness–McCarthy exchange, Buckingham and LDA polarization, LDA absorption; positive ions, the muffin-tin model, the Helm nucleus and the TFM, TFD and DHFS densities; input decks built by the app plus the official CPC `elscata.in` and `h2o.in` examples). It compares every number in every `dcs_*.dat` file produced by the WebAssembly build, native `gfortran` ELSEPA, and (for 13 of the cases) the reference tables in `validations/` (relative tolerance $10^{-5}$; Sherman function absolute tolerance $10^{-9}$).
+`wasm/parity.test.ts` runs 21 cases (H, Cu, Au, Hg and H₂O; electrons and positrons; 100 eV–100 keV; Furness–McCarthy exchange, Buckingham and LDA polarization, LDA absorption; positive ions, the muffin-tin model, the Helm nucleus and the TFM, TFD and DHFS densities; input decks built by the app plus the official CPC `elscata.in` and `h2o.in` examples). It compares every number in every `dcs_*.dat` file produced by the WebAssembly build, native `gfortran` ELSEPA, and (for 13 of the cases) the reference tables in `validations/` (relative tolerance $10^{-5}$; Sherman function absolute tolerance $10^{-9}$).
 
 `wasm/outputs.test.ts` checks that the app reads every quantity ELSEPA computes (absorption cross section, complex phase shifts, $T$ and $U$ consistent with ELSEPA's Sherman function, ELSEPA's warnings) and that every model option in the interface reaches ELSEPA. `wasm/benchmark.ts` times the WebAssembly build against native `gfortran` ELSEPA on the same inputs; CI writes the table to the run summary.
 
@@ -304,9 +309,9 @@ The response is a `SimulationResult` (DCS, Sherman function, amplitudes, cross s
 
 ## 📜 License
 
-The code written for this project is open-source under the **MIT License** (see `LICENSE` and `Licence.txt`).
+The code written for this project is open-source under the **MIT License** (see `LICENSE`).
 
-**ELSEPA is not covered by the MIT License.** The ELSEPA Fortran source in `fortran/` and its atomic data tables in `data/` are the work of F. Salvat, A. Jablonski and C. J. Powell ([Comput. Phys. Commun. 261 (2021) 107704](https://doi.org/10.1016/j.cpc.2020.107704); RADIAL package: [Comput. Phys. Commun. 240 (2019) 165](https://doi.org/10.1016/j.cpc.2019.02.011)) and are licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License (CC BY-NC 3.0). See `fortran/ELSEPA-LICENSE.txt` and `Licence.txt` for details. The earlier (2005) version of ELSEPA is no longer distributed at its authors' request.
+**ELSEPA is not covered by the MIT License.** The ELSEPA Fortran source in `fortran/` and its atomic data tables in `data/` are the work of F. Salvat, A. Jablonski and C. J. Powell ([Comput. Phys. Commun. 261 (2021) 107704](https://doi.org/10.1016/j.cpc.2020.107704); RADIAL package: [Comput. Phys. Commun. 240 (2019) 165](https://doi.org/10.1016/j.cpc.2019.02.011)) and are licensed under the Creative Commons Attribution-NonCommercial 3.0 Unported License (CC BY-NC 3.0). See `fortran/ELSEPA-LICENSE.txt` and `LICENSE` for details. The earlier (2005) version of ELSEPA is no longer distributed at its authors' request.
 
 ---
 

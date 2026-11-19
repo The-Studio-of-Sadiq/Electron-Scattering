@@ -1,13 +1,15 @@
-const CACHE_NAME = 'elsepa-pwa-v5';
+const CACHE_NAME = 'elsepa-pwa-v6';
+// Paths are relative to this worker's location, so the same file works at the
+// site root (Render, Docker) and under /<repo>/ on GitHub Pages.
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
+  './',
+  './index.html',
+  './manifest.json',
+  './favicon.svg',
   // Official ELSEPA Fortran compiled to WebAssembly + atomic data tables (offline simulations)
-  '/elsepa/elsepa.js',
-  '/elsepa/elsepa.wasm',
-  '/elsepa/elsepa.data'
+  './elsepa/elsepa.js',
+  './elsepa/elsepa.wasm',
+  './elsepa/elsepa.data'
 ];
 
 // Install event - Cache core static assets and discover Vite-built bundles
@@ -16,10 +18,10 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then(async (cache) => {
       await cache.addAll(ASSETS_TO_CACHE);
       try {
-        const htmlRes = await fetch('/index.html');
+        const htmlRes = await fetch('./index.html');
         if (htmlRes && htmlRes.ok) {
           const htmlText = await htmlRes.text();
-          const matches = htmlText.matchAll(/(?:src|href)=["'](\/assets\/[^"']+)["']/g);
+          const matches = htmlText.matchAll(/(?:src|href)=["']((?:\/[^"']*)?\/assets\/[^"']+)["']/g);
           const assets = Array.from(matches, (m) => m[1]);
           if (assets.length > 0) {
             await cache.addAll(assets);
@@ -30,7 +32,7 @@ self.addEventListener('install', (event) => {
             const jsRes = await fetch(mainJs);
             if (jsRes && jsRes.ok) {
               const jsText = await jsRes.text();
-              const workerMatch = jsText.match(/["'](\/assets\/[^"']*worker[^"']*\.js)["']/);
+              const workerMatch = jsText.match(/["']((?:\/[^"']*)?\/assets\/[^"']*worker[^"']*\.js)["']/);
               if (workerMatch && workerMatch[1]) {
                 await cache.add(workerMatch[1]);
               }
@@ -67,7 +69,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // Skip handling API requests (e.g. /api/simulate-fortran) so live backend calls hit the express server
-  if (url.pathname.startsWith('/api/')) return;
+  if (url.pathname.includes('/api/')) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
@@ -98,7 +100,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Fallback for document navigation when offline
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html').then((r) => r || caches.match('/'));
+          return caches.match('./index.html').then((r) => r || caches.match('./'));
         }
       });
     })

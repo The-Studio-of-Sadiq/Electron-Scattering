@@ -25,3 +25,38 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+--------------------------------------------------------------------------------
+Third-party component: ELSEPA
+--------------------------------------------------------------------------------
+
+The MIT License above covers the code written for this project (the web
+application, the optional server, the WebAssembly build scripts, the tests and
+the documentation). It does NOT cover ELSEPA.
+
+ELSEPA 2021 (package "elsepa-2020": programs ELSCATA and ELSCATM, subroutine
+package RADIAL, their subroutines and atomic data tables) is the work of
+F. Salvat, A. Jablonski and C. J. Powell:
+
+  F. Salvat, A. Jablonski, C. J. Powell, Comput. Phys. Commun. 261 (2021) 107704,
+  https://doi.org/10.1016/j.cpc.2020.107704
+
+  (Original method description: Comput. Phys. Commun. 165 (2005) 157-190,
+  https://doi.org/10.1016/j.cpc.2004.09.006)
+
+  RADIAL subroutine package:
+  F. Salvat and J. M. Fernandez-Varea, Comput. Phys. Commun. 240 (2019) 165-177,
+  https://doi.org/10.1016/j.cpc.2019.02.011
+
+This repository contains the 2021 (Fortran 90) version of ELSEPA in fortran/,
+its atomic data tables in data/, and a WebAssembly build of both in
+public/elsepa/.
+
+These files are licensed under the Creative Commons Attribution-NonCommercial
+3.0 Unported License (CC BY-NC 3.0). See fortran/ELSEPA-LICENSE.txt for full
+attribution and licence details. In accordance with the licence, use of ELSEPA
+is permitted for non-commercial purposes with appropriate attribution to the
+authors.
+
+Notice: At the request of the ELSEPA authors, the earlier (2005) version of
+ELSEPA is no longer distributed with this software.

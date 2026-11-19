@@ -203,6 +203,8 @@ ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa2020.f` to re
 * **Sherman Function $S(\theta)$**:
   $$S(\theta) = i \frac{f(\theta)g^*(\theta) - f^*(\theta)g(\theta)}{|f(\theta)|^2 + |g(\theta)|^2} = -\frac{2 \,\text{Im}[f(\theta)g^*(\theta)]}{\frac{d\sigma}{d\Omega}(\theta)}$$
 
+<img width="458" height="61" alt="image" src="https://github.com/user-attachments/assets/f037835a-1926-4c13-81d1-9bdc5a20b1c7" />
+
 * **Total Elastic Cross Section $\sigma_{\text{el}}$**:
   $$\sigma_{\text{el}} = 2\pi \int_0^\pi \frac{d\sigma}{d\Omega}(\theta) \sin\theta \, d\theta$$
 
@@ -214,6 +216,8 @@ ELSEPA keyword `MELEC 5` instructs the EFIELD subroutine in `elsepa2020.f` to re
 For a molecule of $N$ atoms at positions $\mathbf{r}_i$, ELSCATM adds the atomic amplitudes coherently and averages over molecular orientations:
 
 $$\left(\frac{d\sigma}{d\Omega}\right)_{\text{mol}}(\theta) = \sum_{i=1}^N \left(\frac{d\sigma}{d\Omega}\right)_i + \sum_{i \neq j}^N \left[ f_i(\theta)f_j^*(\theta) + g_i(\theta)g_j^*(\theta) \right] \frac{\sin(q R_{ij})}{q R_{ij}}$$
+
+<img width="622" height="91" alt="image" src="https://github.com/user-attachments/assets/ba3b6ea9-ddf5-42c2-b613-2fa65355e6eb" />
 
 where $q = 2k \sin(\theta/2)$ is the momentum transfer and $R_{ij} = |\mathbf{r}_i - \mathbf{r}_j|$.
 
@@ -435,15 +439,18 @@ npx tsx wasm/server.test.ts
 
 ```
 ├── .env.example                       # Environment variable template
-├── .github/workflows/elsepa-parity.yml # CI: WASM / native / reference parity + server test
-├── Documentation.md                    # This document
+├── .github/                           # CI/CD workflows, issue/PR templates, FUNDING.yml, dependabot
+├── CHANGELOG.md                        # Release history
+├── CITATION.cff                        # How to cite this software
+├── CONTRIBUTING.md                     # Contribution guide
+├── SECURITY.md                         # Security policy
+├── docs/Documentation.md               # This document
 ├── Dockerfile                          # Multi-stage Docker build (node:20-slim + gfortran)
-├── LICENSE                             # MIT license
+├── LICENSE                             # MIT licence (app code) + ELSEPA CC BY-NC 3.0 notice
 ├── README.md                           # Quickstart README
 ├── render.yaml                         # Render.com blueprint
 ├── index.html                          # Entry HTML with PWA tags & SW registration
-├── metadata.json                       # Applet metadata
-├── package.json                        # Dependencies and scripts (version 1.3.0)
+├── package.json                        # Dependencies and scripts (version 2.0.0)
 ├── server.ts                           # Optional Express server & API routes
 ├── vite.config.ts                      # Vite build configuration
 │

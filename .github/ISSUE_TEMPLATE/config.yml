@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Technical and Physics Documentation
+    url: https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/docs/Documentation.md
+    about: Read comprehensive documentation on the Dirac scattering physics, software architecture, REST API, and validation.
+  - name: Security Policy
+    url: https://github.com/The-Studio-of-Sadiq/Electron-Scattering/security/policy
+    about: Report security vulnerabilities responsibly through GitHub Private Vulnerability Reporting.
