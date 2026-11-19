@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electron Scattering Simulator | Relativistic Dirac Elastic Scattering in the Browser</title>
+  
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Electron Scattering Simulator | Relativistic Dirac Elastic Scattering in the Browser" />
+  <meta name="description" content="Official website for the Electron Scattering Simulator. Dirac partial-wave elastic scattering of electrons and positrons by atoms, ions, and molecules using official ELSEPA 2021 Fortran compiled to WebAssembly. Installable offline PWA developed by HSTU Research Society." />
+  <meta name="keywords" content="Electron Scattering, ELSEPA, Dirac Equation, Elastic Scattering, WebAssembly, PWA, ELSCATA, ELSCATM, Salvat, Jablonski, Powell, HSTU Research Society, Differential Cross Section, Positron Scattering" />
+  <meta name="author" content="Golam Kuadir Khan Prince, Professor Dr. Md. Mahabub Hossain, Pankaj Bhowmik, HSTU Research Society" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://thestudioofsadiq.tech/Electron-Scattering/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://thestudioofsadiq.tech/Electron-Scattering/" />
+  <meta property="og:title" content="Electron Scattering Simulator | ELSEPA Dirac Physics Workbench" />
+  <meta property="og:description" content="Dirac partial-wave elastic scattering of electrons and positrons by atoms, ions and molecules, running official ELSEPA 2021 Fortran compiled to WebAssembly right in the browser. Offline-capable PWA." />
+  <meta property="og:image" content="https://thestudioofsadiq.tech/Electron-Scattering/assets/og-image.svg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="Electron Scattering Simulator" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://thestudioofsadiq.tech/Electron-Scattering/" />
+  <meta name="twitter:title" content="Electron Scattering Simulator | ELSEPA Dirac Physics Workbench" />
+  <meta name="twitter:description" content="Dirac partial-wave elastic scattering of electrons and positrons by atoms, ions and molecules, running official ELSEPA 2021 Fortran compiled to WebAssembly right in the browser." />
+  <meta name="twitter:image" content="https://thestudioofsadiq.tech/Electron-Scattering/assets/og-image.svg" />
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+
+  <!-- Google Fonts Preconnect & Stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Schema.org JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Electron Scattering Simulator",
+    "operatingSystem": "All (Modern Web Browsers, PWA)",
+    "applicationCategory": "ScientificSoftware, EducationalApplication",
+    "url": "https://thestudioofsadiq.tech/Electron-Scattering/",
+    "version": "2.0.0",
+    "license": "https://opensource.org/licenses/MIT",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "High-precision Dirac partial-wave relativistic electron and positron elastic scattering simulator running official ELSEPA 2021 Fortran compiled to WebAssembly directly in the browser.",
+    "author": [
+      {
+        "@type": "Person",
+        "name": "Golam Kuadir Khan Prince",
+        "jobTitle": "Software Architecture & Development",
+        "affiliation": "Department of Electrical and Electronic Engineering, Hajee Mohammad Danesh Science and Technology University (HSTU)"
+      },
+      {
+        "@type": "Person",
+        "name": "Professor Dr. Md. Mahabub Hossain",
+        "jobTitle": "Principal Research & Physics Direction",
+        "affiliation": "Department of Electronics and Communication Engineering, Hajee Mohammad Danesh Science and Technology University (HSTU)"
+      },
+      {
+        "@type": "Person",
+        "name": "Pankaj Bhowmik",
+        "jobTitle": "Co-Researcher",
+        "affiliation": "Department of Computer Science and Engineering, Hajee Mohammad Danesh Science and Technology University (HSTU)"
+      },
+      {
+        "@type": "Organization",
+        "name": "HSTU Research Society",
+        "url": "https://thestudioofsadiq.tech/Electron-Scattering/"
+      }
+    ]
+  }
+  </script>
+  <!-- KaTeX renders the $...$ math in the text -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false}],ignoredTags:['script','noscript','style','textarea','pre','code']});"></script>
+</head>
+<body>
+  <!-- Skip to Main Content Link for Accessibility -->
+  <a href="#main" class="skip-link">Skip to main content</a>
+
+  <!-- Navigation Header -->
+  <header class="site-header" id="top">
+    <div class="nav-container">
+      <a href="#top" class="brand-link" aria-label="Electron Scattering Simulator Home">
+        <img src="assets/favicon.svg" alt="Electron Scattering Logo" class="brand-logo" width="38" height="38" />
+        <div class="brand-text">
+          <span class="brand-title">Electron Scattering</span>
+          <span class="brand-badge">v2.0.0</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Menu -->
+      <nav class="nav-links" aria-label="Main Navigation">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#validation" class="nav-link">Validation</a>
+        <a href="#get-started" class="nav-link">Get Started</a>
+        <a href="#citation" class="nav-link">Cite</a>
+        <a href="#team" class="nav-link">Team</a>
+        <a href="#licence" class="nav-link">Licence</a>
+      </nav>
+
+      <!-- Action Controls -->
+      <div class="nav-actions">
+        <button type="button" class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark and light theme" title="Toggle theme">
+          <svg class="theme-icon icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="theme-icon icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <a href="https://electron-scattering.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-launch-nav">
+          <span>Launch App</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button type="button" class="mobile-menu-toggle" id="mobile-menu-btn" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open navigation menu">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="mobile-nav-drawer" id="mobile-nav" aria-hidden="true">
+      <nav class="mobile-nav-links" aria-label="Mobile Navigation">
+        <a href="#features" class="mobile-nav-link">Features</a>
+        <a href="#how-it-works" class="mobile-nav-link">How It Works</a>
+        <a href="#validation" class="mobile-nav-link">Validation</a>
+        <a href="#get-started" class="mobile-nav-link">Get Started</a>
+        <a href="#citation" class="mobile-nav-link">Cite</a>
+        <a href="#team" class="mobile-nav-link">Team</a>
+        <a href="#licence" class="mobile-nav-link">Licence</a>
+        <a href="https://electron-scattering.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-mobile-launch">Launch App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="container hero-container">
+        <div class="hero-badge-group">
+          <span class="badge badge-indigo">v2.0.0 Release</span>
+          <span class="badge badge-emerald">ELSEPA 2021 Engine</span>
+          <span class="badge badge-purple">WebAssembly PWA</span>
+        </div>
+
+        <h1 class="hero-title">Dirac Partial-Wave Elastic Scattering in Your Browser</h1>
+
+        <p class="hero-description">
+          Dirac partial-wave elastic scattering of electrons and positrons by atoms, ions and molecules, running the official ELSEPA 2021 Fortran compiled to WebAssembly, right in the browser, offline-capable PWA.
+        </p>
+
+        <div class="hero-cta-group">
+          <a href="https://electron-scattering.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-large">
+            <span>Launch the app</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14"></path>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+          <a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-large">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+            </svg>
+            <span>View on GitHub</span>
+          </a>
+          <a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/docs/Documentation.md" target="_blank" rel="noopener noreferrer" class="btn btn-tertiary btn-large">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            <span>Documentation</span>
+          </a>
+        </div>
+
+        <!-- Hosted App Notice -->
+        <div class="hero-callout">
+          <svg class="callout-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span class="callout-text">
+            <strong>Hosted app notice:</strong> The live instance on Render free tier spins down on idle and may take ~30 s to wake up on the first request. The client-side WebAssembly engine operates completely in your browser.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section features-section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Capabilities</p>
+          <h2 class="section-title">Comprehensive Relativistic Physics Suite</h2>
+          <p class="section-subtitle">
+            A state-of-the-art computational platform mapping every parameter of the official ELSEPA 2021 Fortran code to modern interactive controls.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <!-- Card 1: Atomic Workbench -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-indigo">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M12 2a10 10 0 0 0-6.88 17.23L4 21l1.77-1.12A10 10 0 1 0 12 2z"></path>
+                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(30 12 12)"></ellipse>
+                <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-30 12 12)"></ellipse>
+              </svg>
+            </div>
+            <h3 class="feature-title">Atomic Workbench (ELSCATA)</h3>
+            <p class="feature-description">
+              Simulate elements $Z = 1$ to $103$ selected from an interactive periodic table. Supports electron ($e^-$) and positron ($e^+$) projectiles at energies $E \ge 10\text{ eV}$. Configure nuclear charge models (point, uniform sphere, Fermi, Helm) with atomic weight (<code class="inline-code">ATWGHT</code>), nuclear radius (<code class="inline-code">NUCRAD</code>), and skin (<code class="inline-code">NUCSKN</code>) overrides. Full exchange, polarization, and absorption potential controls.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">Z = 1–103</span>
+              <span class="tag">Dirac–Fock</span>
+              <span class="tag">Muffin-tin</span>
+              <span class="tag">Polarization</span>
+            </div>
+          </article>
+
+          <!-- Card 2: Electron Density Editor -->
+          <article class="feature-card feature-card-highlight">
+            <div class="feature-badge">New in v2.0</div>
+            <div class="feature-icon-wrapper icon-emerald">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 3v18h18"></path>
+                <path d="m19 9-5 5-4-4-3 3"></path>
+              </svg>
+            </div>
+            <h3 class="feature-title">Radial Electron Density Editor</h3>
+            <p class="feature-description">
+              A visual interactive editor for radial electron densities $\rho(r)$. Load ELSEPA Dirac–Fock, DHFS, TFD, or TFM densities; drag curve control points, normalize to bound electron count $Z - q$, ionize or add electrons (including negative ions $q &lt; 0$), scale radially, truncate, smooth, or mix. Inspect automated metrics ($N$, $\langle r \rangle$, $R_{50}$, $R_{90}$) and export directly to ELSEPA <code class="inline-code">.den</code> format or inject into simulation.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">Drag-Edit</span>
+              <span class="tag">Negative Ions</span>
+              <span class="tag">Normalization</span>
+              <span class="tag">.den Export</span>
+            </div>
+          </article>
+
+          <!-- Card 3: Molecular Mode -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="6" cy="6" r="3"></circle>
+                <circle cx="18" cy="6" r="3"></circle>
+                <circle cx="12" cy="18" r="3"></circle>
+                <line x1="8.5" y1="7.5" x2="10.5" y2="15.5"></line>
+                <line x1="15.5" y1="7.5" x2="13.5" y2="15.5"></line>
+                <line x1="9" y1="6" x2="15" y2="6"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Molecular Mode (ELSCATM)</h3>
+            <p class="feature-description">
+              Execute ELSEPA's molecular program using the independent-atom model (IAM) with coherent addition of atomic scattering amplitudes and orientation averaging. Built-in presets for $\text{H}_2\text{O}$, $\text{CO}_2$, $\text{CH}_4$, $\text{N}_2$, $\text{C}_6\text{H}_6$, and $\text{UF}_6$. Freely add, remove, and edit 3D atomic coordinates in Å. Computes coherent and incoherent DCS and cross sections.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">ELSCATM</span>
+              <span class="tag">3D Cartesian</span>
+              <span class="tag">Coherent DCS</span>
+              <span class="tag">IAM</span>
+            </div>
+          </article>
+
+          <!-- Card 4: Energy Sweeps & Custom Grids -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-blue">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Energy Sweeps and Custom Grids</h3>
+            <p class="feature-description">
+              Compute total elastic ($\sigma_{\text{el}}$), first transport ($\sigma_1$), and second transport ($\sigma_2$) cross sections across energy spectrums plotted on interactive log–log axes. Choose between standard 16-point grids (10 eV to 1 MeV), logarithmic ranges ($1 \le N \le 100$ points, $10\text{ eV} \le E \le 10^9\text{ eV}$), or arbitrary custom lists with scientific notation (<code class="inline-code">1e3</code>, <code class="inline-code">2.5E4</code>).
+            </p>
+            <div class="feature-tags">
+              <span class="tag">Log–Log Axes</span>
+              <span class="tag">Transport $\sigma_1, \sigma_2$</span>
+              <span class="tag">Custom Energy Grids</span>
+            </div>
+          </article>
+
+          <!-- Card 5: User-Supplied Electron Densities -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-amber">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">User-Supplied Densities (MELEC 5)</h3>
+            <p class="feature-description">
+              Upload custom radial electron density tables in <code class="inline-code">.den</code>, <code class="inline-code">.dat</code>, <code class="inline-code">.txt</code>, or <code class="inline-code">.csv</code> format ($5 \le N \le 999$ points). Automatic trapezoidal normalization verification ensures $4\pi \int_0^\infty \rho(r)r^2 dr = Z - q$ with a 1% tolerance warning. Executed inside isolated temporary workspaces on the server and fresh in-memory filesystems in WebAssembly.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">MELEC 5</span>
+              <span class="tag">Charge Check</span>
+              <span class="tag">Isolated FS</span>
+            </div>
+          </article>
+
+          <!-- Card 6: Custom Angular Grids & Integration -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-indigo">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="2" x2="12" y2="12"></line>
+                <line x1="12" y1="12" x2="19.07" y2="4.93"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Custom Angular Grids and Integration</h3>
+            <p class="feature-description">
+              Resample calculated differential cross sections, spin-rotation functions $T(\theta)$ and $U(\theta)$, and the Sherman function $S(\theta)$ onto custom user-defined angular steps. Calculate numerical cross-section integrals over customized angular sub-ranges alongside full $0^\circ$ to $180^\circ$ integration.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">Resampling</span>
+              <span class="tag">Partial Integrals</span>
+              <span class="tag">Sherman S($\theta$)</span>
+            </div>
+          </article>
+
+          <!-- Card 7: Saved Runs & Comparison -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-purple">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Saved Runs and Comparative Analysis</h3>
+            <p class="feature-description">
+              Save complete simulation parameters and calculated results to browser <code class="inline-code">localStorage</code>. Overlay up to 6 saved runs simultaneously on unified charts, or inspect fine-grained percentage differences between any 2 calculations. Export runs as JSON, clone saved parameters straight back to the workbench, and run batch element sweeps.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">6-Run Overlay</span>
+              <span class="tag">% Difference</span>
+              <span class="tag">Batch Series</span>
+              <span class="tag">JSON Export</span>
+            </div>
+          </article>
+
+          <!-- Card 8: Experimental Dataset Overlay -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-blue">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Experimental Dataset Overlay</h3>
+            <p class="feature-description">
+              Upload laboratory measurement files in <code class="inline-code">.dat</code>, <code class="inline-code">.csv</code>, or <code class="inline-code">.txt</code> format (up to 5 MB). The system parses angle and differential cross section pairs and renders them as discrete scatter points directly over theoretical ELSEPA curves for immediate visual validation.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">5 MB Upload</span>
+              <span class="tag">Data Overlay</span>
+              <span class="tag">Literature Benchmarks</span>
+            </div>
+          </article>
+
+          <!-- Card 9: Offline PWA & Theming -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-emerald">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Offline PWA and Dual Theme</h3>
+            <p class="feature-description">
+              Engineered as an installable Progressive Web App with service-worker precaching of all UI assets, WebAssembly binaries, and 206 atomic database tables. Functions entirely offline on laptops, tablets, and mobile devices. Full scientific dark and light themes with system preference detection and persistence.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">100% Offline</span>
+              <span class="tag">PWA Ready</span>
+              <span class="tag">Dark / Light UI</span>
+              <span class="tag">Zero Setup</span>
+            </div>
+          </article>
+
+          <!-- Card 10: Dual Execution Architecture -->
+          <article class="feature-card">
+            <div class="feature-icon-wrapper icon-amber">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Dual Architecture: WebAssembly and Server</h3>
+            <p class="feature-description">
+              Zero-install in-browser WebAssembly execution in dedicated module Web Workers is the primary engine. An optional Node.js/Express server is available for researchers desiring native <code class="inline-code">gfortran</code> compilation. Both engines run the same Fortran 90 sources, and automated CI parity tests check that their results agree to within a relative tolerance of 10<sup>&minus;5</sup>.
+            </p>
+            <div class="feature-tags">
+              <span class="tag">WASM Worker</span>
+              <span class="tag">Native gfortran</span>
+              <span class="tag">Parity-Tested</span>
+              <span class="tag">Express Server</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section how-it-works-section" id="how-it-works">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Engineering</p>
+          <h2 class="section-title">How It Works: Compilation & Execution Architecture</h2>
+          <p class="section-subtitle">
+            From the authors' pristine 2021 Fortran 90 source code to high-speed WebAssembly executing inside isolated browser Web Workers.
+          </p>
+        </div>
+
+        <!-- Pipeline Flow -->
+        <div class="pipeline-card">
+          <h3 class="pipeline-title">Compilation & Runtime Pipeline</h3>
+          <div class="pipeline-steps">
+            <div class="pipeline-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <span class="step-name">Official ELSEPA 2021</span>
+                <span class="step-desc">Official Fortran 90 package (package elsepa-2020) and RADIAL wave library by Salvat, Jablonski, and Powell. Original author files remain completely unmodified.</span>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <span class="step-name">Build-Time Extensions</span>
+                <span class="step-desc"><code class="inline-code">wasm/patch-elsepa.mjs</code> prepares documented keyword extensions (overriding <code class="inline-code">ATWGHT</code>, <code class="inline-code">NUCRAD</code>, <code class="inline-code">NUCSKN</code>, <code class="inline-code">VPOLB</code>, negative ions) into a staging directory.</span>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <span class="step-name">f90to77 &amp; f2c Translation</span>
+                <span class="step-desc"><code class="inline-code">wasm/f90to77.py</code> and <code class="inline-code">f77fix.py</code> reorder non-executable statements to strict Fortran 77, and netlib <code class="inline-code">f2c</code> translates Fortran routines to C.</span>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <span class="step-name">Emscripten WebAssembly</span>
+                <span class="step-desc">Compiled with <code class="inline-code">emcc -O3</code> into <code class="inline-code">elsepa.wasm</code> (270 KB) and <code class="inline-code">elsepa.data</code> (4 MB containing 206 atomic Dirac–Fock density and screening tables).</span>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <span class="step-name">Browser Web Worker</span>
+                <span class="step-desc">Executes in a dedicated module Web Worker with a clean virtual filesystem per run. Client <code class="inline-code">localApiFallback.ts</code> transparently intercepts <code class="inline-code">/api/*</code> requests without requiring any backend.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architecture Figures Gallery -->
+        <div class="figures-header">
+          <h3 class="figures-section-title">System Architecture Figures</h3>
+          <p class="figures-subtitle">Click any architectural diagram to inspect it full size.</p>
+        </div>
+
+        <div class="figures-grid">
+          <!-- Figure 1 -->
+          <figure class="figure-card" data-figure-src="figures/fig1_system_context.svg" data-figure-title="Figure 1: System Context" data-figure-desc="System context and interaction model showing the user workflow, React PWA frontend, dual execution pathways (in-browser WebAssembly Web Worker vs. optional native gfortran server), offline storage, and GitHub Actions CI.">
+            <div class="figure-image-container">
+              <img src="figures/fig1_system_context.svg" alt="Diagram of system context showing researcher workflow, browser PWA, optional server, and CI" class="figure-image" loading="lazy" />
+              <button type="button" class="figure-zoom-btn" aria-label="Expand Figure 1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
+            </div>
+            <figcaption class="figure-caption">
+              <strong class="figure-label">Figure 1: System Context</strong>
+              <span>User interaction model, React PWA client, dual execution pathways (WebAssembly in-browser Web Worker vs. optional native gfortran server), offline storage, and GitHub Actions CI.</span>
+            </figcaption>
+          </figure>
+
+          <!-- Figure 2 -->
+          <figure class="figure-card" data-figure-src="figures/fig2_physics_engine.svg" data-figure-title="Figure 2: Physics Engine Pipeline" data-figure-desc="Physics engine pipeline from atomic and molecular interface settings to ELSCATA/ELSCATM Fortran input decks, potential calculation, radial Dirac wave equation solving, scattering amplitudes f and g, and physical observables.">
+            <div class="figure-image-container">
+              <img src="figures/fig2_physics_engine.svg" alt="Diagram showing physics engine from interface settings to ELSEPA results" class="figure-image" loading="lazy" />
+              <button type="button" class="figure-zoom-btn" aria-label="Expand Figure 2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
+            </div>
+            <figcaption class="figure-caption">
+              <strong class="figure-label">Figure 2: Physics Engine Pipeline</strong>
+              <span>From UI parameters to ELSCATA/ELSCATM input decks, central potentials, Dirac partial-wave equations, phase shifts, amplitudes $f(\theta)$ and $g(\theta)$, and physical cross sections.</span>
+            </figcaption>
+          </figure>
+
+          <!-- Figure 3 -->
+          <figure class="figure-card" data-figure-src="figures/fig3_data_flow.svg" data-figure-title="Figure 3: Data Flow of a Simulation Request" data-figure-desc="Simulation request data flow through 7 sequential stages: parameter configuration, API request, transparent routing, execution isolation, output file generation, JSON parsing, and dashboard visualization.">
+            <div class="figure-image-container">
+              <img src="figures/fig3_data_flow.svg" alt="Diagram of simulation request data flow through the router, worker, parser, and UI" class="figure-image" loading="lazy" />
+              <button type="button" class="figure-zoom-btn" aria-label="Expand Figure 3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
+            </div>
+            <figcaption class="figure-caption">
+              <strong class="figure-label">Figure 3: Simulation Request Data Flow</strong>
+              <span>Seven-stage request execution lifecycle: parameter configuration, transparent routing, isolated execution, output file parsing, and error transparency without silent fallback.</span>
+            </figcaption>
+          </figure>
+
+          <!-- Figure 4 -->
+          <figure class="figure-card" data-figure-src="figures/fig4_tech_stack.svg" data-figure-title="Figure 4: Technology Stack & Deployment" data-figure-desc="Complete technology stack and deployment tiers: React 19, TypeScript 5.8, Tailwind 4, Recharts 3, KaTeX, WebAssembly compilation via f2c and Emscripten, optional Express/gfortran server, Docker containerization, and automated CI parity tests.">
+            <div class="figure-image-container">
+              <img src="figures/fig4_tech_stack.svg" alt="Diagram of technology stack and deployment layers" class="figure-image" loading="lazy" />
+              <button type="button" class="figure-zoom-btn" aria-label="Expand Figure 4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
+            </div>
+            <figcaption class="figure-caption">
+              <strong class="figure-label">Figure 4: Technology Stack &amp; Deployment</strong>
+              <span>Multi-tier architecture covering modern client frontend (React 19 / TypeScript 5.8), WebAssembly toolchain, Docker containerization, and continuous quality validation.</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Validation Section -->
+    <section class="section validation-section" id="validation">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Quality Assurance</p>
+          <h2 class="section-title">Automated CI Parity Validation</h2>
+          <p class="section-subtitle">
+            Every code change is verified by an automated GitHub Actions CI pipeline comparing the WebAssembly build against native gfortran ELSEPA and published reference tables.
+          </p>
+        </div>
+
+        <div class="validation-stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">21</div>
+            <div class="stat-label">Parity Benchmark Cases</div>
+            <div class="stat-desc">Covering H, Cu, Au, Hg, and H₂O across electrons and positrons from 100 eV to 100 keV.</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">10<sup>-5</sup></div>
+            <div class="stat-label">Relative Tolerance</div>
+            <div class="stat-desc">Matches the exact 6 significant digits of precision printed by ELSEPA in all DCS tables.</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">10<sup>-9</sup></div>
+            <div class="stat-label">Sherman Absolute Tolerance</div>
+            <div class="stat-desc">Rigorous evaluation of the spin polarization Sherman function $S(\theta)$ near zero crossings.</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">0</div>
+            <div class="stat-label">Silent Fallbacks</div>
+            <div class="stat-desc">If ELSEPA cannot run, real errors are surfaced immediately. Quantitative results are always authentic.</div>
+          </div>
+        </div>
+
+        <div class="validation-details-card">
+          <h3 class="validation-details-title">Validation Scope &amp; Reference Comparison</h3>
+          <p class="validation-text">
+            The automated test suite in <code class="inline-code">wasm/parity.test.ts</code> runs under continuous integration (<code class="inline-code">.github/workflows/elsepa-parity.yml</code>). Thirteen benchmark cases compare the WebAssembly output directly against official reference output tables in <code class="inline-code">validations/</code> generated with official ELSEPA 2021, including the authors' official 2021 publication test decks (<code class="inline-code">elscata.in</code> and <code class="inline-code">h2o.in</code>). Eight additional cases test newly added model options (positive ions, muffin-tin models, Helm nuclear distribution, TFM, TFD, DHFS densities, and user-supplied densities using Au <code class="inline-code">z_079.den</code>).
+          </p>
+          <p class="validation-text">
+            Unit test suites (<code class="inline-code">wasm/features.test.ts</code>, <code class="inline-code">density.test.ts</code>, <code class="inline-code">overrides.test.ts</code>) verify grid algorithms, normalization integrals, and parameter overrides, while <code class="inline-code">wasm/browser.test.ts</code> validates browser-only execution and offline service worker operation via headless Chrome DevTools Protocol.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Get Started Section -->
+    <section class="section get-started-section" id="get-started">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Deployment</p>
+          <h2 class="section-title">Get Started in Seconds</h2>
+          <p class="section-subtitle">
+            Choose the execution model that best fits your scientific workflow: immediate in-browser use, local workstation development, or pre-configured Docker containers.
+          </p>
+        </div>
+
+        <div class="get-started-grid">
+          <!-- Card 1: Online PWA -->
+          <div class="card get-started-card">
+            <div class="card-header">
+              <span class="card-step-badge">Method 1</span>
+              <h3 class="card-title">Run in Browser</h3>
+              <p class="card-subtitle">Zero install, runs immediately via WebAssembly on any modern browser.</p>
+            </div>
+            <div class="card-body">
+              <p class="get-started-description">
+                Access the complete ELSEPA 2021 engine directly from your browser. Once loaded, the application installs as a Progressive Web App (PWA) and performs full relativistic calculations completely offline.
+              </p>
+              <div class="card-benefits">
+                <span class="benefit-item">✓ Zero installation required</span>
+                <span class="benefit-item">✓ 100% client-side WebAssembly</span>
+                <span class="benefit-item">✓ Offline PWA operation</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <a href="https://electron-scattering.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block">
+                <span>Launch Web Application</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Card 2: Run Locally -->
+          <div class="card get-started-card">
+            <div class="card-header">
+              <span class="card-step-badge">Method 2</span>
+              <h3 class="card-title">Run Locally with Node</h3>
+              <p class="card-subtitle">Clone the repository and run the local development server.</p>
+            </div>
+            <div class="card-body">
+              <p class="get-started-description">
+                Requires Node.js <code class="inline-code">^20.19.0 || &gt;=22.12.0</code>. If <code class="inline-code">gfortran</code> is found on your PATH, the local server automatically compiles and runs ELSEPA natively; otherwise it runs via WebAssembly.
+              </p>
+              <div class="code-block-wrapper">
+                <div class="code-block-header">
+                  <span class="code-language">bash</span>
+                  <button type="button" class="btn-copy-code" data-copy-target="#code-local" aria-label="Copy local setup commands">
+                    <span class="copy-text">Copy</span>
+                  </button>
+                </div>
+                <pre class="code-pre"><code class="code-content" id="code-local">git clone https://github.com/The-Studio-of-Sadiq/Electron-Scattering.git
+cd Electron-Scattering
+npm ci
+npm run dev</code></pre>
+              </div>
+              <p class="code-note">Then open <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer" class="text-link">http://localhost:3000</a> in your browser.</p>
+            </div>
+          </div>
+
+          <!-- Card 3: Docker -->
+          <div class="card get-started-card">
+            <div class="card-header">
+              <span class="card-step-badge">Method 3</span>
+              <h3 class="card-title">Run with Docker</h3>
+              <p class="card-subtitle">Pre-packaged container with gfortran native compilation built in.</p>
+            </div>
+            <div class="card-body">
+              <p class="get-started-description">
+                Run the multi-stage production container based on <code class="inline-code">node:20-slim</code> with native <code class="inline-code">gfortran</code> pre-compiled executables and static assets bundled.
+              </p>
+              <div class="code-block-wrapper">
+                <div class="code-block-header">
+                  <span class="code-language">bash</span>
+                  <button type="button" class="btn-copy-code" data-copy-target="#code-docker" aria-label="Copy Docker command">
+                    <span class="copy-text">Copy</span>
+                  </button>
+                </div>
+                <pre class="code-pre"><code class="code-content" id="code-docker">docker run -p 3000:3000 ghcr.io/the-studio-of-sadiq/electron-scattering:latest</code></pre>
+              </div>
+              <p class="code-note">Access the running service on port 3000.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cite Section -->
+    <section class="section citation-section" id="citation">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Attribution</p>
+          <h2 class="section-title">Citation and Academic References</h2>
+          <p class="section-subtitle">
+            If you utilize this simulator or its visual workbench in your scientific research or academic coursework, please cite both this software and the underlying ELSEPA engine.
+          </p>
+        </div>
+
+        <div class="citation-layout">
+          <!-- Software Citation Block -->
+          <div class="citation-card">
+            <h3 class="citation-card-title">Software Citation</h3>
+            <p class="citation-text-block">
+              Golam Kuadir Khan Prince, Md. Mahabub Hossain, and Pankaj Bhowmik. <em>Electron Scattering Simulator: a complete PWA of ELSEPA software with GUI</em>. Version 2.0.0 (2026). URL: <a href="https://thestudioofsadiq.tech/Electron-Scattering/" class="text-link">https://thestudioofsadiq.tech/Electron-Scattering/</a>.
+            </p>
+
+            <div class="bibtex-box">
+              <div class="bibtex-header">
+                <span class="bibtex-label">BibTeX Entry</span>
+                <button type="button" class="btn btn-copy-bibtex" id="copy-bibtex-btn" aria-label="Copy BibTeX Citation">
+                  <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span id="copy-bibtex-text">Copy BibTeX</span>
+                </button>
+              </div>
+              <pre class="bibtex-content" id="bibtex-code"><code>@software{prince2026electronscattering,
+  author       = {Prince, Golam Kuadir Khan and Hossain, Md. Mahabub and Bhowmik, Pankaj},
+  title        = {{Electron Scattering Simulator: a complete PWA of ELSEPA software with GUI}},
+  version      = {2.0.0},
+  year         = {2026},
+  url          = {https://thestudioofsadiq.tech/Electron-Scattering/},
+  doi          = {10.5281/zenodo.21716740},
+  publisher    = {Zenodo},
+  howpublished = {\url{https://github.com/The-Studio-of-Sadiq/Electron-Scattering}}
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- ELSEPA Citations Block -->
+          <div class="citation-card">
+            <h3 class="citation-card-title">Core ELSEPA Physics References</h3>
+            <p class="citation-notice">
+              Please also cite the original publications describing the ELSEPA Dirac partial-wave formulation:
+            </p>
+            <ul class="citation-list">
+              <li class="citation-item">
+                <span class="citation-marker">1</span>
+                <div>
+                  <strong>ELSEPA 2021 (New Version Announcement):</strong><br />
+                  F. Salvat, A. Jablonski, C. J. Powell, <em>ELSEPA - Dirac partial-wave calculation of elastic scattering of electrons and positrons by atoms, positive ions and molecules</em>, <strong>Computer Physics Communications</strong> 261 (2021) 107704.<br />
+                  <a href="https://doi.org/10.1016/j.cpc.2020.107704" target="_blank" rel="noopener noreferrer" class="doi-link">doi:10.1016/j.cpc.2020.107704</a>
+                </div>
+              </li>
+              <li class="citation-item">
+                <span class="citation-marker">2</span>
+                <div>
+                  <strong>Original ELSEPA 2005 Method Description:</strong><br />
+                  F. Salvat, A. Jablonski, C. J. Powell, <em>ELSEPA - Dirac partial-wave calculation of elastic scattering of electrons and positrons by atoms, positive ions and molecules</em>, <strong>Computer Physics Communications</strong> 165 (2005) 157–190.<br />
+                  <a href="https://doi.org/10.1016/j.cpc.2004.09.006" target="_blank" rel="noopener noreferrer" class="doi-link">doi:10.1016/j.cpc.2004.09.006</a>
+                </div>
+              </li>
+              <li class="citation-item">
+                <span class="citation-marker">3</span>
+                <div>
+                  <strong>RADIAL Subroutine Library:</strong><br />
+                  F. Salvat, J. M. Fernandez-Varea, <em>RADIAL: A Fortran subroutine package for the solution of the radial Schrödinger and Dirac equations</em>, <strong>Computer Physics Communications</strong> 240 (2019) 165–177.<br />
+                  <a href="https://doi.org/10.1016/j.cpc.2019.02.011" target="_blank" rel="noopener noreferrer" class="doi-link">doi:10.1016/j.cpc.2019.02.011</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Authors / Team Section -->
+    <section class="section team-section" id="team">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Researchers</p>
+          <h2 class="section-title">Research Team and Authors</h2>
+          <p class="section-subtitle">
+            Developed by researchers and software architects at Hajee Mohammad Danesh Science and Technology University (HSTU) and the HSTU Research Society.
+          </p>
+        </div>
+
+        <div class="team-grid">
+          <!-- Member 1: Prince -->
+          <div class="team-card">
+            <div class="team-avatar-initials">GK</div>
+            <h3 class="team-name">Golam Kuadir Khan Prince</h3>
+            <p class="team-role">Software Architecture &amp; Development</p>
+            <p class="team-affiliation">
+              Undergraduate Student<br />
+              Department of Electrical and Electronic Engineering<br />
+              Hajee Mohammad Danesh Science and Technology University (HSTU)<br />
+              Dinajpur, Bangladesh
+            </p>
+            <div class="team-links">
+              <a href="https://orcid.org/0009-0009-6843-1775" target="_blank" rel="noopener noreferrer" class="orcid-link" title="ORCID iD">
+                <svg class="orcid-icon" width="16" height="16" viewBox="0 0 256 256" fill="#a6ce39" aria-hidden="true">
+                  <path d="M128,0A128,128,0,1,0,256,128,128,128,0,0,0,128,0ZM86.35,186.26H63V69.74H86.35ZM74.68,57.1a13.37,13.37,0,1,1,13.37-13.37A13.37,13.37,0,0,1,74.68,57.1ZM193,128c0,35.25-18.73,58.26-53.11,58.26H107.56V69.74h32.33C174.27,69.74,193,92.75,193,128Zm-23.4,0c0-23.2-10.45-38-31-38h-7.6v76h7.6C159.15,166,169.6,151.2,169.6,128Z"></path>
+                </svg>
+                <span>0009-0009-6843-1775</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Member 2: Dr. Hossain -->
+          <div class="team-card">
+            <div class="team-avatar-initials">MH</div>
+            <h3 class="team-name">Professor Dr. Md. Mahabub Hossain</h3>
+            <p class="team-role">Principal Research &amp; Physics Direction</p>
+            <p class="team-affiliation">
+              Faculty<br />
+              Department of Electronics and Communication Engineering<br />
+              Hajee Mohammad Danesh Science and Technology University (HSTU)<br />
+              Dinajpur, Bangladesh
+            </p>
+            <div class="team-links">
+              <a href="https://orcid.org/0000-0003-2840-5352" target="_blank" rel="noopener noreferrer" class="orcid-link" title="ORCID iD">
+                <svg class="orcid-icon" width="16" height="16" viewBox="0 0 256 256" fill="#a6ce39" aria-hidden="true">
+                  <path d="M128,0A128,128,0,1,0,256,128,128,128,0,0,0,128,0ZM86.35,186.26H63V69.74H86.35ZM74.68,57.1a13.37,13.37,0,1,1,13.37-13.37A13.37,13.37,0,0,1,74.68,57.1ZM193,128c0,35.25-18.73,58.26-53.11,58.26H107.56V69.74h32.33C174.27,69.74,193,92.75,193,128Zm-23.4,0c0-23.2-10.45-38-31-38h-7.6v76h7.6C159.15,166,169.6,151.2,169.6,128Z"></path>
+                </svg>
+                <span>0000-0003-2840-5352</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Member 3: Pankaj Bhowmik -->
+          <div class="team-card">
+            <div class="team-avatar-initials">PB</div>
+            <h3 class="team-name">Pankaj Bhowmik</h3>
+            <p class="team-role">Co-Researcher</p>
+            <p class="team-affiliation">
+              Faculty<br />
+              Department of Computer Science and Engineering<br />
+              Hajee Mohammad Danesh Science and Technology University (HSTU)<br />
+              Dinajpur, Bangladesh
+            </p>
+            <div class="team-links">
+              <a href="https://orcid.org/0000-0003-2296-5308" target="_blank" rel="noopener noreferrer" class="orcid-link" title="ORCID iD">
+                <svg class="orcid-icon" width="16" height="16" viewBox="0 0 256 256" fill="#a6ce39" aria-hidden="true">
+                  <path d="M128,0A128,128,0,1,0,256,128,128,128,0,0,0,128,0ZM86.35,186.26H63V69.74H86.35ZM74.68,57.1a13.37,13.37,0,1,1,13.37-13.37A13.37,13.37,0,0,1,74.68,57.1ZM193,128c0,35.25-18.73,58.26-53.11,58.26H107.56V69.74h32.33C174.27,69.74,193,92.75,193,128Zm-23.4,0c0-23.2-10.45-38-31-38h-7.6v76h7.6C159.15,166,169.6,151.2,169.6,128Z"></path>
+                </svg>
+                <span>0000-0003-2296-5308</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="research-group-badge">
+          <strong>Research Group:</strong> HSTU Research Society, Hajee Mohammad Danesh Science and Technology University, Dinajpur 5200, Bangladesh.
+        </div>
+      </div>
+    </section>
+
+    <!-- Licence Section -->
+    <section class="section licence-section" id="licence">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Open Source &amp; Licensing</p>
+          <h2 class="section-title">Licensing and Attribution</h2>
+          <p class="section-subtitle">
+            Clear intellectual property boundaries separating open-source application software from third-party physics engine code.
+          </p>
+        </div>
+
+        <div class="licence-grid">
+          <!-- Card 1: MIT -->
+          <div class="licence-card">
+            <div class="licence-badge badge-blue">MIT License</div>
+            <h3 class="licence-title">Application Code and Interface</h3>
+            <p class="licence-description">
+              The application software, interactive user interface, Express server, WebAssembly build scripts, test suites, and documentation are open-source under the <strong>MIT License</strong>.
+            </p>
+            <p class="licence-copyright">
+              Copyright &copy; 2026 Golam Kuadir Khan Prince. Free to use, modify, and distribute with attribution.
+            </p>
+          </div>
+
+          <!-- Card 2: CC BY-NC 3.0 -->
+          <div class="licence-card">
+            <div class="licence-badge badge-amber">CC BY-NC 3.0</div>
+            <h3 class="licence-title">ELSEPA 2021 Physics Code &amp; Data</h3>
+            <p class="licence-description">
+              The official ELSEPA 2021 Fortran sources (<code class="inline-code">elsepa2020.f</code>, <code class="inline-code">radial.f</code>, <code class="inline-code">elscata.f</code>, <code class="inline-code">elscatm.f</code>), atomic database tables, and WebAssembly build are the intellectual property of <strong>F. Salvat, A. Jablonski, and C. J. Powell</strong>.
+            </p>
+            <p class="licence-terms">
+              Licensed under the <strong>Creative Commons Attribution-NonCommercial 3.0 Unported License (CC BY-NC 3.0)</strong>. Permitted for non-commercial research and educational use with appropriate attribution.
+            </p>
+          </div>
+        </div>
+
+        <!-- 2005 Deprecation Notice -->
+        <div class="licence-notice">
+          <strong>Notice:</strong> At the request of the ELSEPA authors, the earlier (2005) version of ELSEPA is no longer distributed with this software. All calculations utilize the official 2021 release (package elsepa-2020 with RADIAL library).
+        </div>
+      </div>
+    </section>
+
+    <!-- Support Section -->
+    <section class="section support-section" id="support">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-tag">Get Involved</p>
+          <h2 class="section-title">Support the Project</h2>
+          <p class="section-subtitle">
+            Help maintain open-access scientific software and enable future research innovations for computational atomic physics.
+          </p>
+        </div>
+
+        <div class="support-content-card">
+          <div class="support-main">
+            <h3 class="support-heading">Support Sustainable Open Scientific Computing</h3>
+            <p class="support-text">
+              Developing and maintaining high-precision scientific tools requires continuous effort in physics verification, server hosting, and web standards maintenance. Your support helps ensure these tools remain freely accessible to students and researchers worldwide.
+            </p>
+            <div class="support-actions">
+              <a href="https://www.patreon.com/TheStudioofSadiq" target="_blank" rel="noopener noreferrer" class="btn btn-patreon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M14.82 2.41a6.6 6.6 0 0 0-6.6 6.6c0 3.63 2.97 6.57 6.6 6.57 3.64 0 6.6-2.94 6.6-6.57a6.6 6.6 0 0 0-6.6-6.6zM2.58 21.59h3.76V2.41H2.58v19.18z"></path>
+                </svg>
+                <span>Support on Patreon</span>
+              </a>
+              <a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/issues/new/choose" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>Report an Issue / Request Feature</span>
+              </a>
+              <a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="btn btn-tertiary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <line x1="20" y1="8" x2="20" y2="14"></line>
+                  <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                <span>Contributing Guide</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="brand-link">
+            <img src="assets/favicon.svg" alt="Electron Scattering Logo" class="brand-logo" width="32" height="32" />
+            <span class="brand-title">Electron Scattering Simulator</span>
+          </div>
+          <p class="footer-tagline">
+            Dirac partial-wave elastic scattering of electrons and positrons by atoms, ions and molecules. High precision in-browser scientific computing.
+          </p>
+        </div>
+
+        <div class="footer-links-group">
+          <div class="footer-column">
+            <h4 class="footer-heading">Software</h4>
+            <ul class="footer-links">
+              <li><a href="https://electron-scattering.onrender.com/" target="_blank" rel="noopener noreferrer">Launch Web App</a></li>
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/releases" target="_blank" rel="noopener noreferrer">Releases</a></li>
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-column">
+            <h4 class="footer-heading">Documentation</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/docs/Documentation.md" target="_blank" rel="noopener noreferrer">Technical Documentation</a></li>
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing Guide</a></li>
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer">Security Policy</a></li>
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer">Code of Conduct</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-column">
+            <h4 class="footer-heading">Community</h4>
+            <ul class="footer-links">
+              <li><a href="https://github.com/The-Studio-of-Sadiq/Electron-Scattering/issues/new/choose" target="_blank" rel="noopener noreferrer">Issue Tracker</a></li>
+              <li><a href="https://www.patreon.com/TheStudioofSadiq" target="_blank" rel="noopener noreferrer">Support on Patreon</a></li>
+              <li><a href="#citation">Citation Information</a></li>
+              <li><a href="#licence">Licence Details</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p class="footer-copy">
+          &copy; 2026 Electron Scattering Simulator Contributors. Developed by <strong>HSTU Research Society</strong>.
+        </p>
+        <p class="footer-engine-copy">
+          Core physics engine ELSEPA 2021 &copy; Francesc Salvat, Aleksander Jablonski, Cedric J. Powell (CC BY-NC 3.0).
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal for Architecture Figures -->
+  <div class="lightbox-modal" id="figure-lightbox" role="dialog" aria-modal="true" aria-labelledby="lightbox-title" aria-hidden="true">
+    <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+    <div class="lightbox-dialog">
+      <div class="lightbox-header">
+        <h3 class="lightbox-title" id="lightbox-title">Architecture Figure</h3>
+        <button type="button" class="lightbox-close-btn" id="lightbox-close" aria-label="Close dialog">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="lightbox-body">
+        <img src="" alt="" class="lightbox-img" id="lightbox-image" />
+      </div>
+      <div class="lightbox-footer">
+        <p class="lightbox-desc" id="lightbox-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="main.js"></script>
+</body>
+</html>
