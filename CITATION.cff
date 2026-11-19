@@ -5,6 +5,14 @@ type: software
 version: 2.0.0
 date-released: 2026-11-19
 license: MIT
+doi: 10.5281/zenodo.21716740
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21716740
+    description: Concept DOI (all versions)
+  - type: doi
+    value: 10.5281/zenodo.24365635
+    description: Version 2.0.0
 repository-code: "https://github.com/The-Studio-of-Sadiq/Electron-Scattering"
 url: "https://thestudioofsadiq.tech/Electron-Scattering/"
 abstract: >-

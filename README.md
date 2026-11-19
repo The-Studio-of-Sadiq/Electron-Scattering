@@ -5,6 +5,7 @@
 
 [![CI](https://github.com/The-Studio-of-Sadiq/Electron-Scattering/actions/workflows/ci.yml/badge.svg)](https://github.com/The-Studio-of-Sadiq/Electron-Scattering/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/The-Studio-of-Sadiq/Electron-Scattering)](https://github.com/The-Studio-of-Sadiq/Electron-Scattering/releases/latest)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21716740.svg)](https://doi.org/10.5281/zenodo.21716740)
 [![License: MIT (app) / CC BY-NC 3.0 (ELSEPA)](https://img.shields.io/badge/License-MIT%20%2F%20ELSEPA%20CC%20BY--NC%203.0-blue.svg)](LICENSE)
 [![Patreon](https://img.shields.io/badge/Support-Patreon-f96854.svg)](https://www.patreon.com/TheStudioofSadiq)
 [![Node.js](https://img.shields.io/badge/Node.js-%5E20.19.0%20%7C%7C%20%3E%3D22.12.0-green.svg)](https://nodejs.org/)
