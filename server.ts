@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { execSync } from 'child_process';
 import multer from 'multer';
+import { rateLimit } from 'express-rate-limit';
 import {
   ensureFortranBinaryCompiled,
   ensureElscatmBinaryCompiled,
@@ -43,9 +44,24 @@ const requireSourceEditing = (_req: Request, res: Response, next: () => void) =>
   next();
 };
 
+// Render and similar hosts put one proxy in front of the app; trust it so rate
+// limits apply to the client's address rather than the proxy's.
+app.set('trust proxy', 1);
+
+// Rate limits per client IP: API calls (simulations, uploads, source access),
+// and in production the static files and SPA fallback.
+const apiLimiter = rateLimit({ windowMs: 60_000, limit: 300, standardHeaders: 'draft-8', legacyHeaders: false });
+const staticLimiter = rateLimit({ windowMs: 60_000, limit: 2000, standardHeaders: 'draft-8', legacyHeaders: false });
+app.use('/api', apiLimiter);
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Express 5 leaves req.body undefined when no parser ran; keep the Express 4 behaviour ({}).
+app.use((req, _res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
 
 // Configure Multer for secure in-memory file uploads with limits
 const upload = multer({
@@ -331,8 +347,10 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
+    app.use(staticLimiter);
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
+    // Express 5 (path-to-regexp v8) needs a named wildcard; '/{*splat}' also matches '/'.
+    app.get('/{*splat}', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

@@ -1,7 +1,7 @@
 name: Deploy GitHub Pages
 
 # Publishes the project website (site/) to the orphan gh-pages branch,
-# served at https://<owner>.github.io/<repo>/. The app itself is hosted elsewhere.
+# served at https://thestudioofsadiq.tech/Electron-Scattering/ (the organisation's custom domain). The app itself is hosted elsewhere.
 on:
   push:
     branches: [main]

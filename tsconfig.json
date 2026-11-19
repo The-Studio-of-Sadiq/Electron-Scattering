@@ -22,6 +22,8 @@
     },
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "strict": false,
+    "types": ["node", "vite/client"]
   }
 }
