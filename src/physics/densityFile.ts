@@ -3,7 +3,8 @@
  *
  * ELSEPA reads density.usr:
  * - skips 3 header lines
- * - reads R RHO pairs up to NDIN = 996 points (requires at least 5 points for cubic spline)
+ * - reads at most NDIN - 1 = 999 R RHO pairs: its loop reads NDIN = 1000 lines and stops with
+ *   'File is too large' if no end of file was met (requires at least 5 points for its cubic spline)
  * - takes LOG(RHO), so RHO must be > 0 and R > 0 strictly increasing
  * - units: R in bohr (a0), RHO in electrons/bohr^3
  * - normalized: 4*pi*integral(RHO * R^2 dR) = number of bound electrons NELEC = Z - q
@@ -17,7 +18,7 @@ export interface DensityParseResult {
 }
 
 export const MIN_DENSITY_POINTS = 5;
-export const MAX_DENSITY_POINTS = 996;
+export const MAX_DENSITY_POINTS = 999;
 
 /**
  * Parses user-supplied electron density text into normalized ELSEPA format.
@@ -146,3 +147,59 @@ export function checkCustomDensity(params: {
   }
   return { data: parsed.normalized };
 }
+
+/**
+ * Parses ELSEPA electrostatic field tables (`esfield.dat` or `scfield.dat`) into
+ * an array of radial electron density points (r in bohr, rho in electrons/bohr^3).
+ *
+ * In ELSEPA 2021:
+ * - `esfield.dat` (written by subroutine EFIELD when IWR > 0, ~line 1432) has columns:
+ *     I, R(I), RHON(I), RVN(I), DEN(I), RVST(I)
+ *   where DEN(I) = 4*pi*r^2*rho(r) (radial distribution function D(r)). Thus rho = DEN / (4*pi*r^2).
+ * - `scfield.dat` (written by subroutine ELSEPA when ELSCATA runs, ~line 878) has columns:
+ *     i, r, r*V, r*Vst, r*Vex, r*Vpol, r*Wabs, rho_e
+ *   where column 8 (rho_e) directly gives rho(r) in electrons/bohr^3.
+ *
+ * Points with r <= 0 are omitted as ELSEPA density grids require strictly positive r > 0.
+ */
+export function parseEsfield(input: string | Record<string, string>): { r: number; rho: number }[] {
+  let text = '';
+  if (typeof input === 'string') {
+    text = input;
+  } else if (input && typeof input === 'object') {
+    text = input['esfield.dat'] || input['scfield.dat'] || '';
+  }
+
+  if (!text.trim()) return [];
+
+  const lines = text.split(/\r?\n/);
+  const points: { r: number; rho: number }[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('-')) continue;
+
+    const parts = trimmed.split(/\s+/);
+    if (parts.length >= 8) {
+      // scfield.dat format: i, r, r*V, r*Vst, r*Vex, r*Vpol, r*Wabs, rho_e
+      const r = Number(parts[1].replace(/D/gi, 'E'));
+      const rho = Number(parts[7].replace(/D/gi, 'E'));
+      if (Number.isFinite(r) && Number.isFinite(rho) && r > 0 && rho > 0) {
+        points.push({ r, rho });
+      }
+    } else if (parts.length >= 6) {
+      // esfield.dat format: I, R(I), RHON(I), RVN(I), DEN(I), RVST(I)
+      const r = Number(parts[1].replace(/D/gi, 'E'));
+      const den = Number(parts[4].replace(/D/gi, 'E'));
+      if (Number.isFinite(r) && Number.isFinite(den) && r > 0 && den > 0) {
+        const rho = den / (4 * Math.PI * r * r);
+        if (Number.isFinite(rho) && rho > 0) {
+          points.push({ r, rho });
+        }
+      }
+    }
+  }
+
+  return points;
+}
+

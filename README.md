@@ -39,9 +39,11 @@ The physics routines in `fortran/` are the official, unmodified 2021 Fortran 90 
 * **Targets**: atoms and positive ions, $Z = 1$ to $103$, selected from an interactive periodic table, either free or embedded in a solid (muffin-tin model). Projectile: electron ($e^-$) or positron ($e^+$).
 * **Energy**: any kinetic energy accepted by ELSEPA ($E \ge 10\text{ eV}$; ELSEPA rejects lower energies), with presets from 10 eV to 1 MeV.
 * **Model options exposed in the UI** (mapped onto ELSCATA input keywords in `src/physics/elsepaFortranIO.ts`):
-  * **Nuclear charge distribution**: point, uniform sphere, Fermi, or Helm uniform-uniform (ELSEPA uses its own built-in nuclear parameters).
+  * **Nuclear charge distribution**: point, uniform sphere, Fermi, or Helm uniform-uniform (ELSEPA uses its own built-in nuclear parameters; build-time extensions support overriding atomic weight via `ATWGHT` in g/mol, nuclear radius $R_1$ via `NUCRAD` in fm, and skin thickness $R_2$ via `NUCSKN` in fm).
   * **Electron density**: Dirac–Fock (numerical, default), Dirac–Hartree–Fock–Slater, Thomas–Fermi–Dirac, Thomas–Fermi–Molière, or **User-supplied density file** (`MELEC 5`, uploading custom radial electron density tables).
-  * **Ion charge** $q$ (`NELEC = Z - q`) and the **muffin-tin model** for atoms in solids (neutral atoms only), with an optional muffin-tin radius.
+  * **Every input is editable and takes effect**: fields show ELSEPA's own default until you change them (↺ resets). Mass number, nuclear radius and skin go to ELSEPA through the build-time keywords below, the polarization cutoff radius $r_c$ through ELSEPA's `VPOLB` ($b_{pol} = r_c^2\sqrt{2Z^{1/3}/\alpha}$), and a **custom angular grid** resamples ELSEPA's results onto your angles and adds the cross section integrated over that range. Long runs can be **cancelled** (ion + polarization runs converge very slowly in ELSEPA 2021).
+* **Electron Density tab**: a visual editor for the radial electron density: load ELSEPA's own Dirac–Fock, DHFS, TFD or TFM density (atoms and ions), a file, or the workbench density; drag the curve, normalize to $Z-q$, ionize or add electrons, scale radially, truncate, smooth or mix; see $N$, $\langle r\rangle$ and radii enclosing 50%/90%; download an ELSEPA `.den` file (at most 999 points) or send it to the atomic workbench.
+  * **Ion charge** $q$ (`NELEC = Z - q`): supports neutral atoms ($q = 0$), positive ions ($q > 0$), and negative ions ($q < 0$, $\text{NELEC} > Z$), as well as the **muffin-tin model** for atoms in solids (neutral atoms only), with an optional muffin-tin radius.
   * **Exchange** (electrons): none, Furness–McCarthy, Riley–Truhlar, or Thomas–Fermi.
   * **Correlation–polarization**: none, Buckingham, or LDA (user-set dipole polarizability, or ELSEPA's tabulated value).
   * **Absorption**: none or the LDA absorption potential, with adjustable strength.
@@ -68,7 +70,7 @@ The physics routines in `fortran/` are the official, unmodified 2021 Fortran 90 
   * Two numeric columns separated by whitespace or commas:
     * Column 1: radial distance $r$ in **bohr** ($a_0$). Must be strictly positive ($r > 0$) and strictly increasing ($r_{i+1} > r_i$).
     * Column 2: electron density $\rho(r)$ in **electrons/bohr$^3$** ($e/a_0^3$). Must be strictly positive ($\rho > 0$).
-  * Grid limits: between 5 and 996 points ($5 \le N \le 996$, satisfying ELSEPA's cubic spline interpolation requirements and table limits).
+  * Grid limits: between 5 and 999 points ($5 \le N \le 999$, satisfying ELSEPA's cubic spline interpolation requirements and table limits).
   * Normalization condition: $4\pi \int_0^\infty \rho(r) r^2 \, dr = \text{NELEC} = Z - q$. The workbench calculates the trapezoidal integral and warns if it differs from the expected bound electron count by more than 1%.
 * **Execution isolation**: on the native server, each run gets its own temporary working directory holding `density.usr` and a `database` link to the atomic tables (ELSEPA 2021 reads both relative to its working directory), so simultaneous runs never share the file. WebAssembly runs write `density.usr` to the working directory `/` of a fresh in-memory file system.
 
@@ -83,8 +85,8 @@ The physics routines in `fortran/` are the official, unmodified 2021 Fortran 90 
 * Overlay the uploaded points on the computed ELSEPA DCS curve.
 
 ### 6. 🚀 Execution Engines
-* **ELSEPA in the browser (default)**: the Fortran is translated with netlib `f2c` and compiled with Emscripten (`wasm/build.sh` → `public/elsepa/elsepa.{js,wasm,data}`). It runs in a module Web Worker with a fresh module instance per run. `src/utils/localApiFallback.ts` intercepts the app's `/api/*` requests and runs them in the browser when there is no backend, when the backend has no compiled ELSEPA binary, or when the backend's native run fails (HTTP 5xx).
-* **Native ELSEPA on the optional server**: `server.ts` + `server/fortranRunner.ts` compile `fortran/` with `gfortran` and run it natively. The server never substitutes an approximate model: a missing binary or failed run returns HTTP 500, and the browser then uses WebAssembly.
+* **ELSEPA in the browser (default)**: `wasm/patch-elsepa.mjs` applies build-time extensions (nuclear parameter overrides and negative ion support) to the Fortran sources, `wasm/f90to77.py` translates them to Fortran 77, and they are compiled via netlib `f2c` and Emscripten (`wasm/build.sh` → `public/elsepa/elsepa.{js,wasm,data}`). It runs in a module Web Worker with a fresh module instance per run. `src/utils/localApiFallback.ts` intercepts the app's `/api/*` requests and runs them in the browser when there is no backend, when the backend has no compiled ELSEPA binary, or when the backend's native run fails (HTTP 5xx).
+* **Native ELSEPA on the optional server**: `server.ts` + `server/fortranRunner.ts` patch and compile the Fortran with `gfortran` (`node wasm/patch-elsepa.mjs fortran <dir>` followed by `gfortran -O2 -I<dir>`) and run it natively. The server never substitutes an approximate model: a missing binary or failed run returns HTTP 500, and the browser then uses WebAssembly.
 * **TS Approximation (opt-in demo only)**: `src/physics/elsepaPhysicsEngine.ts` and `src/physics/molecularFallback.ts` are a simplified TypeScript model with approximate phase shifts and hard-coded molecular cross sections. They do **not** solve the Dirac equation and are used only when the user selects "TS Approximation" in the header; results are then marked with an "Approximate result" banner. Use it for qualitative demos only, never for quantitative work.
 
 ### 7. 📱 Progressive Web App (PWA) & Dark/Light Theming

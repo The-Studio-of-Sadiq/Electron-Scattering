@@ -192,6 +192,9 @@ async function handleLocally(pathname: string, search: string, method: string, i
 
     return jsonResponse({ error: `Unknown API route ${pathname}` }, 404);
   } catch (err: any) {
+    if (err?.name === 'AbortError' || err?.message === 'Cancelled by user') {
+      throw err;
+    }
     return jsonResponse({ error: err?.message || 'In-browser computation failed' }, 500);
   }
 }

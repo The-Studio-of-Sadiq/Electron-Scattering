@@ -47,8 +47,9 @@ jobs:
       - name: Build native ELSEPA (same flags as the Dockerfile)
         run: |
           mkdir -p native
-          gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f
-          gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f
+          node wasm/patch-elsepa.mjs fortran native/patched
+          gfortran -O2 -Inative/patched -o native/elscata native/patched/elscata.f
+          gfortran -O2 -Inative/patched -o native/elscatm native/patched/elscatm.f
 
       - name: Compare WebAssembly with gfortran and validations
         env:
@@ -58,6 +59,12 @@ jobs:
 
       - name: Unit and feature tests for custom energy grids and user-supplied density
         run: npx --yes tsx@4.21.0 wasm/features.test.ts
+
+      - name: Electron density editor, numerical tools and ELSEPA integration
+        run: npx --yes tsx@4.21.0 wasm/density.test.ts
+
+      - name: Nuclear parameter overrides and negative ion support
+        run: npx --yes tsx@4.21.0 wasm/overrides.test.ts
 
       - name: Server engine runs native ELSEPA, never the TypeScript model
         run: npx --yes tsx@4.21.0 wasm/server.test.ts
@@ -98,8 +105,9 @@ jobs:
       - name: Build native ELSEPA
         run: |
           mkdir -p native
-          gfortran -O2 -Ifortran -o native/elscata fortran/elscata.f
-          gfortran -O2 -Ifortran -o native/elscatm fortran/elscatm.f
+          node wasm/patch-elsepa.mjs fortran native/patched
+          gfortran -O2 -Inative/patched -o native/elscata native/patched/elscata.f
+          gfortran -O2 -Inative/patched -o native/elscatm native/patched/elscatm.f
 
       - name: Regenerate reference tables
         env:

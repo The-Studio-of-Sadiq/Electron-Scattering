@@ -30,13 +30,13 @@ C ====================================================================
 IZ     ${params.z}           ! Atomic number Z
 IEV    ${projStr}           ! Projectile (-1 = Electron, +1 = Positron)
 EV     ${params.energyEv.toFixed(2)}       ! Kinetic Energy in eV
-MASS   ${params.massNumber.toFixed(2)}       ! Mass number A (amu)
+MASS   ${(params.atomicWeightOverride ?? params.massNumber).toFixed(2)}       ! Mass number A (amu)
 NUCMOD ${params.nuclearModel === 'point' ? '1' : params.nuclearModel === 'uniform' ? '2' : '3'}           ! Nuclear model (1=Point, 2=Uniform Sphere, 3=Fermi)
 IELAST ${params.densityModel === 'dirac-fock' ? '1' : params.densityModel === 'thomas-fermi' ? '2' : '3'}           ! Electron density/potential model (1=Dirac-Fock, 2=Thomas-Fermi, 3=Custom)
 MEXCH  ${params.exchangeModel === 'none' ? '0' : params.exchangeModel === 'furness-mccarthy' ? '1' : params.exchangeModel === 'riley-truhlar' ? '2' : '3'}           ! Exchange potential (0=None, 1=Furness-McCarthy, 2=Riley-Truhlar, 3=FEG)
 MPOL   ${params.polarizationModel === 'none' ? '0' : '1'}           ! Polarization potential (0=None, 1=Buckingham)
 POLAR  ${params.polarizability.toFixed(2)}        ! Dipole polarizability alpha_d (a_0^3)
-CUTOFF ${params.cutoffRadius.toFixed(2)}        ! Cutoff radius r_c (a_0)
+CUTOFF ${(params.polarizationCutoffA0 ?? params.cutoffRadius).toFixed(2)}        ! Cutoff radius r_c (a_0)
 MABS   ${params.absorptionModel === 'none' ? '0' : '1'}           ! Absorption potential (0=None, 1=Staszewska LDA)
 THMIN  ${params.minAngle.toFixed(1)}          ! Minimum angle (degrees)
 THMAX  ${params.maxAngle.toFixed(1)}        ! Maximum angle (degrees)
@@ -58,7 +58,8 @@ export function calculatePotentialProfile(
   const rMax = 15.0; // a_0
 
   // Nuclear radius R_N in a_0
-  const rNucFm = 1.07 * Math.pow(params.massNumber, 1 / 3);
+  const effectiveMass = params.atomicWeightOverride ?? params.massNumber;
+  const rNucFm = params.nuclearRadiusFm ?? (1.07 * Math.pow(effectiveMass, 1 / 3));
   const rNucBohr = rNucFm * FERMI_TO_BOHR;
 
   // Kinetic energy in atomic units
@@ -81,8 +82,8 @@ export function calculatePotentialProfile(
       }
     } else {
       // Fermi 2-parameter approximation
-      const c = (params.fermiC || rNucFm) * FERMI_TO_BOHR;
-      const thickness = (params.fermiT || 0.5229) * FERMI_TO_BOHR;
+      const c = (params.nuclearRadiusFm ?? params.fermiC ?? rNucFm) * FERMI_TO_BOHR;
+      const thickness = (params.nuclearSkinFm ?? params.fermiT ?? 0.5229) * FERMI_TO_BOHR;
       const x = (r - c) / thickness;
       const fermiFactor = 1 / (1 + Math.exp(Math.min(20, Math.max(-20, x))));
       if (r < c) {
@@ -127,7 +128,7 @@ export function calculatePotentialProfile(
     let vPolarization = 0;
     if (params.polarizationModel === 'buckingham' && params.polarizability > 0) {
       const alphaD = params.polarizability;
-      const rC = Math.max(0.1, params.cutoffRadius);
+      const rC = Math.max(0.1, params.polarizationCutoffA0 ?? params.cutoffRadius);
       const denominator = Math.pow(r * r + rC * rC, 2);
       vPolarization = -(0.5 * alphaD) / denominator;
     }

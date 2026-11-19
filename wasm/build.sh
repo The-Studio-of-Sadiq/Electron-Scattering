@@ -71,6 +71,12 @@ if [ ! -f "$LIBF2C" ]; then
 fi
 
 # ---- 3. Make the Fortran pure F77 and translate it ------------------------
+echo "[build] applying build-time patch"
+PATCHED="$BUILD/patched"
+rm -rf "$PATCHED"
+mkdir -p "$PATCHED"
+node "$ROOT/wasm/patch-elsepa.mjs" "$ROOT/fortran" "$PATCHED"
+
 echo "[build] translating Fortran"
 SRC="$BUILD/src"
 rm -rf "$SRC"
@@ -80,8 +86,8 @@ PYTHON=python3
 command -v python3 >/dev/null 2>&1 && python3 -c "" 2>/dev/null || PYTHON=python
 
 # f90to77.py prepares lib.f (radial.f + elsepa2020.f), elscata.f, elscatm.f
-# and constants.inc from the official 2021 Fortran sources.
-"$PYTHON" "$ROOT/wasm/f90to77.py" "$ROOT/fortran" "$SRC"
+# and constants.inc from the patched 2021 Fortran sources.
+"$PYTHON" "$ROOT/wasm/f90to77.py" "$PATCHED" "$SRC"
 
 pushd "$SRC" >/dev/null
 for f in lib elscata elscatm; do

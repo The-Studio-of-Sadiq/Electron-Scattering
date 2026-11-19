@@ -10,6 +10,8 @@ import {
   EnergySweepPoint,
 } from '../types';
 import { getElementByZ } from '../data/elements';
+import { ATPOL } from '../data/elsepaTables';
+import { resampleScatteringData, integratePartialCrossSection } from './angularGrid';
 import { BOHR_SQ_TO_CM2, BOHR_SQ_TO_ANGSTROM2, HARtree_EV, SPEED_OF_LIGHT } from './elsepaPhysicsEngine';
 
 // Input builders and output parsers for Salvat's ELSCATA / ELSCATM programs.
@@ -18,6 +20,14 @@ import { BOHR_SQ_TO_CM2, BOHR_SQ_TO_ANGSTROM2, HARtree_EV, SPEED_OF_LIGHT } from
 
 export type FortranOutputFiles = Record<string, string>;
 
+function formatOverrideValue(v: number): string {
+  const s = String(v);
+  if (s.length <= 12) return s;
+  const p = Number(v.toPrecision(8)).toString();
+  if (p.length <= 12) return p;
+  return v.toExponential(5);
+}
+
 export function buildAtomicInput(params: ElsepaInputParams): string {
   // Map input params to Salvat's Fortran keywords
   const nucModInt = { point: 1, uniform: 2, fermi: 3, helm: 4 }[params.nuclearModel] ?? 3;
@@ -25,7 +35,11 @@ export function buildAtomicInput(params: ElsepaInputParams): string {
     throw new Error('Custom electron density data is required when densityModel is "custom-file"');
   }
   const melecInt = { 'thomas-fermi': 1, 'thomas-fermi-dirac': 2, dhfs: 3, 'dirac-fock': 4, 'custom-file': 5 }[params.densityModel as string] ?? 4;
-  const ionCharge = Math.min(params.z, Math.max(0, Math.round(params.ionCharge || 0)));
+  const ionCharge = Math.round(params.ionCharge || 0);
+  const nelec = params.z - ionCharge;
+  if (nelec < 0) {
+    throw new Error(`ELSEPA requires NELEC >= 0 (got NELEC=${nelec} for Z=${params.z}, q=${ionCharge})`);
+  }
   // ELSEPA only applies the muffin-tin model to neutral atoms; RMUF 0 selects its default radius.
   const muffinInt = params.muffinTin && ionCharge === 0 ? 1 : 0;
   const rmufCm = muffinInt && params.muffinTinRadiusAngstrom ? (params.muffinTinRadiusAngstrom * 1e-8).toExponential(5) : 0;
@@ -45,10 +59,20 @@ export function buildAtomicInput(params: ElsepaInputParams): string {
   // given, VPOLA -1 makes ELSEPA use its tabulated (measured) polarizability.
   const polarCm3 = mcpolInt && !(params.polarizability > 0) ? -1 : (params.polarizability * 1.4818474e-25).toExponential(5);
 
-  return [
+  let vpolb: number | string = -1;
+  if (params.polarizationCutoffA0 !== undefined && mcpolInt !== 0) {
+    const alpha =
+      params.polarizability > 0
+        ? params.polarizability
+        : (ATPOL[params.z - 1] ?? 1e-24) / Math.pow(5.2917721067e-9, 3);
+    const bpol = Math.pow(params.polarizationCutoffA0, 2) * Math.sqrt((2 * Math.pow(params.z, 1 / 3)) / alpha);
+    vpolb = formatOverrideValue(bpol);
+  }
+
+  const lines = [
     keywordLine('IZ', params.z),
     keywordLine('MNUCL', nucModInt),
-    keywordLine('NELEC', params.z - ionCharge),
+    keywordLine('NELEC', nelec),
     keywordLine('MELEC', melecInt),
     keywordLine('MUFFIN', muffinInt),
     keywordLine('RMUF', rmufCm),
@@ -56,13 +80,26 @@ export function buildAtomicInput(params: ElsepaInputParams): string {
     keywordLine('MEXCH', mexchInt),
     keywordLine('MCPOL', mcpolInt),
     keywordLine('VPOLA', polarCm3),
-    keywordLine('VPOLB', -1),
+    keywordLine('VPOLB', vpolb),
     keywordLine('MABS', mabsInt),
     keywordLine('VABSA', vabsA),
     keywordLine('VABSD', '-1.0'),
     keywordLine('IHEF', 2),
-    keywordLine('EV', params.energyEv.toExponential(5)),
-  ].join('\n') + '\n';
+  ];
+
+  if (params.atomicWeightOverride !== undefined) {
+    lines.push(keywordLine('ATWGHT', formatOverrideValue(params.atomicWeightOverride)));
+  }
+  if (params.nuclearRadiusFm !== undefined) {
+    lines.push(keywordLine('NUCRAD', formatOverrideValue(params.nuclearRadiusFm)));
+  }
+  if (params.nuclearSkinFm !== undefined) {
+    lines.push(keywordLine('NUCSKN', formatOverrideValue(params.nuclearSkinFm)));
+  }
+
+  lines.push(keywordLine('EV', params.energyEv.toExponential(5)));
+
+  return lines.join('\n') + '\n';
 }
 
 // ELSCATA reads each line as READ(5,'(A6,1X,A12)'): keyword in columns 1-6 and
@@ -246,15 +283,33 @@ export function parseAtomicOutputs(
   // ELSEPA writes the header before computing; a STOP mid-run leaves no table.
   if (scatteringData.length === 0 || !sigmaElAu) return null;
 
+  let processedScatteringData = scatteringData;
+  let sigmaElRangeAu: number | undefined;
+  if (params.customAngularGrid) {
+    sigmaElRangeAu = integratePartialCrossSection(scatteringData, params.minAngle, params.maxAngle);
+    processedScatteringData = resampleScatteringData(
+      scatteringData,
+      params.minAngle,
+      params.maxAngle,
+      params.angleStep
+    );
+  }
+
   return {
     params,
     element: getElementByZ(params.z),
-    scatteringData,
+    scatteringData: processedScatteringData,
     potentialProfile,
     phaseShifts,
     summary: {
       sigmaElAu,
       sigmaElCm2: sigmaElAu * BOHR_SQ_TO_CM2,
+      ...(sigmaElRangeAu !== undefined
+        ? {
+            sigmaElRangeAu,
+            sigmaElRangeCm2: sigmaElRangeAu * BOHR_SQ_TO_CM2,
+          }
+        : {}),
       sigma1Au,
       sigma1Cm2: sigma1Au * BOHR_SQ_TO_CM2,
       sigma2Au,

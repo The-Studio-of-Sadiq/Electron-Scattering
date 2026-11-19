@@ -38,6 +38,11 @@ export interface ElsepaInputParams {
   nuclearModel: NuclearModel;
   fermiC?: number; // Half-density radius in fm (if Fermi model)
   fermiT?: number; // Skin thickness parameter in fm (default ~0.5229 fm)
+  atomicWeightOverride?: number; // ELSEPA ATWGHT override (g/mol); undefined = ELSEPA default ELAW(Z)
+  nuclearRadiusFm?: number; // ELSEPA NUCRAD override (fm); undefined = ELSEPA default
+  nuclearSkinFm?: number; // ELSEPA NUCSKN override (fm); undefined = ELSEPA default
+  polarizationCutoffA0?: number; // Cutoff radius r_c (a_0) mapped to ELSCATA VPOLB; undefined = ELSEPA default
+  customAngularGrid?: boolean; // When true, resample ELSEPA DCS to minAngle..maxAngle with angleStep
   densityModel: ElectronDensityModel;
   ionCharge?: number; // positive-ion charge q; ELSEPA NELEC = Z - q (default 0, neutral atom)
   muffinTin?: boolean; // atom in a solid: ELSEPA muffin-tin model (neutral atoms only)
@@ -112,6 +117,8 @@ export interface SimulationResult {
   summary: {
     sigmaElAu: number;
     sigmaElCm2: number;
+    sigmaElRangeAu?: number; // Partial elastic cross section integrated over custom [minAngle, maxAngle] in a_0^2
+    sigmaElRangeCm2?: number; // Partial elastic cross section in cm^2
     sigma1Au: number;
     sigma1Cm2: number;
     sigma2Au: number;

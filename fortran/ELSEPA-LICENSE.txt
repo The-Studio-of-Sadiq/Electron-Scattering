@@ -23,3 +23,20 @@ translator does not accept Fortran 90 modules. No other change is made.
 
 The earlier (2005) version of ELSEPA is no longer distributed with this software, at the request of
 its authors.
+
+Changes
+-------
+In accordance with CC BY-NC 3.0 Section 4(b), this repository applies a build-time patch
+(`wasm/patch-elsepa.mjs`) to copies of the distributed Fortran sources before building
+native and WebAssembly binaries. The distributed source files in `fortran/` remain
+byte-identical copies of the upstream distribution.
+
+The patch introduces:
+1. Keyword `ATWGHT`: overrides the atomic weight (in g/mol) used to evaluate nuclear radius formulas.
+2. Keywords `NUCRAD` and `NUCSKN`: override the nuclear radius parameter R1 and skin thickness
+   parameter R2 (in fm) across the supported nuclear charge density models.
+3. Support for negative ions (anions, NELEC > IZ) by removing the STOP 'Negative ion.'
+   statements in `elscata.f` and `elsepa2020.f` (subroutine EFIELD).
+
+Runs that do not supply these new keywords retain the exact default behavior and produce
+numerically identical outputs to unmodified ELSEPA 2021.

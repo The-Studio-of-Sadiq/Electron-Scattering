@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
 import { ElsepaInputParams, SimulationResult, MolecularInputParams, MolecularSimulationResult, EnergySweepPoint } from '../src/types';
@@ -85,6 +86,19 @@ function checkAndCleanBinary(binaryPath: string): boolean {
   }
 }
 
+function getPatchedFortranDir(): string {
+  const rootDir = process.cwd();
+  const patchedDir = path.join(os.tmpdir(), 'elsepa-patched-fortran');
+  const patchScript = path.join(rootDir, 'wasm', 'patch-elsepa.mjs');
+  const fortranDir = path.join(rootDir, 'fortran');
+  execSync(`node "${patchScript}" "${fortranDir}" "${patchedDir}"`, {
+    encoding: 'utf-8',
+    timeout: 30000,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  return patchedDir;
+}
+
 export function ensureFortranBinaryCompiled(): string | null {
   if (compiledBinaryPath && fs.existsSync(compiledBinaryPath)) {
     return compiledBinaryPath;
@@ -106,15 +120,15 @@ export function ensureFortranBinaryCompiled(): string | null {
 
   // Attempt gfortran compilation if available
   try {
-    const fortranDir = path.join(rootDir, 'fortran');
-    const elscataFile = path.join(fortranDir, 'elscata.f');
+    const patchedDir = getPatchedFortranDir();
+    const elscataFile = path.join(patchedDir, 'elscata.f');
 
     if (!fs.existsSync(elscataFile)) {
       return null;
     }
 
     console.log('Compiling official Salvat ELSEPA Fortran source code with gfortran...');
-    execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscataFile}"`, {
+    execSync(`gfortran -O2 -I"${patchedDir}" -o "${binaryTarget}" "${elscataFile}"`, {
       encoding: 'utf-8',
       timeout: 180000,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -233,15 +247,15 @@ export function ensureElscatmBinaryCompiled(): string | null {
   }
 
   try {
-    const fortranDir = path.join(rootDir, 'fortran');
-    const elscatmFile = path.join(fortranDir, 'elscatm.f');
+    const patchedDir = getPatchedFortranDir();
+    const elscatmFile = path.join(patchedDir, 'elscatm.f');
 
     if (!fs.existsSync(elscatmFile)) {
       return null;
     }
 
     console.log('Compiling official Salvat ELSCATM Fortran source code with gfortran...');
-    execSync(`gfortran -O2 -I"${fortranDir}" -o "${binaryTarget}" "${elscatmFile}"`, {
+    execSync(`gfortran -O2 -I"${patchedDir}" -o "${binaryTarget}" "${elscatmFile}"`, {
       encoding: 'utf-8',
       timeout: 180000,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -473,13 +487,27 @@ export function triggerFortranCompilation() {
     };
   }
 
+  let patchedDir: string;
+  try {
+    patchedDir = getPatchedFortranDir();
+  } catch (err: any) {
+    const errMsg = err?.stderr?.toString() || err?.stdout?.toString() || err?.message || 'Unknown patch error';
+    logs += `[ERROR] Fortran patch failed:\n${errMsg}\n`;
+    return {
+      success: false,
+      compiled: false,
+      hasGFortran: true,
+      logs,
+    };
+  }
+
   let atomicOk = false;
   let molOk = false;
 
   try {
     logs += `[gfortran] Compiling Atomic ELSEPA executable (elsepa_exec)...\n`;
     const atomicOutput = execSync(
-      `gfortran -O2 -I"${fortranDir}" -o "${atomicTarget}" "${path.join(fortranDir, 'elscata.f')}"`,
+      `gfortran -O2 -I"${patchedDir}" -o "${atomicTarget}" "${path.join(patchedDir, 'elscata.f')}"`,
       { encoding: 'utf-8', timeout: 180000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     if (atomicOutput) logs += atomicOutput + '\n';
@@ -496,7 +524,7 @@ export function triggerFortranCompilation() {
   try {
     logs += `[gfortran] Compiling Molecular ELSCATM executable (elscatm_exec)...\n`;
     const molOutput = execSync(
-      `gfortran -O2 -I"${fortranDir}" -o "${molTarget}" "${path.join(fortranDir, 'elscatm.f')}"`,
+      `gfortran -O2 -I"${patchedDir}" -o "${molTarget}" "${path.join(patchedDir, 'elscatm.f')}"`,
       { encoding: 'utf-8', timeout: 180000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     if (molOutput) logs += molOutput + '\n';

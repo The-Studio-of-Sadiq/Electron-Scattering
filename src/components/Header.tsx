@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FlaskConical,
+  Atom,
   UploadCloud,
   Terminal,
   Sparkles,
@@ -18,8 +19,8 @@ import { ElectronScatteringLogo } from './Logo';
 import packageJson from '../../package.json';
 
 interface HeaderProps {
-  activeTab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics';
-  setActiveTab: (tab: 'workbench' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics') => void;
+  activeTab: 'workbench' | 'density' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics';
+  setActiveTab: (tab: 'workbench' | 'density' | 'molecular' | 'sweep' | 'saved' | 'datasets' | 'deploy' | 'physics') => void;
   fortranStatus: FortranServerStatus | null;
   enginePreference: 'gfortran' | 'typescript';
   setEnginePreference: (engine: 'gfortran' | 'typescript') => void;
@@ -271,6 +272,21 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <FlaskConical className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Atomic Workbench</span>
+          </button>
+
+          <button
+            id="tab-density"
+            onClick={() => setActiveTab('density')}
+            className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
+              activeTab === 'density'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : theme === 'light'
+                ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Atom className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
+            <span>Electron Density</span>
           </button>
 
           <button
